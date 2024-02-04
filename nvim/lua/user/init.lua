@@ -1,8 +1,48 @@
 return {
     colorscheme = "catppuccin",
-
     plugins = {
         {
+            "rmagatti/auto-session",
+            lazy = false,
+            config = function()
+                require("auto-session").setup({
+                    log_level = "error",
+                    auto_session_suppress_dirs = {
+                        "~/", "~/Projects", "~/Downloads", "/"
+                    },
+                    post_restore_cmds = {"Neotree toggle"}
+                })
+            end
+        }, { -- override treesitter
+            "nvim-treesitter/nvim-treesitter",
+            opts = function(_, opts)
+                opts.ensure_installed = {
+                    "bash", "comment", "css", "html", "javascript", "jsdoc",
+                    "jsonc", "lua", "markdown", "regex", "tsx", "typescript",
+                    "yaml"
+                }
+            end
+        }, { -- override mason-null-ls ensure installed
+            "jay-babu/mason-null-ls.nvim",
+            opts = function(_, opts)
+                local mason_null_ls = require("mason-null-ls")
+                opts.ensure_installed = {
+                    "python-lsp-server", "autopep8", "eslint-lsp", "shellcheck",
+                    "beautysh", "eslint_d", "prettierd",
+                    "typescript-language-server", "lua-language-server",
+                    "stylua", "luaformatter", "yamlfix", "markdownlint"
+                }
+                mason_null_ls.setup(opts)
+            end
+        }, { -- override nvim-cmp to disable <Tab> and <S-Tab> mappings
+            "hrsh7th/nvim-cmp",
+            opts = function(_, opts)
+                local cmp = require("cmp")
+                opts.mapping["<Tab>"] = cmp.config.disable
+                opts.mapping["<S-Tab>"] = cmp.config.disable
+                return opts
+            end
+        }, {"christoomey/vim-tmux-navigator"}, {
             "github/copilot.vim",
             lazy = false,
             init = function() vim.g.copilot_assume_mapped = true end
@@ -11,8 +51,7 @@ return {
             config = function()
                 require("catppuccin").setup({flavour = "macchiato"})
             end
-        }, -- lazy.nvim
-        {
+        }, {
             "folke/noice.nvim",
             lazy = false,
             event = "VeryLazy",
@@ -61,7 +100,6 @@ return {
                             },
                             opts = {skip = true}
                         }
-
                     }
                 })
             end
