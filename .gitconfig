@@ -1,0 +1,51 @@
+[http]
+	proxy = http://webproxy.deutsche-boerse.de:8080
+[core]
+	editor = vi
+[user]
+	name = Firstname Lastname
+	email = alex.borgognoni@deutsche-boerse.com
+	name = Alex
+[url "ssh://git@github.deutsche-boerse.de/"]
+	insteadOf = https://github.deutsche-boerse.de/
+[alias]
+	aa = add -A .
+	aacm = !git add -A . && git commit
+	aacm = !git add -A . && git commit -m
+	amend = commit --amend -m
+	br = branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate
+	brD = branch -D
+	brd = branch -d
+	capf = !git add -A && git commit --amend --no-edit && git push -f
+	cm = commit -m
+	co = checkout
+	cob = checkout -b
+	coo = !git fetch && git checkout
+	cp = cherry-pick
+	f = "!git ls-files | grep -i"
+	gr = grep -Ii
+	la = "!git config -l | grep alias | cut -c 7-"
+	last = log -1 HEAD --stat
+	ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
+	ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
+	master = !git checkout master && git pull origin 
+	merged = branch --merged
+	p = !git push origin `git branch --show-current`
+	pf = !git push --force origin `git branch --show-current`
+	plo = pull origin
+	ploh = pull origin HEAD
+	plom = pull origin master
+	po = push origin
+	poh = push origin HEAD
+	pom = push origin master
+	tree = log --
+	search = !git rev-list --all | xargs git grep -F
+	st = status
+	sw = switch
+	swc = switch -c
+	undo = reset --soft HEAD^
+	untracked = ls-files --others --ignored --exclude-standard
+	unstage = restore --staged
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
