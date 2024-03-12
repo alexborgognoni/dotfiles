@@ -1,11 +1,10 @@
-[http]
-	proxy = http://webproxy.deutsche-boerse.de:8080
 [core]
 	editor = vi
 [user]
 	name = Firstname Lastname
 	email = alex.borgognoni@deutsche-boerse.com
 	name = Alex
+	password = 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
 [url "ssh://git@github.deutsche-boerse.de/"]
 	insteadOf = https://github.deutsche-boerse.de/
 [alias]
@@ -49,3 +48,7 @@
 [credential "https://github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
+[http]
+	proxy = http://webproxy.deutsche-boerse.de:8080/
+[https]
+	proxy = http://webproxy.deutsche-boerse.de:8080/
