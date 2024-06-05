@@ -3,8 +3,6 @@ export ZSH="$HOME/.oh-my-zsh"
 export PATH="$HOME/.cargo/bin/:$PATH"
 export NVIM_APPNAME="astronvim_v4"
 
-fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
-
 # Set name of the theme to load
 ZSH_THEME="amuse"
 
@@ -33,17 +31,21 @@ else
     export EDITOR='nvim'
 fi
 
-# Aliases
-alias c="clear"
-alias cat="batcat --color=always"
-alias k="kubectl"
-alias ls="exa --icons"
-alias nv="NVIM_APPNAME=astronvim_v4 nvim"
-alias tf="terraform"
+################################################
+#                   Plugins                    #
+################################################
 
-# plugins
 source $ZSH/oh-my-zsh.sh
 plugins=(git)
+
+fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
+
+# zoxide
+if [[ ! -f $(command -v zoxide) ]]; then
+    print -P "%F{33} %F{220}Installing %F{33}zoxide%F{220}…%f"
+    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+fi
+eval "$(zoxide init zsh)"
 
 ### Added by Zinit's installer
 if [[ ! -f $HOME/.local/share/zinit/zinit.git/zinit.zsh ]]; then
@@ -70,6 +72,8 @@ zinit light zsh-users/zsh-syntax-highlighting
 zinit light zsh-users/zsh-completions
 zinit light zsh-users/zsh-autosuggestions
 zinit light Aloxaf/fzf-tab
+zinit ice lucid wait'0'
+zinit light joshskidmore/zsh-fzf-history-search
 
 # Completion styling
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
@@ -78,19 +82,21 @@ zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
-# autojump
-[[ -s /home/alex123/.autojump/etc/profile.d/autojump.sh ]] && source /home/alex123/.autojump/etc/profile.d/autojump.sh
-
-autoload -U compinit && compinit -u
-
 # nvm
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # brew
-# eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
+# aliases
+alias c="clear"
+alias cat="batcat --color=always"
+alias k="kubecolor"
+alias ls="exa --icons"
+alias nv="NVIM_APPNAME=astronvim_v4 nvim"
+alias tf="terraform"
 
 ################################################
 #          Work specific configurations        #
@@ -107,7 +113,6 @@ export http_proxy="http://webproxy.deutsche-boerse.de:8080/"
 export https_proxy="http://webproxy.deutsche-boerse.de:8080/"
 export no_proxy="tfe.deutsche-boerse.de"
 export rsync_proxy="rsync://webproxy.deutsche-boerse.de:8080/"
-
 
 # Map arrow keys
 xmodmap -e "keycode 64 = Mode_switch" # set Alt_l as the "Mode_switch"
