@@ -9,7 +9,7 @@
 	insteadOf = https://github.deutsche-boerse.de/
 [alias]
 	aa = add -A .
-	aacm = !git add -A . && git commit
+	aac = !git add -A . && git commit
 	aacm = !git add -A . && git commit -m
 	amend = commit --amend -m
 	br = branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate
@@ -43,7 +43,7 @@
 	sw = switch
 	swc = switch -c
 	undo = reset --soft HEAD^
-	untracked = ls-files --others --ignored --exclude-standard
+	untracked = clean -f -d
 	unstage = restore --staged
 [credential "https://github.com"]
 	helper = 
