@@ -1,7 +1,8 @@
 # Environment variables
 export ZSH="$HOME/.oh-my-zsh"
-export PATH="$HOME/.cargo/bin/:$PATH"
+export PATH="$HOME/.cargo/bin/:/opt/nvim-linux64/bin:$PATH"
 export NVIM_APPNAME="astronvim_v4"
+export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 # Set name of the theme to load
 ZSH_THEME="amuse"
@@ -47,7 +48,7 @@ if [[ ! -f $(command -v zoxide) ]]; then
 fi
 eval "$(zoxide init zsh)"
 
-### Added by Zinit's installer
+# Added by Zinit's installer
 if [[ ! -f $HOME/.local/share/zinit/zinit.git/zinit.zsh ]]; then
     print -P "%F{33} %F{220}Installing %F{33}ZDHARMA-CONTINUUM%F{220} Initiative Plugin Manager (%F{33}zdharma-continuum/zinit%F{220})…%f"
     command mkdir -p "$HOME/.local/share/zinit" && command chmod g-rwX "$HOME/.local/share/zinit"
@@ -60,8 +61,6 @@ source "$HOME/.local/share/zinit/zinit.git/zinit.zsh"
 autoload -Uz _zinit
 (( ${+_comps} )) && _comps[zinit]=_zinit
 
-# Load a few important annexes, without Turbo
-# (this is currently required for annexes)
 zinit light-mode for \
     zdharma-continuum/zinit-annex-as-monitor \
     zdharma-continuum/zinit-annex-bin-gem-node \
@@ -96,6 +95,8 @@ alias cat="batcat --color=always"
 alias k="kubecolor"
 alias ls="exa --icons"
 alias nv="NVIM_APPNAME=astronvim_v4 nvim"
+alias python="python3"
+alias rr="ranger"
 alias tf="terraform"
 
 ################################################
