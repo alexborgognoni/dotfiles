@@ -1,4 +1,45 @@
 return {
+  -- {
+  --   "kelly-lin/ranger.nvim",
+  --   config = function()
+  --     require("ranger-nvim").setup { replace_netrw = true }
+  --     vim.api.nvim_set_keymap("n", "<leader>r", "", {
+  --       noremap = true,
+  --       callback = function() require("ranger-nvim").open(true) end,
+  --     })
+  --   end,
+  -- },
+  -- {
+  --   "lukas-reineke/indent-blankline.nvim",
+  --   main = "ibl",
+  --   ---@module "ibl"
+  --   ---@type ibl.config
+  --   config = function() require("ibl").setup() end,
+  -- },
+  -- {
+  --   "hrsh7th/nvim-cmp",
+  --   opts = function(_, opts)
+  --     require("cmp").setup {
+  --       view = {
+  --         entries = {
+  --           vertical_positioning = "below",
+  --         },
+  --       },
+  --     }
+  --   end,
+  -- },
+  {
+    "ray-x/lsp_signature.nvim",
+    lazy = true,
+    event = "VeryLazy",
+    opts = {},
+    config = function()
+      require("lsp_signature").setup {
+        floating_window_above_cur_line = true,
+        hint_enable = false,
+      }
+    end,
+  },
   {
     "rmagatti/auto-session",
     lazy = false,
@@ -11,6 +52,13 @@ return {
             require("neo-tree").refresh() -- refresh neotree so the new session name is displayed in the status bar
           end,
         },
+        auto_session_suppress_dirs = {
+          "~/",
+          "~/Projects",
+          "~/Downloads",
+          "/",
+        },
+        post_restore_cmds = { "Neotree toggle" },
       }
     end,
   },
@@ -75,20 +123,16 @@ return {
 
       "nvim-tree/nvim-web-devicons",
     },
-  },
-  {
-    "rmagatti/auto-session",
-    lazy = false,
-    config = function()
-      require("auto-session").setup {
-        log_level = "error",
-        auto_session_suppress_dirs = {
-          "~/",
-          "~/Projects",
-          "~/Downloads",
-          "/",
+    init = function()
+      require("markview").setup {
+        modes = { "n", "no", "c" },
+        hybrid_modes = { "n" },
+        callbacks = {
+          on_enable = function(_, win)
+            vim.wo[win].conceallevel = 3
+            vim.wo[win].concealcursor = "c"
+          end,
         },
-        post_restore_cmds = { "Neotree toggle" },
       }
     end,
   },
@@ -140,11 +184,11 @@ return {
     end,
   },
   { "christoomey/vim-tmux-navigator" },
-  {
-    "github/copilot.vim",
-    lazy = false,
-    init = function() vim.g.copilot_assume_mapped = true end,
-  },
+  -- {
+  --   "github/copilot.vim",
+  --   lazy = false,
+  --   init = function() vim.g.copilot_assume_mapped = true end,
+  -- },
   {
     "catppuccin/nvim",
     config = function() require("catppuccin").setup { flavour = "macchiato" } end,
