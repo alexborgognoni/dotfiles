@@ -48,7 +48,3 @@
 [credential "https://github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
-[http]
-	proxy = http://webproxy.deutsche-boerse.de:8080/
-[https]
-	proxy = http://webproxy.deutsche-boerse.de:8080/
