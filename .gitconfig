@@ -37,14 +37,16 @@
 	po = push origin
 	poh = push origin HEAD
 	pom = push origin master
-	tree = log --
+	pub = "!f() { git add . && git commit -m \"$1\" && git push; }; f"
 	search = !git rev-list --all | xargs git grep -F
 	st = status
 	sw = switch
 	swc = switch -c
+	tree = log --
 	undo = reset --soft HEAD^
-	untracked = clean -f -d
 	unstage = restore --staged
+	untracked = clean -f -d
+	zap = !git add . && git commit --amend --no-edit && git push -f
 [credential "https://github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
