@@ -125,7 +125,7 @@ zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview '
 #############################################
 
 alias c="clear"
-alias cat="batcat --color=always"
+alias bat="batcat"
 alias k="kubecolor"
 alias ls="exa --icons"
 alias nv="nvim"
