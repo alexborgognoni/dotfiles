@@ -9,7 +9,7 @@ export REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
 export NODE_EXTRA_CA_CERTS="/etc/ssl/certs/ca-certificates.crt"
 export NODE_OPTIONS="--use-openssl-ca --use-system-ca"
 
-export PATH="$PATH:$HOME/.cargo/bin:/opt/nvim-linux-x86_64/bin:/usr/local/go/bin:$GOPATH/bin:$HOME/.config/composer/vendor/bin"
+export PATH="$PATH:$HOME/.cargo/bin:/opt/nvim-linux-x86_64/bin:/usr/local/go/bin:$GOPATH/bin:$HOME/.config/composer/vendor/bin:$HOME/.bun/bin:$HOME/.opencode/bin:$HOME/.config/herd-lite/bin"
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init - zsh)"
