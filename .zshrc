@@ -6,6 +6,8 @@ export ZSH="$HOME/.oh-my-zsh"
 export GOPATH="$HOME/go"
 export NVM_DIR="$HOME/.nvm"
 export REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
+export NODE_EXTRA_CA_CERTS="/etc/ssl/certs/ca-certificates.crt"
+export NODE_OPTIONS="--use-openssl-ca --use-system-ca"
 
 export PATH="$PATH:$HOME/.cargo/bin:/opt/nvim-linux-x86_64/bin:/usr/local/go/bin:$GOPATH/bin:$HOME/.config/composer/vendor/bin"
 
