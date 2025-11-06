@@ -123,16 +123,13 @@ else
     compinit -C
 fi
 
-# Load interactive plugins after completions
-zinit light zsh-users/zsh-autosuggestions
-zinit light Aloxaf/fzf-tab
-
 # Load git plugin from OMZ via Zinit (provides git aliases)
 zinit snippet OMZ::plugins/git/git.plugin.zsh
 
-# Defer syntax highlighting and fzf history for faster startup
-zinit ice lucid wait'0'
+# Load plugins with default configuration
+zinit light zsh-users/zsh-autosuggestions
 zinit light zsh-users/zsh-syntax-highlighting
+zinit light Aloxaf/fzf-tab
 
 zinit ice lucid wait'1'
 zinit light joshskidmore/zsh-fzf-history-search
