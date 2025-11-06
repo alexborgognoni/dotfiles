@@ -9,10 +9,22 @@ export REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
 export NODE_EXTRA_CA_CERTS="/etc/ssl/certs/ca-certificates.crt"
 export NODE_OPTIONS="--use-openssl-ca --use-system-ca"
 
-export PATH="$PATH:$HOME/.cargo/bin:/opt/nvim-linux-x86_64/bin:/usr/local/go/bin:$GOPATH/bin:$HOME/.config/composer/vendor/bin:$HOME/.bun/bin:$HOME/.opencode/bin:$HOME/.config/herd-lite/bin"
+# PATH configuration - organized for readability
+export PATH="$PATH:$HOME/.cargo/bin"
+export PATH="$PATH:/opt/nvim-linux-x86_64/bin"
+export PATH="$PATH:/usr/local/go/bin"
+export PATH="$PATH:$GOPATH/bin"
+export PATH="$PATH:$HOME/.config/composer/vendor/bin"
+export PATH="$PATH:$HOME/.bun/bin"
+export PATH="$PATH:$HOME/.opencode/bin"
+export PATH="$PATH:$HOME/.config/herd-lite/bin"
+
+# Pyenv initialization
 export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init - zsh)"
+if [[ -d $PYENV_ROOT/bin ]]; then
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init - zsh)"
+fi
 
 export PHP_INI_SCAN_DIR="$HOME/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 
@@ -63,9 +75,40 @@ bindkey '^n' history-search-forward
 if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/google-cloud-sdk/path.zsh.inc"; fi # updates PATH for the Google Cloud SDK
 if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-cloud-sdk/completion.zsh.inc"; fi # enables shell command completion for gcloud
 
-# NVM
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# NVM - lazy loading for faster shell startup
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+    # Lazy load nvm to speed up shell startup
+    nvm() {
+        unset -f nvm node npm npx
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+        nvm "$@"
+    }
+
+    # Lazy load node to speed up shell startup
+    node() {
+        unset -f nvm node npm npx
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+        node "$@"
+    }
+
+    # Lazy load npm to speed up shell startup
+    npm() {
+        unset -f nvm node npm npx
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+        npm "$@"
+    }
+
+    # Lazy load npx to speed up shell startup
+    npx() {
+        unset -f nvm node npm npx
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+        npx "$@"
+    }
+fi
 
 # Oh-My-Zsh
 plugins=(git)
@@ -73,9 +116,6 @@ source "$ZSH/oh-my-zsh.sh"
 
 # zoxide
 eval "$(zoxide init zsh)"
-
-# zsh-completions
-fpath+=${ZSH_CUSTOM:-${ZSH:-$HOME/.oh-my-zsh}/custom}/plugins/zsh-completions/src
 
 # Zinit
 ZINIT_HOME="$HOME/.local/share/zinit"
@@ -112,23 +152,26 @@ zinit light joshskidmore/zsh-fzf-history-search
 #           Completion and FZF              #
 #############################################
 
+# Initialize completion system
+autoload -Uz compinit && compinit
+
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' menu no
 
-zstyle ':fzf-tab:complete:*' fzf-preview '
-    if [ -d "$realpath" ]; then exa --tree --icons "$realpath"
-    elif [ -f "$realpath" ]; then batcat --color=always "$realpath"
-    else echo "$realpath"
+# Consolidated fzf-tab preview function
+_fzf_preview_file_or_dir() {
+    if [ -d "$realpath" ]; then
+        exa -a --tree --icons "$realpath"
+    elif [ -f "$realpath" ]; then
+        batcat --color=always "$realpath"
+    else
+        echo "$realpath"
     fi
-'
+}
 
-zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview '
-    if [ -d "$realpath" ]; then exa -a --tree --icons "$realpath"
-    elif [ -f "$realpath" ]; then batcat --color=always "$realpath"
-    else echo "$realpath"
-    fi
-'
+zstyle ':fzf-tab:complete:*' fzf-preview '_fzf_preview_file_or_dir'
+zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview '_fzf_preview_file_or_dir'
 
 #############################################
 #                 Aliases                   #
@@ -159,63 +202,4 @@ y() {
         cd "$cwd"
     fi
     rm -f -- "$tmp"
-}
-
-ghcs() {
-    local FUNCNAME="${funcstack[1]}"
-    local TARGET="shell"
-    local GH_DEBUG="${GH_DEBUG}"
-    local GH_HOST="${GH_HOST}"
-    local OPT OPTARG OPTIND
-
-    while getopts "dht:-:" OPT; do
-        if [[ "$OPT" = "-" ]]; then
-            OPT="${OPTARG%%=*}"
-            OPTARG="${OPTARG#*=}"
-        fi
-        case "$OPT" in
-            d | debug) GH_DEBUG=api ;;
-            h | help) echo "$__USAGE"; return 0 ;;
-            hostname) GH_HOST="$OPTARG" ;;
-            t | target) TARGET="$OPTARG" ;;
-        esac
-    done
-    shift "$((OPTIND-1))"
-
-    local TMPFILE
-    TMPFILE="$(mktemp -t gh-copilotXXXXXX)"
-    trap 'rm -f "$TMPFILE"' EXIT
-
-    if GH_DEBUG="$GH_DEBUG" GH_HOST="$GH_HOST" gh copilot suggest -t "$TARGET" "$@" --shell-out "$TMPFILE"; then
-        if [ -s "$TMPFILE" ]; then
-            local FIXED_CMD
-            FIXED_CMD="$(<"$TMPFILE")"
-            print -s "$FIXED_CMD"
-            eval "$FIXED_CMD"
-        fi
-    else
-        return 1
-    fi
-}
-
-ghce() {
-    local FUNCNAME="${funcstack[1]}"
-    local GH_DEBUG="${GH_DEBUG}"
-    local GH_HOST="${GH_HOST}"
-    local OPT OPTARG OPTIND
-
-    while getopts "dh-:" OPT; do
-        if [[ "$OPT" = "-" ]]; then
-            OPT="${OPTARG%%=*}"
-            OPTARG="${OPTARG#*=}"
-        fi
-        case "$OPT" in
-            d | debug) GH_DEBUG=api ;;
-            h | help) echo "$__USAGE"; return 0 ;;
-            hostname) GH_HOST="$OPTARG" ;;
-        esac
-    done
-    shift "$((OPTIND-1))"
-
-    GH_DEBUG="$GH_DEBUG" GH_HOST="$GH_HOST" gh copilot explain "$@"
 }
