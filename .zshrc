@@ -73,11 +73,9 @@ if [[ -d $PYENV_ROOT/bin ]]; then
     eval "$(pyenv init - zsh)"
 fi
 
-# NVM initialization
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-    \. "$NVM_DIR/nvm.sh"
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-fi
+# NVM - using zsh-nvm plugin for lazy loading
+export NVM_LAZY_LOAD=true
+export NVM_COMPLETION=true
 
 # Homebrew - cached for faster shell startup
 if [[ -f "$HOME/.brewenv_cache" ]]; then
@@ -125,6 +123,9 @@ fi
 
 # Load git plugin from OMZ via Zinit (provides git aliases)
 zinit snippet OMZ::plugins/git/git.plugin.zsh
+
+# Load zsh-nvm plugin for lazy NVM loading
+zinit light lukechilds/zsh-nvm
 
 # Load plugins with default configuration
 zinit light zsh-users/zsh-autosuggestions
