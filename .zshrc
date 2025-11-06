@@ -66,52 +66,17 @@ bindkey '^[[D' backward-word      # Left arrow (with modifiers)
 if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/google-cloud-sdk/path.zsh.inc"; fi
 if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-cloud-sdk/completion.zsh.inc"; fi
 
-# Pyenv - lazy loading for faster shell startup
+# Pyenv initialization
 export PYENV_ROOT="$HOME/.pyenv"
 if [[ -d $PYENV_ROOT/bin ]]; then
     export PATH="$PYENV_ROOT/bin:$PATH"
-
-    # Lazy load pyenv to speed up shell startup
-    pyenv() {
-        unset -f pyenv
-        eval "$(command pyenv init - zsh)"
-        pyenv "$@"
-    }
+    eval "$(pyenv init - zsh)"
 fi
 
-# NVM - lazy loading for faster shell startup
+# NVM initialization
 if [ -s "$NVM_DIR/nvm.sh" ]; then
-    # Lazy load nvm to speed up shell startup
-    nvm() {
-        unset -f nvm node npm npx
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-        nvm "$@"
-    }
-
-    # Lazy load node to speed up shell startup
-    node() {
-        unset -f nvm node npm npx
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-        node "$@"
-    }
-
-    # Lazy load npm to speed up shell startup
-    npm() {
-        unset -f nvm node npm npx
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-        npm "$@"
-    }
-
-    # Lazy load npx to speed up shell startup
-    npx() {
-        unset -f nvm node npm npx
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-        npx "$@"
-    }
+    \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 fi
 
 # Homebrew - cached for faster shell startup
