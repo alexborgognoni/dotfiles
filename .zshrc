@@ -147,25 +147,8 @@ zinit light-mode for \
     zdharma-continuum/zinit-annex-patch-dl \
     zdharma-continuum/zinit-annex-rust
 
-# Load syntax highlighting and completions immediately
+# Load completions first
 zinit light zsh-users/zsh-completions
-zinit light zsh-users/zsh-autosuggestions
-zinit light Aloxaf/fzf-tab
-
-# Defer syntax highlighting slightly for faster initial prompt
-zinit ice lucid wait'0' atinit'zpcompinit; zpcdreplay'
-zinit light zsh-users/zsh-syntax-highlighting
-
-# Defer fzf history search
-zinit ice lucid wait'1'
-zinit light joshskidmore/zsh-fzf-history-search
-
-# Load git plugin from OMZ via Zinit (provides git aliases)
-zinit snippet OMZ::plugins/git/git.plugin.zsh
-
-#############################################
-#           Completion and FZF              #
-#############################################
 
 # Initialize completion system with caching (runs once per day)
 autoload -Uz compinit
@@ -174,6 +157,24 @@ if [[ -n ${HOME}/.zcompdump(#qN.mh+24) ]]; then
 else
     compinit -C
 fi
+
+# Load interactive plugins after completions
+zinit light zsh-users/zsh-autosuggestions
+zinit light Aloxaf/fzf-tab
+
+# Load git plugin from OMZ via Zinit (provides git aliases)
+zinit snippet OMZ::plugins/git/git.plugin.zsh
+
+# Defer syntax highlighting and fzf history for faster startup
+zinit ice lucid wait'0'
+zinit light zsh-users/zsh-syntax-highlighting
+
+zinit ice lucid wait'1'
+zinit light joshskidmore/zsh-fzf-history-search
+
+#############################################
+#           Completion and FZF              #
+#############################################
 
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
