@@ -8,4 +8,5 @@ error_symbol = "[\\$](bold red)"
 disabled = true
 
 [directory]
-style = "bold 189"
+truncation_length = 0
+truncate_to_repo = false
