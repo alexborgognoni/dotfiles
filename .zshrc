@@ -2,7 +2,6 @@
 #               Environment                 #
 #############################################
 
-export ZSH="$HOME/.oh-my-zsh"
 export GOPATH="$HOME/go"
 export NVM_DIR="$HOME/.nvm"
 export REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
@@ -18,13 +17,7 @@ export PATH="$PATH:$HOME/.config/composer/vendor/bin"
 export PATH="$PATH:$HOME/.bun/bin"
 export PATH="$PATH:$HOME/.opencode/bin"
 export PATH="$PATH:$HOME/.config/herd-lite/bin"
-
-# Pyenv initialization
-export PYENV_ROOT="$HOME/.pyenv"
-if [[ -d $PYENV_ROOT/bin ]]; then
-    export PATH="$PYENV_ROOT/bin:$PATH"
-    eval "$(pyenv init - zsh)"
-fi
+export PATH="$PATH:$HOME/.local/bin"
 
 export PHP_INI_SCAN_DIR="$HOME/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 
@@ -34,18 +27,6 @@ if [[ -n $SSH_CONNECTION ]]; then
 else
     export EDITOR="nvim"
 fi
-
-# Homebrew
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-
-# bun completions
-[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
-
-#############################################
-#                Zsh Theme                  #
-#############################################
-
-ZSH_THEME="amuse"
 
 #############################################
 #                History                    #
@@ -72,8 +53,21 @@ bindkey '^n' history-search-forward
 #############################################
 
 # Gcloud
-if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/google-cloud-sdk/path.zsh.inc"; fi # updates PATH for the Google Cloud SDK
-if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-cloud-sdk/completion.zsh.inc"; fi # enables shell command completion for gcloud
+if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/google-cloud-sdk/path.zsh.inc"; fi
+if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-cloud-sdk/completion.zsh.inc"; fi
+
+# Pyenv - lazy loading for faster shell startup
+export PYENV_ROOT="$HOME/.pyenv"
+if [[ -d $PYENV_ROOT/bin ]]; then
+    export PATH="$PYENV_ROOT/bin:$PATH"
+
+    # Lazy load pyenv to speed up shell startup
+    pyenv() {
+        unset -f pyenv
+        eval "$(command pyenv init - zsh)"
+        pyenv "$@"
+    }
+fi
 
 # NVM - lazy loading for faster shell startup
 if [ -s "$NVM_DIR/nvm.sh" ]; then
@@ -110,12 +104,17 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
     }
 fi
 
-# Oh-My-Zsh
-plugins=(git)
-source "$ZSH/oh-my-zsh.sh"
+# Homebrew - cached for faster shell startup
+if [[ -f "$HOME/.brewenv_cache" ]]; then
+    source "$HOME/.brewenv_cache"
+else
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    # Cache the brew environment for next time
+    /home/linuxbrew/.linuxbrew/bin/brew shellenv > "$HOME/.brewenv_cache"
+fi
 
-# zoxide
-eval "$(zoxide init zsh)"
+# bun completions
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # Zinit
 ZINIT_HOME="$HOME/.local/share/zinit"
@@ -130,30 +129,41 @@ if [[ ! -f $ZINIT_BIN/zinit.zsh ]]; then
 fi
 
 source "$ZINIT_BIN/zinit.zsh"
-autoload -Uz _zinit
-(( ${+_comps} )) && _comps[zinit]=_zinit
 
-# Zinit plugins
+# Zinit plugins - using turbo mode for non-critical plugins
 zinit light-mode for \
     zdharma-continuum/zinit-annex-as-monitor \
     zdharma-continuum/zinit-annex-bin-gem-node \
     zdharma-continuum/zinit-annex-patch-dl \
     zdharma-continuum/zinit-annex-rust
 
-zinit light zsh-users/zsh-syntax-highlighting
+# Load syntax highlighting and completions immediately
 zinit light zsh-users/zsh-completions
 zinit light zsh-users/zsh-autosuggestions
 zinit light Aloxaf/fzf-tab
 
-zinit ice lucid wait'0'
+# Defer syntax highlighting slightly for faster initial prompt
+zinit ice lucid wait'0' atinit'zpcompinit; zpcdreplay'
+zinit light zsh-users/zsh-syntax-highlighting
+
+# Defer fzf history search
+zinit ice lucid wait'1'
 zinit light joshskidmore/zsh-fzf-history-search
+
+# Load git plugin from OMZ via Zinit (provides git aliases)
+zinit snippet OMZ::plugins/git/git.plugin.zsh
 
 #############################################
 #           Completion and FZF              #
 #############################################
 
-# Initialize completion system
-autoload -Uz compinit && compinit
+# Initialize completion system with caching (runs once per day)
+autoload -Uz compinit
+if [[ -n ${HOME}/.zcompdump(#qN.mh+24) ]]; then
+    compinit
+else
+    compinit -C
+fi
 
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
@@ -174,32 +184,21 @@ zstyle ':fzf-tab:complete:*' fzf-preview '_fzf_preview_file_or_dir'
 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview '_fzf_preview_file_or_dir'
 
 #############################################
-#                 Aliases                   #
+#            External Configs               #
 #############################################
 
-alias c="clear"
-alias bat="batcat"
-alias k="kubecolor"
-alias ls="exa --icons"
-alias nv="nvim"
-alias python="python3"
-alias rr="ranger"
-alias tf="terraform"
-alias tree="exa --tree --icons"
+# Load aliases
+[ -f "$HOME/.zsh/aliases.zsh" ] && source "$HOME/.zsh/aliases.zsh"
+
+# Load functions
+[ -f "$HOME/.zsh/functions.zsh" ] && source "$HOME/.zsh/functions.zsh"
 
 #############################################
-#               Functions                   #
+#                Prompt                     #
 #############################################
 
-mkcd() {
-    mkdir -p "$1" && cd "$1"
-}
+# Starship prompt (replaces Oh-My-Zsh)
+eval "$(starship init zsh)"
 
-y() {
-    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
-    yazi "$@" --cwd-file="$tmp"
-    if cwd="$(<"$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-        cd "$cwd"
-    fi
-    rm -f -- "$tmp"
-}
+# zoxide (loaded after prompt for faster startup)
+eval "$(zoxide init zsh)"
