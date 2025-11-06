@@ -48,6 +48,16 @@ bindkey -e
 bindkey '^p' history-search-backward
 bindkey '^n' history-search-forward
 
+# Word navigation with Ctrl+Arrow keys
+bindkey '^[[1;5C' forward-word    # Ctrl+Right
+bindkey '^[[1;5D' backward-word   # Ctrl+Left
+
+# Alternative sequences for different terminals
+bindkey '^[OC' forward-word       # Ctrl+Right (alt)
+bindkey '^[OD' backward-word      # Ctrl+Left (alt)
+bindkey '^[[C' forward-word       # Right arrow (with modifiers)
+bindkey '^[[D' backward-word      # Left arrow (with modifiers)
+
 #############################################
 #                 Plugins                   #
 #############################################
