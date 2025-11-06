@@ -46,5 +46,4 @@
 	untracked = clean -f -d
 	zap = !git add . && git commit --amend --no-edit && git push -f
 [credential "https://github.com"]
-	helper = 
 	helper = !/usr/bin/gh auth git-credential
