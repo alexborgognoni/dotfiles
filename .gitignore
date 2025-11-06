@@ -1,2 +1,3 @@
 tmux/plugins
 .fonts/.uuid
+nvim/lazy-lock.json
