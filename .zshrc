@@ -145,19 +145,9 @@ zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' menu no
 
-# Consolidated fzf-tab preview function
-_fzf_preview_file_or_dir() {
-    if [ -d "$realpath" ]; then
-        exa -a --tree --icons "$realpath"
-    elif [ -f "$realpath" ]; then
-        batcat --color=always "$realpath"
-    else
-        echo "$realpath"
-    fi
-}
-
-zstyle ':fzf-tab:complete:*' fzf-preview '_fzf_preview_file_or_dir'
-zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview '_fzf_preview_file_or_dir'
+# fzf-tab preview configuration
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always --icons $realpath'
+zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'exa -1 --color=always --icons $realpath'
 
 #############################################
 #            External Configs               #
