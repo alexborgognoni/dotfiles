@@ -2,9 +2,10 @@
 	editor = nvim
 [user]
 	name = Alex Borgognoni
-	email = alex.borgognoni@deutsche-boerse.com
-[url "ssh://git@github.deutsche-boerse.de/"]
-	insteadOf = https://github.deutsche-boerse.de/
+	email = alex.bor0419@gmail.com
+	signingkey = CDAA1309229CF3B46B7446F221D072CC9982C9BB
+[commit]
+	gpgsign = true
 [alias]
 	aa = add -A .
 	aac = !git add -A . && git commit
@@ -47,3 +48,5 @@
 	zap = !git add . && git commit --amend --no-edit && git push -f
 [credential "https://github.com"]
 	helper = !/usr/bin/gh auth git-credential
+[includeIf "gitdir:~/Projects/work/"]
+	path = ~/.gitconfig-work
