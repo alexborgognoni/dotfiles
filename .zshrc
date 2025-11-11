@@ -138,8 +138,11 @@ zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' menu no
 
 # fzf-tab preview configuration
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always --icons $realpath'
-zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'exa -1 --color=always --icons $realpath'
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa --tree --icons --level 1 --color=always $realpath'
+zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'exa --tree --icons --level 1 --color=always $realpath'
+
+# File preview with batcat for most commands
+zstyle ':fzf-tab:complete:*:*' fzf-preview 'if [[ -f $realpath ]]; then batcat --color=always --style=numbers --line-range=:500 $realpath 2>/dev/null; elif [[ -d $realpath ]]; then exa --tree --icons --level 1 --color=always $realpath; fi'
 
 #############################################
 #            External Configs               #
