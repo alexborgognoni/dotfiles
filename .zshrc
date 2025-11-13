@@ -52,6 +52,11 @@ bindkey '^n' history-search-forward
 bindkey '^[[1;5C' forward-word    # Ctrl+Right
 bindkey '^[[1;5D' backward-word   # Ctrl+Left
 
+# Enable command line editing with Ctrl+x Ctrl+e
+autoload -U edit-command-line
+zle -N edit-command-line
+bindkey '^x^e' edit-command-line
+
 #############################################
 #                 Plugins                   #
 #############################################
