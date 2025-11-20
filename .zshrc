@@ -150,8 +150,30 @@ zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'exa --tree --icons --level 
 zstyle ':fzf-tab:complete:*:options' fzf-preview
 zstyle ':fzf-tab:complete:*:argument-1' fzf-preview
 
-# File preview with batcat for most commands
-zstyle ':fzf-tab:complete:*:*' fzf-preview 'if [[ -f $realpath ]]; then batcat --color=always --style=numbers --line-range=:500 $realpath 2>/dev/null; elif [[ -d $realpath ]]; then exa --tree --icons --level 1 --color=always $realpath; fi'
+# File preview with batcat for most commands (and kitty icat for images/PDFs)
+zstyle ':fzf-tab:complete:*:*' fzf-preview '
+if [[ -f $realpath ]]; then
+  mime=$(file --mime-type -b $realpath)
+  # Check if we'\''re in kitty terminal
+  if [[ -n $KITTY_WINDOW_ID ]] && command -v kitten &>/dev/null; then
+    # Handle images with kitty icat
+    if [[ $mime == image/* ]]; then
+      kitten icat --clear --transfer-mode=memory --unicode-placeholder --stdin=no --place=${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}@0x0 $realpath
+    # Handle PDFs by converting first page to image at high resolution
+    elif [[ $mime == application/pdf ]] && command -v pdftoppm &>/dev/null; then
+      pdftoppm -jpeg -f 1 -l 1 -singlefile -r 600 $realpath /tmp/fzf-pdf-preview 2>/dev/null && \
+      kitten icat --clear --transfer-mode=memory --unicode-placeholder --stdin=no --place=${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}@0x0 /tmp/fzf-pdf-preview.jpg
+    else
+      # Try batcat for text files
+      batcat --color=always --style=numbers --line-range=:500 $realpath 2>/dev/null
+    fi
+  else
+    # Not in kitty, just use batcat
+    batcat --color=always --style=numbers --line-range=:500 $realpath 2>/dev/null
+  fi
+elif [[ -d $realpath ]]; then
+  exa --tree --icons --level 1 --color=always $realpath
+fi'
 
 #############################################
 #            External Configs               #
