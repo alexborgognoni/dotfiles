@@ -146,6 +146,10 @@ zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa --tree --icons --level 1 --color=always $realpath'
 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'exa --tree --icons --level 1 --color=always $realpath'
 
+# Disable preview for command options and arguments
+zstyle ':fzf-tab:complete:*:options' fzf-preview
+zstyle ':fzf-tab:complete:*:argument-1' fzf-preview
+
 # File preview with batcat for most commands
 zstyle ':fzf-tab:complete:*:*' fzf-preview 'if [[ -f $realpath ]]; then batcat --color=always --style=numbers --line-range=:500 $realpath 2>/dev/null; elif [[ -d $realpath ]]; then exa --tree --icons --level 1 --color=always $realpath; fi'
 
