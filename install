@@ -47,7 +47,7 @@ step() {
 ###############################################################################
 
 # Check if we're running from a git repo or piped from curl
-if [[ ! -d "$(dirname "${BASH_SOURCE[0]}")/.git" ]]; then
+if [[ ! -d "$(dirname "${BASH_SOURCE[0]:-}")/.git" ]]; then
     info "Cloning dotfiles repository..."
 
     DOTFILES_DIR="$HOME/dotfiles"
