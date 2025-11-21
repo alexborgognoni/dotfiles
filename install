@@ -113,7 +113,7 @@ echo ""
 
 # Prompt for profile
 # Check if PROFILE is already set via environment variable
-if [[ -z "$PROFILE" ]]; then
+if [[ -z "${PROFILE:-}" ]]; then
     # Check if running interactively
     if [[ -t 0 ]]; then
         # Interactive mode - prompt user
