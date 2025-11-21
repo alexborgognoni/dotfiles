@@ -150,6 +150,9 @@ info "Dotfiles directory: $DOTFILES_DIR"
 
 step "[1/6] Installing dependencies..."
 
+info "Adding Ansible PPA..."
+sudo apt-add-repository -y ppa:ansible/ansible >/dev/null 2>&1
+
 info "Updating package cache..."
 sudo apt update -qq
 
