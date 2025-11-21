@@ -1,0 +1,453 @@
+---
+# Add APT repositories for packages not in standard Ubuntu repos
+# Using modern keyring approach (not deprecated apt-key)
+
+###############################################################################
+# GitHub CLI
+###############################################################################
+
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when: "'gh' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download GitHub CLI GPG key
+  get_url:
+    url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+    dest: /etc/apt/keyrings/githubcli-archive-keyring.gpg
+    mode: '0644'
+  become: yes
+  when: "'gh' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add GitHub CLI repository
+  apt_repository:
+    repo: "deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
+    state: present
+    filename: github-cli
+  become: yes
+  when: "'gh' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# Docker
+###############################################################################
+
+- name: Ensure keyrings directory exists (Docker)
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when: "'docker-ce' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download Docker GPG key
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+  become: yes
+  when: "'docker-ce' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+  become: yes
+  when: "'docker-ce' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# Azure CLI (work profile only)
+###############################################################################
+
+- name: Ensure keyrings directory exists (Azure CLI)
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when:
+    - profile == 'work'
+    - "'azure-cli' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download Microsoft GPG key
+  get_url:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    dest: /tmp/microsoft.asc
+  when:
+    - profile == 'work'
+    - "'azure-cli' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Convert Microsoft GPG key to binary format
+  shell: |
+    cat /tmp/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg
+    chmod 644 /etc/apt/keyrings/microsoft.gpg
+  args:
+    creates: /etc/apt/keyrings/microsoft.gpg
+  become: yes
+  when:
+    - profile == 'work'
+    - "'azure-cli' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add Azure CLI repository
+  apt_repository:
+    repo: "deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_distribution_release }} main"
+    state: present
+    filename: azure-cli
+  become: yes
+  when:
+    - profile == 'work'
+    - "'azure-cli' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# Terraform (HashiCorp)
+###############################################################################
+
+- name: Ensure keyrings directory exists (HashiCorp)
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when: "'terraform' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download HashiCorp GPG key
+  shell: |
+    wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/keyrings/hashicorp-archive-keyring.gpg
+  args:
+    creates: /etc/apt/keyrings/hashicorp-archive-keyring.gpg
+  become: yes
+  when: "'terraform' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Set permissions on HashiCorp GPG key
+  file:
+    path: /etc/apt/keyrings/hashicorp-archive-keyring.gpg
+    mode: '0644'
+  become: yes
+  when: "'terraform' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add HashiCorp repository
+  apt_repository:
+    repo: "deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+    state: present
+    filename: hashicorp
+  become: yes
+  when: "'terraform' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# Cloud Foundry CLI (work profile only)
+###############################################################################
+
+- name: Ensure keyrings directory exists (Cloud Foundry)
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when:
+    - profile == 'work'
+    - "'cf8-cli' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download Cloud Foundry GPG key
+  get_url:
+    url: https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key
+    dest: /etc/apt/keyrings/cloudfoundry.asc
+    mode: '0644'
+  become: yes
+  when:
+    - profile == 'work'
+    - "'cf8-cli' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add Cloud Foundry repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/cloudfoundry.asc] https://packages.cloudfoundry.org/debian stable main"
+    state: present
+    filename: cloudfoundry-cli
+  become: yes
+  when:
+    - profile == 'work'
+    - "'cf8-cli' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# VS Code (Microsoft)
+###############################################################################
+
+- name: Ensure keyrings directory exists (VS Code)
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when: "'code' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download Microsoft GPG key for VS Code
+  get_url:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    dest: /tmp/microsoft-vscode.asc
+  when: "'code' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Convert Microsoft GPG key to binary format for VS Code
+  shell: |
+    cat /tmp/microsoft-vscode.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg
+    chmod 644 /usr/share/keyrings/microsoft.gpg
+  args:
+    creates: /usr/share/keyrings/microsoft.gpg
+  become: yes
+  when: "'code' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add VS Code repository
+  apt_repository:
+    repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main"
+    state: present
+    filename: vscode
+  become: yes
+  when: "'code' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# Google Chrome
+###############################################################################
+
+- name: Download Google Chrome GPG key
+  get_url:
+    url: https://dl.google.com/linux/linux_signing_key.pub
+    dest: /tmp/google-chrome.asc
+  when: "'google-chrome-stable' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Convert Google Chrome GPG key to binary format
+  shell: |
+    cat /tmp/google-chrome.asc | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
+    chmod 644 /usr/share/keyrings/google-chrome.gpg
+  args:
+    creates: /usr/share/keyrings/google-chrome.gpg
+  become: yes
+  when: "'google-chrome-stable' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add Google Chrome repository
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main"
+    state: present
+    filename: google-chrome
+  become: yes
+  when: "'google-chrome-stable' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# Kubecolor
+###############################################################################
+
+- name: Ensure keyrings directory exists (Kubecolor)
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when: "'kubecolor' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download Kubecolor GPG key
+  get_url:
+    url: https://kubecolor.github.io/packages/deb/archive-keyring.gpg
+    dest: /usr/share/keyrings/kubecolor-archive-keyring.gpg
+    mode: '0644'
+  become: yes
+  when: "'kubecolor' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add Kubecolor repository
+  apt_repository:
+    repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/kubecolor-archive-keyring.gpg] https://kubecolor.github.io/packages/deb stable main"
+    state: present
+    filename: kubecolor
+  become: yes
+  when: "'kubecolor' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# RabbitMQ
+###############################################################################
+
+- name: Ensure keyrings directory exists (RabbitMQ)
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when: "'rabbitmq-server' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download RabbitMQ GPG key
+  get_url:
+    url: https://keys.openpgp.org/vks/v1/by-fingerprint/0A9AF2115F4687BD29803A206B73A36E6026DFCA
+    dest: /tmp/rabbitmq.asc
+  when: "'rabbitmq-server' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Convert RabbitMQ GPG key to binary format
+  shell: |
+    cat /tmp/rabbitmq.asc | gpg --dearmor -o /usr/share/keyrings/com.rabbitmq.team.gpg
+    chmod 644 /usr/share/keyrings/com.rabbitmq.team.gpg
+  args:
+    creates: /usr/share/keyrings/com.rabbitmq.team.gpg
+  become: yes
+  when: "'rabbitmq-server' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add RabbitMQ Erlang repository
+  apt_repository:
+    repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/com.rabbitmq.team.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-erlang/deb/ubuntu {{ ansible_distribution_release }} main"
+    state: present
+    filename: rabbitmq-erlang
+  become: yes
+  when: "'rabbitmq-server' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add RabbitMQ Server repository
+  apt_repository:
+    repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/com.rabbitmq.team.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-server/deb/ubuntu {{ ansible_distribution_release }} main"
+    state: present
+    filename: rabbitmq-server
+  become: yes
+  when: "'rabbitmq-server' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# Touchegg (work profile only)
+###############################################################################
+
+- name: Add Touchegg PPA
+  apt_repository:
+    repo: ppa:touchegg/stable
+    state: present
+  become: yes
+  when:
+    - profile == 'work'
+    - "'touchegg' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# Deadsnakes PPA (Python versions)
+###############################################################################
+
+- name: Add Deadsnakes PPA for Python versions
+  apt_repository:
+    repo: ppa:deadsnakes/ppa
+    state: present
+  become: yes
+  tags: ['repositories']
+
+###############################################################################
+# Microsoft .NET
+###############################################################################
+
+- name: Ensure keyrings directory exists (Microsoft .NET)
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  tags: ['repositories']
+
+- name: Download Microsoft .NET GPG key
+  get_url:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    dest: /tmp/microsoft-prod.asc
+  tags: ['repositories']
+
+- name: Convert Microsoft .NET GPG key to binary format
+  shell: |
+    cat /tmp/microsoft-prod.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+    chmod 644 /usr/share/keyrings/microsoft-prod.gpg
+  args:
+    creates: /usr/share/keyrings/microsoft-prod.gpg
+  become: yes
+  tags: ['repositories']
+
+- name: Add Microsoft .NET repository
+  apt_repository:
+    repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/ubuntu/{{ ansible_distribution_version }}/prod {{ ansible_distribution_release }} main"
+    state: present
+    filename: microsoft-prod
+  become: yes
+  tags: ['repositories']
+
+###############################################################################
+# Microsoft Edge (work profile only)
+###############################################################################
+
+- name: Ensure keyrings directory exists (Microsoft Edge)
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when:
+    - profile == 'work'
+    - "'microsoft-edge-stable' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download Microsoft Edge GPG key
+  get_url:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    dest: /tmp/microsoft-edge.asc
+  when:
+    - profile == 'work'
+    - "'microsoft-edge-stable' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Convert Microsoft Edge GPG key to binary format
+  shell: |
+    cat /tmp/microsoft-edge.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-edge.gpg
+    chmod 644 /usr/share/keyrings/microsoft-edge.gpg
+  args:
+    creates: /usr/share/keyrings/microsoft-edge.gpg
+  become: yes
+  when:
+    - profile == 'work'
+    - "'microsoft-edge-stable' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add Microsoft Edge repository
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-edge.gpg] https://packages.microsoft.com/repos/edge stable main"
+    state: present
+    filename: microsoft-edge
+  become: yes
+  when:
+    - profile == 'work'
+    - "'microsoft-edge-stable' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# Refresh apt cache after adding repositories
+###############################################################################
+
+- name: Update apt cache after adding repositories
+  apt:
+    update_cache: yes
+  become: yes
+  tags: ['repositories']

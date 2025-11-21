@@ -1,0 +1,5 @@
+{{- /* Template helper for profile-specific code blocks */ -}}
+{{- /* Usage: {{ template "profile-block.tmpl" dict "profile" "work" "content" "work specific code" }} */ -}}
+{{- if eq .chezmoi.data.profile .profile -}}
+{{ .content }}
+{{- end -}}

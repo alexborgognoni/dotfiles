@@ -1,0 +1,28 @@
+---
+# Snap package installation
+
+- name: Check if snapd is installed
+  command: which snap
+  register: snap_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['snap']
+
+- name: Install snapd if not present
+  apt:
+    name: snapd
+    state: present
+  become: yes
+  when: snap_check.rc != 0
+  tags: ['snap']
+
+- name: Install Snap packages
+  snap:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+    classic: "{{ item.classic | default(false) }}"
+    channel: "{{ item.channel | default('stable') }}"
+  loop: "{{ all_snap_packages }}"
+  become: yes
+  when: all_snap_packages is defined and all_snap_packages | length > 0
+  tags: ['snap']

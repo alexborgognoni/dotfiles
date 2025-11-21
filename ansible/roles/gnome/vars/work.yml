@@ -1,0 +1,16 @@
+---
+# Work profile GNOME configuration
+
+# Work-specific settings
+gnome_profile_settings: false
+
+# Override favorite apps for work profile to include work-specific apps
+favorite_apps: >
+  ['org.gnome.Nautilus.desktop', 'microsoft-edge.desktop', 'firefox_firefox.desktop',
+   'chromium_chromium.desktop', 'code.desktop', 'org.gnome.Terminal.desktop', 'kitty.desktop',
+   'slack_slack.desktop', 'org.remmina.Remmina.desktop']
+
+# Work may have different wallpaper preferences
+# background_settings:
+#   - key: "picture-uri"
+#     value: "'file:///home/{{ ansible_env.USER }}/Pictures/Wallpapers/work-wallpaper.png'"

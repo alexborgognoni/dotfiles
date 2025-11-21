@@ -1,7 +1,0 @@
-# Set the path to CopyQ and ensure it's running
-set $copyq /usr/bin/copyq
-exec --no-startup-id $copyq
-
-## Launch clipboard selection // <> + Shift + V
-# Show clipboard selection using CopyQ and paste the selected entry directly
-bindsym $mod+Shift+v exec $copyq menu | ifne xclip -i -sel clipboard -f | ifne xclip -i -sel primary

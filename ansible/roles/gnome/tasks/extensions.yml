@@ -1,0 +1,60 @@
+---
+# Install and configure GNOME extensions
+
+- name: Check if gnome-shell is installed
+  command: which gnome-shell
+  register: gnome_shell_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['gnome-extensions']
+
+- name: Install GNOME Extensions dependencies
+  apt:
+    name:
+      - gnome-shell-extensions
+      - gnome-shell-extension-manager
+      - chrome-gnome-shell
+    state: present
+  become: yes
+  when: gnome_shell_check.rc == 0
+  tags: ['gnome-extensions']
+
+- name: Create extensions directory
+  file:
+    path: "{{ ansible_env.HOME }}/.local/share/gnome-shell/extensions"
+    state: directory
+    mode: '0755'
+  when: gnome_shell_check.rc == 0
+  tags: ['gnome-extensions']
+
+- name: Enable GNOME extensions
+  shell: |
+    gnome-extensions enable {{ item }}
+  loop: "{{ gnome_extensions }}"
+  when:
+    - gnome_shell_check.rc == 0
+    - gnome_extensions is defined
+  ignore_errors: yes
+  tags: ['gnome-extensions']
+
+- name: Apply extension-specific settings from dconf
+  shell: |
+    dconf load /org/gnome/shell/extensions/ < "{{ playbook_dir }}/roles/gnome/files/dconf/extensions.conf"
+  when:
+    - gnome_shell_check.rc == 0
+    - gnome_extensions is defined
+  ignore_errors: yes
+  tags: ['gnome-extensions']
+
+- name: Display extension installation message
+  debug:
+    msg: |
+      GNOME Extensions have been configured. Some extensions may need to be installed manually via:
+      - GNOME Extensions website (extensions.gnome.org)
+      - Extension Manager app
+      - Or using: `gnome-extensions install <extension-id>`
+
+      After manual installation, run:
+      ansible-playbook -i inventory.yml playbook.yml -e "profile={{ profile }}" --tags gnome-extensions
+  when: gnome_shell_check.rc == 0
+  tags: ['gnome-extensions']

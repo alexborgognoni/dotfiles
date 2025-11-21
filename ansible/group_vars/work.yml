@@ -1,0 +1,28 @@
+---
+# Work profile variables
+
+user_email: "alex.borgognoni@deutsche-boerse.com"  # Update this
+
+# Work-specific environment variables
+work_env_vars:
+  EDITOR: "nvim"
+  VISUAL: "nvim"
+  # Corporate proxy (uncomment and update if needed)
+  # HTTP_PROXY: "http://proxy.company.com:8080"
+  # HTTPS_PROXY: "http://proxy.company.com:8080"
+  # NO_PROXY: "localhost,127.0.0.1,.company.internal"
+
+# pip configuration with Artifactory
+pip_index_url: "https://artifactory.dbgcloud.io/artifactory/api/pypi/pypi.python.org/simple"  # Update this
+pip_extra_index_url:
+  - "https://pypi.org/simple"  # Fallback to public PyPI
+
+# Node.js configuration with extra CA certificates
+node_extra_ca_certs: "/etc/ssl/certs/ca-certificates.crt"  # Path to corporate CAs
+
+# Git configuration
+git_signing_key: ""  # Add if you use GPG signing for work
+git_sign_commits: false
+
+# Work-specific tools
+azure_tenant_id: ""  # Add if you use Azure CLI

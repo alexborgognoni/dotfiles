@@ -1,0 +1,37 @@
+# Files to ignore (not apply to home directory)
+
+README.md
+LICENSE
+.git/
+
+# OS-specific ignores
+{{- if ne .chezmoi.os "linux" }}
+# Ignore Linux-specific files on non-Linux systems
+.config/gnome/
+{{- end }}
+
+{{- if ne .chezmoi.os "darwin" }}
+# Ignore macOS-specific files on non-macOS systems
+.config/macos/
+{{- end }}
+
+# Profile-specific ignores
+{{- if eq .profile "personal" }}
+# Ignore work-specific files in personal profile
+.config/work/
+.Xmodmap  # Only used on work laptop for keyboard remapping
+{{- end }}
+
+{{- if eq .profile "work" }}
+# Ignore personal-specific files in work profile
+.config/personal/
+{{- end }}
+
+# Ignore tmux plugins (managed by tpm)
+.config/tmux/plugins/
+
+# Ignore files containing secrets
+.config/gh/hosts.yml  # Contains OAuth tokens
+
+# Fonts are installed by Ansible, not managed by chezmoi
+.fonts

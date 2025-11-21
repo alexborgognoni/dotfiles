@@ -1,0 +1,89 @@
+---
+# Common packages for all profiles
+# These packages are installed regardless of profile
+
+apt_packages:
+  - name: 7zip
+  - name: ansible
+  - name: autojump
+  - name: automake
+  - name: bat
+  - name: build-essential
+  - name: chafa
+  - name: chrome-gnome-shell
+  - name: cmake
+  - name: code  # VS Code
+  - name: google-chrome-stable
+  - name: curl
+  - name: docker-buildx-plugin
+  - name: docker-ce
+  - name: docker-ce-cli
+  - name: docker-compose-plugin
+  - name: exa
+  - name: fd-find
+  - name: ffmpeg
+  - name: fzf
+  - name: gh  # GitHub CLI
+  - name: git
+  - name: gnome-shell-extensions
+  - name: gnome-themes-extra
+  - name: gnome-tweaks
+  - name: gtk2-engines-murrine
+  - name: imagemagick
+  - name: inkscape
+  - name: jq
+  - name: kubecolor
+  - name: libevent-dev
+  - name: libncurses-dev
+  - name: luarocks
+  - name: lynx
+  - name: make
+  - name: moreutils
+  - name: neofetch
+  - name: pkg-config
+  - name: poppler-utils
+  - name: python3
+  - name: python3.10-venv
+  - name: python3-pip
+  - name: rabbitmq-server
+  - name: ranger
+  - name: ripgrep
+  - name: sassc
+  - name: software-properties-common
+  - name: terraform
+  - name: mysql-server
+  - name: postgresql
+  - name: tmux
+  - name: tree
+  - name: vim
+  - name: wget
+  - name: xclip
+  - name: zoxide
+  - name: zsh
+  - name: zsh-autosuggestions
+  - name: zsh-syntax-highlighting
+
+snap_packages:
+  - name: chromium
+  - name: firefox
+  - name: foliate
+  - name: postman
+  # Note: slack and storage-explorer moved to work.yml
+
+cargo_packages:
+  - name: neovide
+
+pip_packages:
+  - name: click
+  - name: fastapi
+  - name: poetry-core
+  - name: pydantic
+  - name: pydantic_core
+  - name: requests
+  - name: rich
+  - name: uvicorn
+
+npm_packages:
+  - name: typescript
+
+brew_packages:

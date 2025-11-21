@@ -1,0 +1,38 @@
+---
+# Main playbook for dotfiles setup
+- name: Setup dotfiles and system configuration
+  hosts: localhost
+  become: false  # We'll use become per-task when needed
+
+  vars:
+    profile: "{{ lookup('env', 'PROFILE') | default('personal', true) }}"
+    home_dir: "{{ ansible_env.HOME }}"
+    dotfiles_dir: "{{ playbook_dir }}"
+    chezmoi_source_dir: "{{ playbook_dir }}/chezmoi"
+
+  vars_files:
+    - "group_vars/all.yml"
+    - "group_vars/{{ profile }}.yml"
+
+  pre_tasks:
+    - name: Display configuration
+      debug:
+        msg:
+          - "Profile: {{ profile }}"
+          - "Home: {{ home_dir }}"
+          - "Dotfiles: {{ dotfiles_dir }}"
+          - "Chezmoi source: {{ chezmoi_source_dir }}"
+
+    - name: Ensure profile is valid
+      assert:
+        that:
+          - profile in ['personal', 'work']
+        fail_msg: "Profile must be 'personal' or 'work', got '{{ profile }}'"
+
+  roles:
+    - base
+    - packages
+    - gnome
+    # Additional roles will be added in later phases:
+    # - dotfiles
+    # - secrets

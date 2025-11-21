@@ -1,0 +1,45 @@
+---
+# Apply GNOME dconf settings
+
+- name: Ensure dconf is installed
+  apt:
+    name: dconf-cli
+    state: present
+  become: yes
+  tags: ['gnome-settings']
+
+- name: Apply common GNOME settings
+  shell: |
+    dconf load / < "{{ playbook_dir }}/roles/gnome/files/dconf/common.conf"
+  when: gnome_common_settings is defined
+  tags: ['gnome-settings']
+
+- name: Apply profile-specific GNOME settings
+  shell: |
+    dconf load / < "{{ playbook_dir }}/roles/gnome/files/dconf/{{ profile }}.conf"
+  when: gnome_profile_settings is defined
+  ignore_errors: yes
+  tags: ['gnome-settings']
+
+- name: Set favorite apps
+  dconf:
+    key: "/org/gnome/shell/favorite-apps"
+    value: "{{ favorite_apps }}"
+  when: favorite_apps is defined
+  tags: ['gnome-settings']
+
+- name: Configure desktop interface preferences
+  dconf:
+    key: "/org/gnome/desktop/interface/{{ item.key }}"
+    value: "{{ item.value }}"
+  loop: "{{ interface_settings }}"
+  when: interface_settings is defined
+  tags: ['gnome-settings']
+
+- name: Configure desktop background
+  dconf:
+    key: "/org/gnome/desktop/background/{{ item.key }}"
+    value: "{{ item.value }}"
+  loop: "{{ background_settings }}"
+  when: background_settings is defined
+  tags: ['gnome-settings']

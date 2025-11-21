@@ -1,0 +1,18 @@
+[Default Applications]
+x-scheme-handler/http=google-chrome.desktop
+application/xhtml+xml=google-chrome.desktop
+text/html=google-chrome.desktop
+x-scheme-handler/https=google-chrome.desktop
+x-scheme-handler/about=google-chrome.desktop
+x-scheme-handler/unknown=google-chrome.desktop
+x-scheme-handler/mailto=google-chrome.desktop
+x-scheme-handler/postman=Postman.desktop
+
+[Added Associations]
+x-scheme-handler/http=google-chrome.desktop;
+application/xhtml+xml=google-chrome.desktop;
+text/html=google-chrome.desktop;
+x-scheme-handler/https=google-chrome.desktop;
+video/mp4=mpv.desktop;
+video/x-matroska=mpv.desktop;
+application/x-x509-ca-cert=org.gnome.gedit.desktop;

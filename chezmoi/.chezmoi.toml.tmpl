@@ -1,0 +1,24 @@
+{{- $profile := env "PROFILE" | default "personal" -}}
+{{- $email := "" -}}
+{{- $name := "Alex Borgognoni" -}}
+
+{{- if eq $profile "personal" -}}
+{{-   $email = "alex.bor0419@gmail.com" -}}
+{{- else if eq $profile "work" -}}
+{{-   $email = "alex.borgognoni@deutsche-boerse.com" -}}
+{{- end -}}
+
+[data]
+    profile = {{ $profile | quote }}
+    email = {{ $email | quote }}
+    name = {{ $name | quote }}
+
+[edit]
+    command = "nvim"
+
+[merge]
+    command = "nvim"
+    args = ["-d", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Source {{ "}}" }}", "{{ "{{" }} .Target {{ "}}" }}"]
+
+[bitwarden]
+    command = "bw"

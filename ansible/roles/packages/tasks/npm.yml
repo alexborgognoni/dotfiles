@@ -1,0 +1,22 @@
+---
+# NPM (Node.js) global package installation
+
+- name: Check if npm is installed
+  command: which npm
+  register: npm_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['npm']
+
+- name: Install npm global packages
+  npm:
+    name: "{{ item.name }}"
+    version: "{{ item.version | default(omit) }}"
+    state: "{{ item.state | default('present') }}"
+    global: yes
+  loop: "{{ all_npm_packages }}"
+  when:
+    - npm_check.rc == 0
+    - all_npm_packages is defined
+    - all_npm_packages | length > 0
+  tags: ['npm']

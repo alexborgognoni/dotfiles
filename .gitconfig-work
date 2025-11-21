@@ -1,6 +1,0 @@
-[user]
-	email = alex.borgognoni@deutsche-boerse.com
-[commit]
-	gpgsign = false
-[url "ssh://git@github.deutsche-boerse.de/"]
-	insteadOf = https://github.deutsche-boerse.de/

@@ -1,0 +1,48 @@
+---
+# Configure GNOME keyboard shortcuts and keybindings
+
+- name: Set custom keyboard shortcuts
+  dconf:
+    key: "/org/gnome/settings-daemon/plugins/media-keys/{{ item.key }}"
+    value: "{{ item.value }}"
+  loop: "{{ keyboard_shortcuts }}"
+  when: keyboard_shortcuts is defined
+  tags: ['gnome-keybindings']
+
+- name: Set window management keybindings
+  dconf:
+    key: "/org/gnome/desktop/wm/keybindings/{{ item.key }}"
+    value: "{{ item.value }}"
+  loop: "{{ wm_keybindings }}"
+  when: wm_keybindings is defined
+  tags: ['gnome-keybindings']
+
+- name: Set shell keybindings
+  dconf:
+    key: "/org/gnome/shell/keybindings/{{ item.key }}"
+    value: "{{ item.value }}"
+  loop: "{{ shell_keybindings }}"
+  when: shell_keybindings is defined
+  tags: ['gnome-keybindings']
+
+- name: Clear existing custom keybindings
+  dconf:
+    key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
+    value: "[]"
+  when: custom_keybindings is defined
+  tags: ['gnome-keybindings']
+
+- name: Set custom keybindings paths
+  dconf:
+    key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
+    value: "{{ custom_keybindings | map(attribute='path') | list | string }}"
+  when: custom_keybindings is defined
+  tags: ['gnome-keybindings']
+
+- name: Configure each custom keybinding
+  dconf:
+    key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/{{ item.name }}/{{ item.property }}"
+    value: "{{ item.value }}"
+  loop: "{{ custom_keybindings_details }}"
+  when: custom_keybindings_details is defined
+  tags: ['gnome-keybindings']

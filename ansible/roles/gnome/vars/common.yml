@@ -1,0 +1,105 @@
+---
+# Common GNOME configuration variables
+
+# Enable/disable GNOME settings application
+gnome_common_settings: true
+
+# Favorite apps pinned to dash/dock
+favorite_apps: >
+  ['org.gnome.Nautilus.desktop', 'firefox_firefox.desktop', 'chromium_chromium.desktop',
+   'code.desktop', 'org.gnome.Terminal.desktop', 'kitty.desktop', 'slack_slack.desktop']
+
+# Interface settings
+interface_settings:
+  - key: "clock-format"
+    value: "'24h'"
+  - key: "clock-show-date"
+    value: "true"
+  - key: "clock-show-seconds"
+    value: "false"
+  - key: "color-scheme"
+    value: "'prefer-dark'"
+  - key: "cursor-size"
+    value: "32"
+  - key: "enable-animations"
+    value: "false"
+  - key: "font-hinting"
+    value: "'slight'"
+  - key: "show-battery-percentage"
+    value: "true"
+
+# Font settings
+font_settings:
+  - key: "font-name"
+    value: "JetBrainsMono Nerd Font 11"
+  - key: "document-font-name"
+    value: "JetBrainsMono Nerd Font 11"
+  - key: "monospace-font-name"
+    value: "JetBrainsMono Nerd Font Mono 13"
+
+# Theme settings
+gtk_theme: "catppuccin-macchiato-lavender-standard+default"
+icon_theme: "Yaru"
+cursor_theme: "volantes_light_cursors"
+dark_mode: true
+
+# Background settings (will be overridden by chezmoi-managed wallpaper)
+background_settings:
+  - key: "picture-options"
+    value: "'zoom'"
+  - key: "color-shading-type"
+    value: "'solid'"
+  - key: "primary-color"
+    value: "'#000000000000'"
+  - key: "secondary-color"
+    value: "'#000000000000'"
+
+# Keyboard shortcuts
+keyboard_shortcuts:
+  - key: "terminal"
+    value: "['<Super>Return']"
+  - key: "www"
+    value: "['<Shift><Super>Return']"
+  - key: "home"
+    value: "['<Super>e']"
+  - key: "control-center"
+    value: "['<Super>c']"
+  - key: "screensaver"
+    value: "['<Super>Escape']"
+
+# Window manager keybindings
+wm_keybindings:
+  - key: "close"
+    value: "['<Super>q', '<Alt>F4']"
+  - key: "maximize"
+    value: "['<Super>Up']"
+  - key: "unmaximize"
+    value: "['<Super>Down']"
+  - key: "toggle-fullscreen"
+    value: "['F11']"
+
+# Shell keybindings
+shell_keybindings:
+  - key: "toggle-application-view"
+    value: "['<Super>a']"
+  - key: "toggle-overview"
+    value: "['<Super>s']"
+
+# GNOME Extensions to enable
+gnome_extensions:
+  - "space-bar@luchrioh"
+  - "notification-banner-reloaded@marcinjakubowski.github.com"
+  - "AlphabeticalAppGrid@stuarthayhurst"
+  - "blur-my-shell@aunetx"
+  - "Vitals@CoreCoding.com"
+  - "clipboard-history@alexsaveau.dev"
+  - "emoji-copy@felipeftn"
+  - "unite@hardpixel.eu"
+  - "transparent-top-bar@ftpix.com"
+  - "panel-date-format@keiii.github.com"
+  - "appmenu-color-icon@arahiko-ayami.github.com"
+  - "appindicatorsupport@rgcjonas.gmail.com"
+  - "top-bar-organizer@julian.gse.jsts.xyz"
+  - "mprisLabel@moon-0xff.github.com"
+  - "ubuntu-appindicators@ubuntu.com"
+  - "ubuntu-dock@ubuntu.com"

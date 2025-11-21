@@ -1,0 +1,47 @@
+---
+# Base system setup tasks
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  become: yes
+  tags: ['base', 'apt']
+
+- name: Ensure essential packages are installed
+  apt:
+    name:
+      - git
+      - curl
+      - wget
+      - build-essential
+      - software-properties-common
+    state: present
+  become: yes
+  tags: ['base', 'packages']
+
+- name: Set timezone
+  timezone:
+    name: "{{ timezone }}"
+  become: yes
+  when: timezone is defined
+  tags: ['base', 'system']
+
+- name: Ensure locale is generated
+  locale_gen:
+    name: "{{ locale }}"
+    state: present
+  become: yes
+  when: locale is defined
+  tags: ['base', 'system']
+
+- name: Create common directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ home_dir }}/.local/bin"
+    - "{{ home_dir }}/.config"
+    - "{{ home_dir }}/projects"
+  tags: ['base', 'directories']

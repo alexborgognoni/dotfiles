@@ -1,0 +1,10 @@
+{{- /* Template helper for profile-specific values */ -}}
+{{- /* Usage: {{ template "profile-value.tmpl" dict "profile" . "personal" "value1" "work" "value2" "default" "value3" }} */ -}}
+{{- $currentProfile := .profile.profile -}}
+{{- if eq $currentProfile "personal" -}}
+{{-   .personal -}}
+{{- else if eq $currentProfile "work" -}}
+{{-   .work -}}
+{{- else -}}
+{{-   .default -}}
+{{- end -}}

@@ -1,0 +1,18 @@
+---
+# Personal profile packages
+# Add packages that should only be installed on personal machines
+
+apt_packages: []
+  # - name: spotify-client
+  # - name: discord
+
+snap_packages: []
+  # - name: spotify
+
+cargo_packages: []
+
+pip_packages: []
+
+npm_packages: []
+
+brew_packages: []

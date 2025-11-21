@@ -1,0 +1,10 @@
+---
+# Personal profile GNOME configuration
+
+# Personal-specific settings can be added here
+gnome_profile_settings: false
+
+# Override favorite apps for personal profile
+# favorite_apps: >
+#   ['org.gnome.Nautilus.desktop', 'firefox_firefox.desktop', 'chromium_chromium.desktop',
+#    'code.desktop', 'kitty.desktop']

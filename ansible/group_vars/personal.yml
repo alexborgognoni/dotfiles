@@ -1,0 +1,13 @@
+---
+# Personal profile variables
+
+user_email: "alex.bor0419@gmail.com"
+
+# Personal-specific environment variables
+personal_env_vars:
+  EDITOR: "nvim"
+  VISUAL: "nvim"
+  
+# Git configuration
+git_signing_key: "CDAA1309229CF3B46B7446F221D072CC9982C9BB"  # Personal GPG key for github.com
+git_sign_commits: true

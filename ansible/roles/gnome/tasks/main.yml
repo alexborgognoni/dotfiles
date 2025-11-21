@@ -1,0 +1,29 @@
+---
+# Main tasks for GNOME role
+
+- name: Load common GNOME variables
+  include_vars:
+    file: "../vars/common.yml"
+  tags: ['gnome']
+
+- name: Load profile-specific GNOME variables
+  include_vars:
+    file: "../vars/{{ profile }}.yml"
+  ignore_errors: yes
+  tags: ['gnome']
+
+- name: Apply GNOME settings
+  include_tasks: settings.yml
+  tags: ['gnome', 'gnome-settings']
+
+- name: Install and configure GNOME extensions
+  include_tasks: extensions.yml
+  tags: ['gnome', 'gnome-extensions']
+
+- name: Configure keyboard shortcuts
+  include_tasks: keybindings.yml
+  tags: ['gnome', 'gnome-keybindings']
+
+- name: Install and apply themes
+  include_tasks: themes.yml
+  tags: ['gnome', 'gnome-themes']

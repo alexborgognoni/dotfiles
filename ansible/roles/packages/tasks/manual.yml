@@ -1,0 +1,259 @@
+---
+# Manual software installations
+# For software not available in standard package managers
+
+###############################################################################
+# Kitty Terminal
+###############################################################################
+
+- name: Check if Kitty is installed
+  command: which kitty
+  register: kitty_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'kitty']
+
+- name: Install Kitty Terminal
+  shell: |
+    curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin
+    ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
+    mkdir -p ~/.local/share/applications
+    cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
+    cp ~/.local/kitty.app/share/applications/kitty-open.desktop ~/.local/share/applications/
+    sed -i "s|Icon=kitty|Icon=$(readlink -f ~)/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png|g" ~/.local/share/applications/kitty*.desktop
+    sed -i "s|Exec=kitty|Exec=$(readlink -f ~)/.local/kitty.app/bin/kitty|g" ~/.local/share/applications/kitty*.desktop
+    echo 'kitty.desktop' > ~/.config/xdg-terminals.list
+  when: kitty_check.rc != 0
+  tags: ['manual', 'kitty']
+
+###############################################################################
+# Lazygit
+###############################################################################
+
+- name: Check if Lazygit is installed
+  command: which lazygit
+  register: lazygit_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'lazygit']
+
+- name: Get latest Lazygit version
+  uri:
+    url: https://api.github.com/repos/jesseduffield/lazygit/releases/latest
+    return_content: yes
+  register: lazygit_release
+  when: lazygit_check.rc != 0
+  tags: ['manual', 'lazygit']
+
+- name: Install Lazygit
+  shell: |
+    LAZYGIT_VERSION="{{ lazygit_release.json.tag_name | regex_replace('^v', '') }}"
+    TEMP_DIR=$(mktemp -d)
+    curl -Lo "$TEMP_DIR/lazygit.tar.gz" "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+    tar xf "$TEMP_DIR/lazygit.tar.gz" -C "$TEMP_DIR" lazygit
+    sudo install "$TEMP_DIR/lazygit" -D -t /usr/local/bin/
+    rm -rf "$TEMP_DIR"
+  when: lazygit_check.rc != 0
+  become: yes
+  tags: ['manual', 'lazygit']
+
+###############################################################################
+# Neovim
+###############################################################################
+
+- name: Check if Neovim is installed
+  command: which nvim
+  register: nvim_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'neovim']
+
+- name: Install Neovim
+  shell: |
+    TEMP_DIR=$(mktemp -d)
+    curl -Lo "$TEMP_DIR/nvim.tar.gz" https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+    sudo rm -rf /opt/nvim-linux-x86_64
+    sudo tar -C /opt -xzf "$TEMP_DIR/nvim.tar.gz"
+    rm -rf "$TEMP_DIR"
+  when: nvim_check.rc != 0
+  become: yes
+  tags: ['manual', 'neovim']
+
+###############################################################################
+# NVM (Node Version Manager)
+###############################################################################
+
+- name: Check if NVM is installed
+  stat:
+    path: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+  register: nvm_check
+  tags: ['manual', 'nvm']
+
+- name: Install NVM
+  shell: |
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+  when: not nvm_check.stat.exists
+  tags: ['manual', 'nvm']
+
+- name: Install Node.js via NVM
+  shell: |
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    nvm install node
+  args:
+    executable: /bin/bash
+  when: not nvm_check.stat.exists
+  tags: ['manual', 'nvm']
+
+###############################################################################
+# Yazi File Manager
+###############################################################################
+
+- name: Check if Yazi is installed
+  command: which yazi
+  register: yazi_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'yazi']
+
+- name: Get latest Yazi release URL
+  shell: |
+    curl -s https://api.github.com/repos/sxyazi/yazi/releases/latest \
+      | grep "browser_download_url" \
+      | grep "x86_64-unknown-linux-gnu.tar.gz" \
+      | cut -d '"' -f 4
+  register: yazi_url
+  when: yazi_check.rc != 0
+  changed_when: false
+  tags: ['manual', 'yazi']
+
+- name: Install Yazi
+  shell: |
+    TEMP_DIR=$(mktemp -d)
+    curl -L "{{ yazi_url.stdout }}" -o "$TEMP_DIR/yazi.tar.gz"
+    tar -xzf "$TEMP_DIR/yazi.tar.gz" -C "$TEMP_DIR"
+    sudo install "$TEMP_DIR/yazi"*/yazi /usr/local/bin/
+    rm -rf "$TEMP_DIR"
+  when: yazi_check.rc != 0
+  become: yes
+  tags: ['manual', 'yazi']
+
+###############################################################################
+# k9s (Kubernetes CLI)
+###############################################################################
+
+- name: Check if k9s is installed
+  command: which k9s
+  register: k9s_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'k9s']
+
+- name: Install k9s
+  shell: |
+    curl -sS https://webinstall.dev/k9s | bash
+  when: k9s_check.rc != 0
+  tags: ['manual', 'k9s']
+
+###############################################################################
+# Tmux Plugin Manager
+###############################################################################
+
+- name: Check if TPM is installed
+  stat:
+    path: "{{ ansible_env.HOME }}/.tmux/plugins/tpm"
+  register: tpm_check
+  tags: ['manual', 'tmux']
+
+- name: Install Tmux Plugin Manager
+  git:
+    repo: https://github.com/tmux-plugins/tpm
+    dest: "{{ ansible_env.HOME }}/.tmux/plugins/tpm"
+    version: master
+  when: not tpm_check.stat.exists
+  tags: ['manual', 'tmux']
+
+###############################################################################
+# Zinit (Zsh Plugin Manager)
+###############################################################################
+
+- name: Check if Zinit is installed
+  stat:
+    path: "{{ ansible_env.HOME }}/.local/share/zinit/zinit.git"
+  register: zinit_check
+  tags: ['manual', 'zinit']
+
+- name: Install Zinit
+  git:
+    repo: https://github.com/zdharma-continuum/zinit
+    dest: "{{ ansible_env.HOME }}/.local/share/zinit/zinit.git"
+    version: master
+  when: not zinit_check.stat.exists
+  tags: ['manual', 'zinit']
+
+###############################################################################
+# Zoxide
+###############################################################################
+
+- name: Check if Zoxide is installed
+  command: which zoxide
+  register: zoxide_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'zoxide']
+
+- name: Install Zoxide
+  shell: |
+    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+  when: zoxide_check.rc != 0
+  tags: ['manual', 'zoxide']
+
+###############################################################################
+# Bitwarden CLI
+###############################################################################
+
+- name: Check if Bitwarden CLI is installed
+  command: which bw
+  register: bw_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'bitwarden']
+
+- name: Create temporary directory for Bitwarden CLI
+  tempfile:
+    state: directory
+  register: bw_temp_dir
+  when: bw_check.rc != 0
+  tags: ['manual', 'bitwarden']
+
+- name: Download Bitwarden CLI
+  get_url:
+    url: https://vault.bitwarden.com/download/?app=cli&platform=linux
+    dest: "{{ bw_temp_dir.path }}/bw.zip"
+  when: bw_check.rc != 0
+  tags: ['manual', 'bitwarden']
+
+- name: Unzip Bitwarden CLI
+  unarchive:
+    src: "{{ bw_temp_dir.path }}/bw.zip"
+    dest: "{{ bw_temp_dir.path }}"
+    remote_src: yes
+  when: bw_check.rc != 0
+  tags: ['manual', 'bitwarden']
+
+- name: Install Bitwarden CLI to /usr/local/bin
+  copy:
+    src: "{{ bw_temp_dir.path }}/bw"
+    dest: /usr/local/bin/bw
+    mode: '0755'
+    remote_src: yes
+  become: yes
+  when: bw_check.rc != 0
+  tags: ['manual', 'bitwarden']
+
+- name: Clean up Bitwarden CLI temp directory
+  file:
+    path: "{{ bw_temp_dir.path }}"
+    state: absent
+  when: bw_check.rc != 0
+  tags: ['manual', 'bitwarden']

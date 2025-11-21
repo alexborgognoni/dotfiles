@@ -1,0 +1,18 @@
+---
+# Variables common to all profiles
+
+# System configuration
+timezone: "Europe/Luxembourg"  # Adjust to your timezone
+locale: "en_US.UTF-8"
+
+# User information
+user_name: "{{ ansible_env.USER }}"
+user_email: "alex.bor0419@gmail.com"  # Will be overridden in profile-specific vars
+user_full_name: "Alex Borgognoni"
+
+# Bitwarden configuration
+bitwarden_email: "alex.bor0419@gmail.com"  # Update this
+use_bitwarden: true
+
+# chezmoi configuration
+chezmoi_version: "latest"  # Can specify version like "2.46.1"

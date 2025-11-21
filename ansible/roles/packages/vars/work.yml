@@ -1,0 +1,22 @@
+---
+# Work profile packages
+# Packages only installed on work machines
+
+apt_packages:
+  - name: azure-cli
+  - name: azure-functions-core-tools-4
+  - name: cf8-cli  # Cloud Foundry CLI
+  - name: microsoft-edge-stable
+  - name: touchegg
+
+snap_packages:
+  - name: slack
+  - name: storage-explorer  # Azure Storage Explorer
+
+cargo_packages: []
+
+pip_packages: []
+
+npm_packages: []
+
+brew_packages: []

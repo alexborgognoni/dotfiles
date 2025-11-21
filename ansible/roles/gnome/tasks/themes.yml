@@ -1,0 +1,146 @@
+---
+# Install and configure GNOME themes, icons, and fonts
+
+###############################################################################
+# Install theme dependencies
+###############################################################################
+
+- name: Install theme dependencies
+  apt:
+    name:
+      - gnome-themes-extra
+      - gtk2-engines-murrine
+      - sassc
+    state: present
+  become: yes
+  tags: ['gnome-themes']
+
+###############################################################################
+# Install Catppuccin GTK Theme
+###############################################################################
+
+- name: Check if Catppuccin theme is installed
+  stat:
+    path: "{{ ansible_env.HOME }}/.local/share/themes/catppuccin-macchiato-lavender-standard+default"
+  register: catppuccin_check
+  tags: ['gnome-themes']
+
+- name: Clone Catppuccin GTK theme repository
+  git:
+    repo: https://github.com/catppuccin/gtk.git
+    dest: /tmp/catppuccin-gtk
+    version: main
+    depth: 1
+  when: not catppuccin_check.stat.exists
+  tags: ['gnome-themes']
+
+- name: Install Catppuccin GTK theme
+  shell: |
+    cd /tmp/catppuccin-gtk
+    python3 install.py macchiato -a lavender --tweaks default -d "{{ ansible_env.HOME }}/.local/share/themes"
+  when: not catppuccin_check.stat.exists
+  tags: ['gnome-themes']
+
+- name: Clean up Catppuccin repository
+  file:
+    path: /tmp/catppuccin-gtk
+    state: absent
+  when: not catppuccin_check.stat.exists
+  tags: ['gnome-themes']
+
+###############################################################################
+# Configure icon themes
+###############################################################################
+
+- name: Install icon themes
+  apt:
+    name:
+      - yaru-theme-icon
+      - papirus-icon-theme
+    state: present
+  become: yes
+  tags: ['gnome-themes']
+
+###############################################################################
+# Install fonts
+###############################################################################
+
+- name: Ensure fonts directory exists
+  file:
+    path: "{{ ansible_env.HOME }}/.local/share/fonts"
+    state: directory
+    mode: '0755'
+  tags: ['gnome-themes']
+
+- name: Check if JetBrains Mono Nerd Font is installed
+  stat:
+    path: "{{ ansible_env.HOME }}/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf"
+  register: nerd_font_check
+  tags: ['gnome-themes']
+
+- name: Download JetBrains Mono Nerd Font
+  get_url:
+    url: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+    dest: /tmp/JetBrainsMono.zip
+  when: not nerd_font_check.stat.exists
+  tags: ['gnome-themes']
+
+- name: Extract JetBrains Mono Nerd Font
+  unarchive:
+    src: /tmp/JetBrainsMono.zip
+    dest: "{{ ansible_env.HOME }}/.local/share/fonts/"
+    remote_src: yes
+  when: not nerd_font_check.stat.exists
+  tags: ['gnome-themes']
+
+- name: Clean up font archive
+  file:
+    path: /tmp/JetBrainsMono.zip
+    state: absent
+  when: not nerd_font_check.stat.exists
+  tags: ['gnome-themes']
+
+- name: Update font cache
+  command: fc-cache -fv
+  when: not nerd_font_check.stat.exists
+  tags: ['gnome-themes']
+
+###############################################################################
+# Apply theme settings
+###############################################################################
+
+- name: Apply GTK theme
+  dconf:
+    key: "/org/gnome/desktop/interface/gtk-theme"
+    value: "'{{ gtk_theme }}'"
+  when: gtk_theme is defined
+  tags: ['gnome-themes']
+
+- name: Apply icon theme
+  dconf:
+    key: "/org/gnome/desktop/interface/icon-theme"
+    value: "'{{ icon_theme }}'"
+  when: icon_theme is defined
+  tags: ['gnome-themes']
+
+- name: Apply cursor theme
+  dconf:
+    key: "/org/gnome/desktop/interface/cursor-theme"
+    value: "'{{ cursor_theme }}'"
+  when: cursor_theme is defined
+  tags: ['gnome-themes']
+
+- name: Apply font settings
+  dconf:
+    key: "/org/gnome/desktop/interface/{{ item.key }}"
+    value: "'{{ item.value }}'"
+  loop: "{{ font_settings }}"
+  when: font_settings is defined
+  tags: ['gnome-themes']
+
+- name: Enable dark mode
+  dconf:
+    key: "/org/gnome/desktop/interface/color-scheme"
+    value: "'prefer-dark'"
+  when: dark_mode is defined and dark_mode
+  tags: ['gnome-themes']

@@ -1,3 +1,62 @@
+# Secrets and sensitive files
+.env
+.env.sh
+*.key
+*.pem
+*.asc
+*_rsa
+*_rsa.pub
+*.gpg
+
+# chezmoi generated files
+.chezmoi.toml  # Generated from template
+
+# OS-specific
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Editor directories
+.vscode/
+.idea/
+*.code-workspace
+
+# Temporary files
+*.log
+*.tmp
+.*.tmp
+
+# Local machine-specific
+.brewenv_cache
+.zcompdump*
+.zsh_history
+
+# Build artifacts
+node_modules/
+*.o
+*.so
+*.dylib
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+
+# Old/legacy configs (preserved but not active)
+old/
+
+# These were in the old gitignore
 tmux/plugins
-.fonts/.uuid
+chezmoi/dot_config/tmux/plugins/
 nvim/lazy-lock.json
+
+# Fonts (installed by Ansible, not tracked)
+.fonts/
+chezmoi/dot_fonts/
+
+# Keep empty directories
+!.gitkeep

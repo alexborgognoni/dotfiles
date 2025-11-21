@@ -1,0 +1,57 @@
+---
+# Main tasks for packages role
+
+- name: Load common package variables
+  include_vars:
+    file: "../vars/common.yml"
+    name: common_packages
+  tags: ['packages']
+
+- name: Load profile-specific package variables
+  include_vars:
+    file: "../vars/{{ profile }}.yml"
+    name: profile_packages
+  ignore_errors: yes
+  tags: ['packages']
+
+- name: Merge package lists
+  set_fact:
+    all_apt_packages: "{{ common_packages.apt_packages | default([]) + profile_packages.apt_packages | default([]) }}"
+    all_snap_packages: "{{ common_packages.snap_packages | default([]) + profile_packages.snap_packages | default([]) }}"
+    all_cargo_packages: "{{ common_packages.cargo_packages | default([]) + profile_packages.cargo_packages | default([]) }}"
+    all_pip_packages: "{{ common_packages.pip_packages | default([]) + profile_packages.pip_packages | default([]) }}"
+    all_npm_packages: "{{ common_packages.npm_packages | default([]) + profile_packages.npm_packages | default([]) }}"
+    all_brew_packages: "{{ common_packages.brew_packages | default([]) + profile_packages.brew_packages | default([]) }}"
+  tags: ['packages']
+
+- name: Add APT repositories
+  include_tasks: repositories.yml
+  tags: ['packages', 'repositories']
+
+- name: Install APT packages
+  include_tasks: apt.yml
+  tags: ['packages', 'apt']
+
+- name: Install Snap packages
+  include_tasks: snap.yml
+  tags: ['packages', 'snap']
+
+- name: Install Cargo packages
+  include_tasks: cargo.yml
+  tags: ['packages', 'cargo']
+
+- name: Install Pip packages
+  include_tasks: pip.yml
+  tags: ['packages', 'pip']
+
+- name: Install NPM packages
+  include_tasks: npm.yml
+  tags: ['packages', 'npm']
+
+- name: Install Homebrew packages
+  include_tasks: brew.yml
+  tags: ['packages', 'brew']
+
+- name: Install manual packages
+  include_tasks: manual.yml
+  tags: ['packages', 'manual']

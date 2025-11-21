@@ -1,0 +1,20 @@
+---
+# Homebrew package installation
+
+- name: Check if homebrew is installed
+  command: which brew
+  register: brew_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['brew']
+
+- name: Install homebrew packages
+  homebrew:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+  loop: "{{ all_brew_packages }}"
+  when:
+    - brew_check.rc == 0
+    - all_brew_packages is defined
+    - all_brew_packages | length > 0
+  tags: ['brew']
