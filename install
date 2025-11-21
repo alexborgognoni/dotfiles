@@ -112,17 +112,29 @@ echo "╚═══════════════════════�
 echo ""
 
 # Prompt for profile
-while true; do
-    read -p "Which profile? [personal/work]: " PROFILE
-    case $PROFILE in
-        personal|work)
-            break
-            ;;
-        *)
-            warning "Invalid choice. Please enter 'personal' or 'work'."
-            ;;
-    esac
-done
+# Check if PROFILE is already set via environment variable
+if [[ -z "$PROFILE" ]]; then
+    # Check if running interactively
+    if [[ -t 0 ]]; then
+        # Interactive mode - prompt user
+        while true; do
+            read -p "Which profile? [personal/work]: " PROFILE
+            case $PROFILE in
+                personal|work)
+                    break
+                    ;;
+                *)
+                    warning "Invalid choice. Please enter 'personal' or 'work'."
+                    ;;
+            esac
+        done
+    else
+        # Non-interactive mode (piped from curl) - default to personal
+        PROFILE="personal"
+        info "Running in non-interactive mode, defaulting to 'personal' profile"
+        info "To use 'work' profile, set PROFILE=work before running: PROFILE=work curl -fsSL ... | bash"
+    fi
+fi
 
 export PROFILE
 success "Profile selected: $PROFILE"
