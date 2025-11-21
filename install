@@ -150,10 +150,14 @@ info "Dotfiles directory: $DOTFILES_DIR"
 
 step "[1/6] Installing dependencies..."
 
+info "Updating package cache..."
+sudo apt update -qq
+
+info "Installing software-properties-common (for PPA support)..."
+sudo apt install -y -qq software-properties-common
+
 info "Adding Ansible PPA..."
 sudo apt-add-repository -y ppa:ansible/ansible >/dev/null 2>&1
-
-info "Updating package cache..."
 sudo apt update -qq
 
 info "Installing Ansible and essential tools..."
@@ -161,8 +165,7 @@ sudo apt install -y -qq \
     ansible \
     git \
     curl \
-    wget \
-    software-properties-common
+    wget
 
 success "Dependencies installed"
 
