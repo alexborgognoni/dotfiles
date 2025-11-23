@@ -21,7 +21,7 @@
 
 - name: Check if Catppuccin theme is installed
   stat:
-    path: "{{ ansible_env.HOME }}/.local/share/themes/catppuccin-macchiato-lavender-standard+default"
+    path: "{{ ansible_env.HOME }}/.local/share/themes/catppuccin-macchiato-lavender-standard"
   register: catppuccin_check
   tags: ['gnome-themes']
 
@@ -37,7 +37,7 @@
 - name: Install Catppuccin GTK theme
   shell: |
     cd /tmp/catppuccin-gtk
-    python3 install.py macchiato -a lavender --tweaks default -d "{{ ansible_env.HOME }}/.local/share/themes"
+    python3 install.py macchiato lavender -d "{{ ansible_env.HOME }}/.local/share/themes" --link
   when: not catppuccin_check.stat.exists
   tags: ['gnome-themes']
 
