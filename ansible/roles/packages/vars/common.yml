@@ -19,9 +19,10 @@ apt_packages:
   - name: docker-ce
   - name: docker-ce-cli
   - name: docker-compose-plugin
-  - name: exa
+  - name: eza
   - name: fd-find
   - name: ffmpeg
+  - name: foliate
   - name: fzf
   - name: gh  # GitHub CLI
   - name: git
@@ -32,7 +33,6 @@ apt_packages:
   - name: imagemagick
   - name: inkscape
   - name: jq
-  - name: kubecolor
   - name: libevent-dev
   - name: libncurses-dev
   - name: luarocks
@@ -45,8 +45,6 @@ apt_packages:
   - name: python3
   - name: python3.10-venv
   - name: python3-pip
-  - name: rabbitmq-server
-  - name: ranger
   - name: ripgrep
   - name: sassc
   - name: software-properties-common
@@ -66,7 +64,6 @@ apt_packages:
 snap_packages:
   - name: chromium
   - name: firefox
-  - name: foliate
   - name: postman
   # Note: slack and storage-explorer moved to work.yml
 
@@ -86,4 +83,4 @@ pip_packages:
 npm_packages:
   - name: typescript
 
-brew_packages:
+brew_packages: []

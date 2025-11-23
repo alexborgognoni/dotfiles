@@ -199,7 +199,7 @@ bin/work-auth-refresh.sh
 # chezmoi/dot_zsh/aliases.zsh.tmpl
 
 # Common aliases for all profiles
-alias ll='exa -la --icons'
+alias ll='eza -la --icons'
 alias vim='nvim'
 alias cat='batcat'
 
@@ -270,7 +270,7 @@ If a file only exists in one profile, use .chezmoiignore:
 Don't duplicate configuration. Extract common parts:
 ```zsh
 # ✅ Good
-alias ll='exa -la --icons'  # Common
+alias ll='eza -la --icons'  # Common
 
 {{- if eq .profile "work" }}
 alias k='kubectl'  # Work-only
@@ -278,12 +278,12 @@ alias k='kubectl'  # Work-only
 
 # ❌ Avoid
 {{- if eq .profile "work" }}
-alias ll='exa -la --icons'  # Duplicated
+alias ll='eza -la --icons'  # Duplicated
 alias k='kubectl'
 {{- end }}
 
 {{- if eq .profile "personal" }}
-alias ll='exa -la --icons'  # Duplicated
+alias ll='eza -la --icons'  # Duplicated
 {{- end }}
 ```
 

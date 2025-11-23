@@ -27,9 +27,11 @@
   when: gnome_shell_check.rc == 0
   tags: ['gnome-extensions']
 
-- name: Enable GNOME extensions
+- name: Enable GNOME extensions via CLI
   shell: |
     gnome-extensions enable {{ item }}
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
   loop: "{{ gnome_extensions }}"
   when:
     - gnome_shell_check.rc == 0
@@ -37,9 +39,45 @@
   ignore_errors: yes
   tags: ['gnome-extensions']
 
+- name: Set enabled extensions via dconf (fallback)
+  dconf:
+    key: "/org/gnome/shell/enabled-extensions"
+    value: "{{ gnome_extensions | string }}"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
+  when:
+    - gnome_shell_check.rc == 0
+    - gnome_extensions is defined
+  tags: ['gnome-extensions']
+
+- name: Disable GNOME extensions via CLI
+  shell: |
+    gnome-extensions disable {{ item }}
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
+  loop: "{{ gnome_extensions_disabled | default([]) }}"
+  when:
+    - gnome_shell_check.rc == 0
+    - gnome_extensions_disabled is defined
+  ignore_errors: yes
+  tags: ['gnome-extensions']
+
+- name: Set disabled extensions via dconf (fallback)
+  dconf:
+    key: "/org/gnome/shell/disabled-extensions"
+    value: "{{ gnome_extensions_disabled | string }}"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
+  when:
+    - gnome_shell_check.rc == 0
+    - gnome_extensions_disabled is defined
+  tags: ['gnome-extensions']
+
 - name: Apply extension-specific settings from dconf
   shell: |
     dconf load /org/gnome/shell/extensions/ < "{{ playbook_dir }}/roles/gnome/files/dconf/extensions.conf"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
   when:
     - gnome_shell_check.rc == 0
     - gnome_extensions is defined

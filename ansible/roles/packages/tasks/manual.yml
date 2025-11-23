@@ -3,6 +3,56 @@
 # For software not available in standard package managers
 
 ###############################################################################
+# Bitwarden CLI
+###############################################################################
+
+- name: Check if Bitwarden CLI is installed
+  command: which bw
+  register: bw_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'bitwarden']
+
+- name: Create temporary directory for Bitwarden CLI
+  tempfile:
+    state: directory
+  register: bw_temp_dir
+  when: bw_check.rc != 0
+  tags: ['manual', 'bitwarden']
+
+- name: Download Bitwarden CLI
+  get_url:
+    url: https://vault.bitwarden.com/download/?app=cli&platform=linux
+    dest: "{{ bw_temp_dir.path }}/bw.zip"
+  when: bw_check.rc != 0
+  tags: ['manual', 'bitwarden']
+
+- name: Unzip Bitwarden CLI
+  unarchive:
+    src: "{{ bw_temp_dir.path }}/bw.zip"
+    dest: "{{ bw_temp_dir.path }}"
+    remote_src: yes
+  when: bw_check.rc != 0
+  tags: ['manual', 'bitwarden']
+
+- name: Install Bitwarden CLI to /usr/local/bin
+  copy:
+    src: "{{ bw_temp_dir.path }}/bw"
+    dest: /usr/local/bin/bw
+    mode: '0755'
+    remote_src: yes
+  become: yes
+  when: bw_check.rc != 0
+  tags: ['manual', 'bitwarden']
+
+- name: Clean up Bitwarden CLI temp directory
+  file:
+    path: "{{ bw_temp_dir.path }}"
+    state: absent
+  when: bw_check.rc != 0
+  tags: ['manual', 'bitwarden']
+
+###############################################################################
 # Kitty Terminal
 ###############################################################################
 
@@ -156,20 +206,93 @@
   tags: ['manual', 'k9s']
 
 ###############################################################################
+# Kubecolor
+###############################################################################
+
+- name: Check if Kubecolor is installed
+  command: which kubecolor
+  register: kubecolor_check
+  ignore_errors: yes
+  changed_when: false
+  when: "'kubecolor' in all_apt_packages | map(attribute='name') | list"
+  tags: ['manual', 'kubecolor']
+
+- name: Ensure apt-transport-https and wget are installed
+  apt:
+    name:
+      - apt-transport-https
+      - wget
+    state: present
+  become: yes
+  when:
+    - "'kubecolor' in all_apt_packages | map(attribute='name') | list"
+    - kubecolor_check.rc != 0
+  tags: ['manual', 'kubecolor']
+
+- name: Get Kubecolor version
+  shell: wget -q -O- https://kubecolor.github.io/packages/deb/version
+  register: kubecolor_version
+  when:
+    - "'kubecolor' in all_apt_packages | map(attribute='name') | list"
+    - kubecolor_check.rc != 0
+  changed_when: false
+  tags: ['manual', 'kubecolor']
+
+- name: Download Kubecolor deb package
+  get_url:
+    url: "https://kubecolor.github.io/packages/deb/pool/main/k/kubecolor/kubecolor_{{ kubecolor_version.stdout }}_{{ ansible_architecture }}.deb"
+    dest: /tmp/kubecolor.deb
+  when:
+    - "'kubecolor' in all_apt_packages | map(attribute='name') | list"
+    - kubecolor_check.rc != 0
+  tags: ['manual', 'kubecolor']
+
+- name: Install Kubecolor
+  apt:
+    deb: /tmp/kubecolor.deb
+  become: yes
+  when:
+    - "'kubecolor' in all_apt_packages | map(attribute='name') | list"
+    - kubecolor_check.rc != 0
+  tags: ['manual', 'kubecolor']
+
+- name: Clean up Kubecolor deb package
+  file:
+    path: /tmp/kubecolor.deb
+    state: absent
+  when:
+    - "'kubecolor' in all_apt_packages | map(attribute='name') | list"
+    - kubecolor_check.rc != 0
+  tags: ['manual', 'kubecolor']
+
+###############################################################################
 # Tmux Plugin Manager
 ###############################################################################
 
+- name: Ensure tmux plugins directory exists
+  file:
+    path: "{{ ansible_env.HOME }}/.config/tmux/plugins"
+    state: directory
+    mode: '0755'
+  tags: ['manual', 'tmux']
+
 - name: Check if TPM is installed
   stat:
-    path: "{{ ansible_env.HOME }}/.tmux/plugins/tpm"
+    path: "{{ ansible_env.HOME }}/.config/tmux/plugins/tpm"
   register: tpm_check
   tags: ['manual', 'tmux']
 
 - name: Install Tmux Plugin Manager
   git:
     repo: https://github.com/tmux-plugins/tpm
-    dest: "{{ ansible_env.HOME }}/.tmux/plugins/tpm"
+    dest: "{{ ansible_env.HOME }}/.config/tmux/plugins/tpm"
     version: master
+  when: not tpm_check.stat.exists
+  tags: ['manual', 'tmux']
+
+- name: Install TPM plugins automatically
+  shell: |
+    {{ ansible_env.HOME }}/.config/tmux/plugins/tpm/bin/install_plugins
   when: not tpm_check.stat.exists
   tags: ['manual', 'tmux']
 
@@ -207,53 +330,3 @@
     curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
   when: zoxide_check.rc != 0
   tags: ['manual', 'zoxide']
-
-###############################################################################
-# Bitwarden CLI
-###############################################################################
-
-- name: Check if Bitwarden CLI is installed
-  command: which bw
-  register: bw_check
-  ignore_errors: yes
-  changed_when: false
-  tags: ['manual', 'bitwarden']
-
-- name: Create temporary directory for Bitwarden CLI
-  tempfile:
-    state: directory
-  register: bw_temp_dir
-  when: bw_check.rc != 0
-  tags: ['manual', 'bitwarden']
-
-- name: Download Bitwarden CLI
-  get_url:
-    url: https://vault.bitwarden.com/download/?app=cli&platform=linux
-    dest: "{{ bw_temp_dir.path }}/bw.zip"
-  when: bw_check.rc != 0
-  tags: ['manual', 'bitwarden']
-
-- name: Unzip Bitwarden CLI
-  unarchive:
-    src: "{{ bw_temp_dir.path }}/bw.zip"
-    dest: "{{ bw_temp_dir.path }}"
-    remote_src: yes
-  when: bw_check.rc != 0
-  tags: ['manual', 'bitwarden']
-
-- name: Install Bitwarden CLI to /usr/local/bin
-  copy:
-    src: "{{ bw_temp_dir.path }}/bw"
-    dest: /usr/local/bin/bw
-    mode: '0755'
-    remote_src: yes
-  become: yes
-  when: bw_check.rc != 0
-  tags: ['manual', 'bitwarden']
-
-- name: Clean up Bitwarden CLI temp directory
-  file:
-    path: "{{ bw_temp_dir.path }}"
-    state: absent
-  when: bw_check.rc != 0
-  tags: ['manual', 'bitwarden']

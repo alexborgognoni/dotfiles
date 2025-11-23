@@ -4,10 +4,8 @@
 # Enable/disable GNOME settings application
 gnome_common_settings: true
 
-# Favorite apps pinned to dash/dock
-favorite_apps: >
-  ['org.gnome.Nautilus.desktop', 'firefox_firefox.desktop', 'chromium_chromium.desktop',
-   'code.desktop', 'org.gnome.Terminal.desktop', 'kitty.desktop', 'slack_slack.desktop']
+# Favorite apps pinned to dash/dock (Files, Chrome, Kitty only)
+favorite_apps: "['org.gnome.Nautilus.desktop', 'google-chrome.desktop', 'kitty.desktop']"
 
 # Interface settings
 interface_settings:
@@ -17,16 +15,22 @@ interface_settings:
     value: "true"
   - key: "clock-show-seconds"
     value: "false"
+  - key: "clock-show-weekday"
+    value: "false"
   - key: "color-scheme"
     value: "'prefer-dark'"
   - key: "cursor-size"
     value: "32"
+  - key: "cursor-theme"
+    value: "'volantes_light_cursors'"
   - key: "enable-animations"
     value: "false"
   - key: "font-hinting"
     value: "'slight'"
   - key: "show-battery-percentage"
     value: "true"
+  - key: "text-scaling-factor"
+    value: "1.0"
 
 # Font settings
 font_settings:
@@ -39,6 +43,7 @@ font_settings:
 
 # Theme settings
 gtk_theme: "catppuccin-macchiato-lavender-standard+default"
+shell_theme: "catppuccin-macchiato-lavender-standard+default"
 icon_theme: "Yaru"
 cursor_theme: "volantes_light_cursors"
 dark_mode: true
@@ -54,7 +59,16 @@ background_settings:
   - key: "secondary-color"
     value: "'#000000000000'"
 
-# Keyboard shortcuts
+# Mutter settings
+mutter_settings:
+  - key: "dynamic-workspaces"
+    value: "false"
+  - key: "edge-tiling"
+    value: "true"
+  - key: "workspaces-only-on-primary"
+    value: "true"
+
+# Keyboard shortcuts (media keys)
 keyboard_shortcuts:
   - key: "terminal"
     value: "['<Super>Return']"
@@ -66,17 +80,54 @@ keyboard_shortcuts:
     value: "['<Super>c']"
   - key: "screensaver"
     value: "['<Super>Escape']"
+  - key: "rotate-video-lock-static"
+    value: "@as []"
 
 # Window manager keybindings
 wm_keybindings:
   - key: "close"
-    value: "['<Super>q', '<Alt>F4']"
+    value: "['<Shift><Super>q']"
   - key: "maximize"
-    value: "['<Super>Up']"
-  - key: "unmaximize"
-    value: "['<Super>Down']"
+    value: "['<Shift><Super>k']"
   - key: "toggle-fullscreen"
-    value: "['F11']"
+    value: "['<Super>f']"
+  - key: "toggle-maximized"
+    value: "['<Shift><Super>f']"
+  - key: "switch-to-workspace-up"
+    value: "['<Primary><Super>Up', '<Primary><Super>k']"
+  - key: "switch-to-workspace-down"
+    value: "['<Primary><Super>Down', '<Primary><Super>j']"
+  - key: "move-to-workspace-up"
+    value: "@as []"
+  - key: "move-to-workspace-down"
+    value: "@as []"
+  - key: "move-to-workspace-1"
+    value: "['<Shift><Super>exclam']"
+  - key: "move-to-workspace-2"
+    value: "['<Shift><Super>at']"
+  - key: "move-to-workspace-3"
+    value: "['<Shift><Super>numbersign']"
+  - key: "move-to-workspace-4"
+    value: "['<Shift><Super>dollar']"
+  - key: "move-to-workspace-5"
+    value: "['<Super><Shift>5']"
+  - key: "move-to-workspace-6"
+    value: "['<Super><Shift>6']"
+  - key: "move-to-workspace-7"
+    value: "['<Super><Shift>7']"
+  - key: "move-to-workspace-8"
+    value: "['<Super><Shift>8']"
+  - key: "move-to-workspace-9"
+    value: "['<Super><Shift>9']"
+  - key: "move-to-workspace-10"
+    value: "['<Super><Shift>0']"
+
+# Mutter keybindings
+mutter_keybindings:
+  - key: "toggle-tiled-left"
+    value: "['<Shift><Super>h']"
+  - key: "toggle-tiled-right"
+    value: "['<Shift><Super>l']"
 
 # Shell keybindings
 shell_keybindings:
@@ -84,8 +135,28 @@ shell_keybindings:
     value: "['<Super>a']"
   - key: "toggle-overview"
     value: "['<Super>s']"
+  - key: "show-screenshot-ui"
+    value: "['<Shift><Super>s']"
+  - key: "switch-to-application-1"
+    value: "@as []"
+  - key: "switch-to-application-2"
+    value: "@as []"
+  - key: "switch-to-application-3"
+    value: "@as []"
+  - key: "switch-to-application-4"
+    value: "@as []"
+  - key: "switch-to-application-5"
+    value: "@as []"
+  - key: "switch-to-application-6"
+    value: "@as []"
+  - key: "switch-to-application-7"
+    value: "@as []"
+  - key: "switch-to-application-8"
+    value: "@as []"
+  - key: "switch-to-application-9"
+    value: "@as []"
 
-# GNOME Extensions to enable
+# GNOME Extensions to enable (panel-date-format REMOVED)
 gnome_extensions:
   - "space-bar@luchrioh"
   - "notification-banner-reloaded@marcinjakubowski.github.com"
@@ -96,10 +167,42 @@ gnome_extensions:
   - "emoji-copy@felipeftn"
   - "unite@hardpixel.eu"
   - "transparent-top-bar@ftpix.com"
-  - "panel-date-format@keiii.github.com"
   - "appmenu-color-icon@arahiko-ayami.github.com"
   - "appindicatorsupport@rgcjonas.gmail.com"
   - "top-bar-organizer@julian.gse.jsts.xyz"
   - "mprisLabel@moon-0xff.github.com"
+  - "user-theme@gnome-shell-extensions.gcampax.github.com"
+  - "auto-move-windows@gnome-shell-extensions.gcampax.github.com"
+
+# Built-in extensions to DISABLE (Ubuntu dock and appindicators)
+gnome_extensions_disabled:
   - "ubuntu-appindicators@ubuntu.com"
   - "ubuntu-dock@ubuntu.com"
+  - "ding@rastersoft.com"
+  - "workspace-indicator@gnome-shell-extensions.gcampax.github.com"
+  - "window-list@gnome-shell-extensions.gcampax.github.com"
+  - "screenshot-window-sizer@gnome-shell-extensions.gcampax.github.com"
+  - "places-menu@gnome-shell-extensions.gcampax.github.com"
+  - "native-window-placement@gnome-shell-extensions.gcampax.github.com"
+  - "launch-new-instance@gnome-shell-extensions.gcampax.github.com"
+  - "auto-move-windows@gnome-shell-extensions.gcampax.github.com"
+  - "apps-menu@gnome-shell-extensions.gcampax.github.com"
+
+# Peripherals settings
+peripherals_mouse:
+  - key: "speed"
+    value: "-0.17518248175182483"
+
+peripherals_touchpad:
+  - key: "click-method"
+    value: "'none'"
+  - key: "natural-scroll"
+    value: "true"
+  - key: "send-events"
+    value: "'enabled'"
+  - key: "speed"
+    value: "0.29197080291970812"
+  - key: "tap-to-click"
+    value: "true"
+  - key: "two-finger-scrolling-enabled"
+    value: "true"

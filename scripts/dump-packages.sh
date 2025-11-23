@@ -46,7 +46,7 @@ docker-buildx-plugin
 docker-ce
 docker-ce-cli
 docker-compose-plugin
-exa
+eza
 fd-find
 ffmpeg
 fzf
@@ -73,7 +73,6 @@ postgresql
 python3
 python3-pip
 python3.10-venv
-ranger
 ripgrep
 sassc
 software-properties-common

@@ -22,7 +22,7 @@ Modern dotfiles for Ubuntu GNOME, managed with **chezmoi** and **Ansible**.
 
 **One-line install:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/alexborgognoni/dotfiles/main/install | bash
+wget -qO- https://raw.githubusercontent.com/alexborgognoni/dotfiles/main/install | bash
 ```
 
 **Or manually:**
@@ -99,8 +99,7 @@ dotfiles/
 │   ├── dot_gitconfig.tmpl
 │   └── dot_config/    # All .config files
 ├── scripts/           # Utility scripts
-├── docs/             # Documentation
-└── old/              # Deprecated files
+└── docs/             # Documentation
 ```
 
 ## Architecture

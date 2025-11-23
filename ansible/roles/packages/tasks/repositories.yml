@@ -3,6 +3,42 @@
 # Using modern keyring approach (not deprecated apt-key)
 
 ###############################################################################
+# Clean up potentially conflicting old repositories
+###############################################################################
+
+- name: Remove old/conflicting repository files
+  file:
+    path: "/etc/apt/sources.list.d/{{ item }}"
+    state: absent
+  loop:
+    - github-cli.list
+    - docker.list
+    - hashicorp.list
+    - microsoft.list
+    - microsoft-edge.list
+    - microsoft-prod.list
+    - vscode.list
+    - google-chrome.list
+    - gierens.list
+    - cloudfoundry-cli.list
+    - azure-cli.list
+    - foliate.list
+  become: yes
+  ignore_errors: yes
+  tags: ['repositories']
+
+- name: Remove old keyring files from deprecated location
+  file:
+    path: "/usr/share/keyrings/{{ item }}"
+    state: absent
+  loop:
+    - githubcli-archive-keyring.gpg
+    - docker-archive-keyring.gpg
+  become: yes
+  ignore_errors: yes
+  tags: ['repositories']
+
+###############################################################################
 # GitHub CLI
 ###############################################################################
 
@@ -257,85 +293,6 @@
   tags: ['repositories']
 
 ###############################################################################
-# Kubecolor
-###############################################################################
-
-- name: Ensure keyrings directory exists (Kubecolor)
-  file:
-    path: /usr/share/keyrings
-    state: directory
-    mode: '0755'
-  become: yes
-  when: "'kubecolor' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Download Kubecolor GPG key
-  get_url:
-    url: https://kubecolor.github.io/packages/deb/archive-keyring.gpg
-    dest: /usr/share/keyrings/kubecolor-archive-keyring.gpg
-    mode: '0644'
-  become: yes
-  when: "'kubecolor' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Add Kubecolor repository
-  apt_repository:
-    repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/kubecolor-archive-keyring.gpg] https://kubecolor.github.io/packages/deb stable main"
-    state: present
-    filename: kubecolor
-  become: yes
-  when: "'kubecolor' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-###############################################################################
-# RabbitMQ
-###############################################################################
-
-- name: Ensure keyrings directory exists (RabbitMQ)
-  file:
-    path: /usr/share/keyrings
-    state: directory
-    mode: '0755'
-  become: yes
-  when: "'rabbitmq-server' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Download RabbitMQ GPG key
-  get_url:
-    url: https://keys.openpgp.org/vks/v1/by-fingerprint/0A9AF2115F4687BD29803A206B73A36E6026DFCA
-    dest: /tmp/rabbitmq.asc
-  when: "'rabbitmq-server' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Convert RabbitMQ GPG key to binary format
-  shell: |
-    cat /tmp/rabbitmq.asc | gpg --dearmor -o /usr/share/keyrings/com.rabbitmq.team.gpg
-    chmod 644 /usr/share/keyrings/com.rabbitmq.team.gpg
-  args:
-    creates: /usr/share/keyrings/com.rabbitmq.team.gpg
-  become: yes
-  when: "'rabbitmq-server' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Add RabbitMQ Erlang repository
-  apt_repository:
-    repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/com.rabbitmq.team.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-erlang/deb/ubuntu {{ ansible_distribution_release }} main"
-    state: present
-    filename: rabbitmq-erlang
-  become: yes
-  when: "'rabbitmq-server' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Add RabbitMQ Server repository
-  apt_repository:
-    repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/com.rabbitmq.team.gpg] https://ppa1.novemberain.com/rabbitmq/rabbitmq-server/deb/ubuntu {{ ansible_distribution_release }} main"
-    state: present
-    filename: rabbitmq-server
-  become: yes
-  when: "'rabbitmq-server' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-###############################################################################
 # Touchegg (work profile only)
 ###############################################################################
 
@@ -347,6 +304,57 @@
   when:
     - profile == 'work'
     - "'touchegg' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# eza (modern ls replacement, fork of exa)
+###############################################################################
+
+- name: Ensure keyrings directory exists (eza)
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when: "'eza' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download eza GPG key
+  shell: |
+    wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+  args:
+    creates: /etc/apt/keyrings/gierens.gpg
+  become: yes
+  when: "'eza' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Set permissions on eza GPG key
+  file:
+    path: /etc/apt/keyrings/gierens.gpg
+    mode: '0644'
+  become: yes
+  when: "'eza' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add eza repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main"
+    state: present
+    filename: gierens
+  become: yes
+  when: "'eza' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# Foliate (e-book reader)
+###############################################################################
+
+- name: Add Foliate PPA
+  apt_repository:
+    repo: ppa:apandada1/foliate
+    state: present
+  become: yes
+  when: "'foliate' in all_apt_packages | map(attribute='name') | list"
   tags: ['repositories']
 
 ###############################################################################
