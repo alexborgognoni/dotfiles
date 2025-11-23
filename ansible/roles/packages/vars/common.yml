@@ -22,6 +22,7 @@ apt_packages:
   - name: eza
   - name: fd-find
   - name: ffmpeg
+  - name: file
   - name: foliate
   - name: fzf
   - name: gh  # GitHub CLI
