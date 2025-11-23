@@ -11,9 +11,10 @@
 - name: Install GNOME Extensions dependencies
   apt:
     name:
-      - gnome-shell-extensions
-      - gnome-shell-extension-manager
       - chrome-gnome-shell
+      - gnome-shell-extension-manager
+      - gnome-shell-extensions
+      - pipx
     state: present
   become: yes
   when: gnome_shell_check.rc == 0
@@ -25,6 +26,25 @@
     state: directory
     mode: '0755'
   when: gnome_shell_check.rc == 0
+  tags: ['gnome-extensions']
+
+- name: Install gnome-extensions-cli via pipx
+  community.general.pipx:
+    name: gnome-extensions-cli
+    state: present
+  when: gnome_shell_check.rc == 0
+  tags: ['gnome-extensions']
+
+- name: Install GNOME extensions from extensions.gnome.org
+  shell: |
+    {{ ansible_env.HOME }}/.local/bin/gext install {{ item }}
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
+  loop: "{{ gnome_extensions }}"
+  when:
+    - gnome_shell_check.rc == 0
+    - gnome_extensions is defined
+  ignore_errors: yes
   tags: ['gnome-extensions']
 
 - name: Enable GNOME extensions via CLI

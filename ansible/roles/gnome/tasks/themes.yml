@@ -10,7 +10,11 @@
     name:
       - gnome-themes-extra
       - gtk2-engines-murrine
+      - inkscape
+      - papirus-icon-theme
       - sassc
+      - x11-apps
+      - yaru-theme-icon
     state: present
   become: yes
   tags: ['gnome-themes']
@@ -49,19 +53,6 @@
   tags: ['gnome-themes']
 
 ###############################################################################
-# Configure icon themes
-###############################################################################
-
-- name: Install icon themes
-  apt:
-    name:
-      - yaru-theme-icon
-      - papirus-icon-theme
-    state: present
-  become: yes
-  tags: ['gnome-themes']
-
-###############################################################################
 # Install Volantes Cursors
 ###############################################################################
 
@@ -76,16 +67,6 @@
   stat:
     path: "{{ ansible_env.HOME }}/.icons/volantes_light_cursors"
   register: volantes_check
-  tags: ['gnome-themes']
-
-- name: Install Volantes cursor build dependencies
-  apt:
-    name:
-      - inkscape
-      - x11-apps
-    state: present
-  become: yes
-  when: not volantes_check.stat.exists
   tags: ['gnome-themes']
 
 - name: Clone Volantes cursors repository
