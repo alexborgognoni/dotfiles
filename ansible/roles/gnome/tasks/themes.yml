@@ -25,7 +25,7 @@
 
 - name: Check if Catppuccin theme is installed
   stat:
-    path: "{{ ansible_env.HOME }}/.local/share/themes/catppuccin-macchiato-lavender-standard"
+    path: "{{ ansible_env.HOME }}/.local/share/themes/catppuccin-macchiato-lavender-standard+default"
   register: catppuccin_check
   tags: ['gnome-themes']
 
