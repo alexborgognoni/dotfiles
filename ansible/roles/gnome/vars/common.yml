@@ -42,8 +42,8 @@ font_settings:
     value: "JetBrainsMono Nerd Font Mono 13"
 
 # Theme settings
-gtk_theme: "catppuccin-macchiato-lavender-standard+default"
-shell_theme: "catppuccin-macchiato-lavender-standard+default"
+gtk_theme: "catppuccin-macchiato-lavender-standard"
+shell_theme: "catppuccin-macchiato-lavender-standard"
 icon_theme: "Yaru"
 cursor_theme: "volantes_light_cursors"
 dark_mode: true
