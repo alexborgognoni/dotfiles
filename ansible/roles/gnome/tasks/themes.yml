@@ -155,7 +155,7 @@
   tags: ['gnome-themes']
 
 - name: Update font cache
-  command: fc-cache -fv
+  command: fc-cache -f "{{ ansible_env.HOME }}/.local/share/fonts"
   when: not nerd_font_check.stat.exists
   tags: ['gnome-themes']
 
