@@ -94,8 +94,6 @@ dotfiles/
 │   │   ├── tmux/                 # Tmux config
 │   │   └── starship.toml         # Starship prompt
 │   │
-│   ├── dot_fonts/                # User fonts
-│   ├── dot_icons/                # User icon themes
 │   ├── Pictures/                 # Wallpapers, etc.
 │   │
 │   ├── run_once_*                # Scripts run once on first apply
@@ -260,9 +258,11 @@ common_apt_packages:
 
 common_cargo_packages:
   - bat
-  - exa
   - ripgrep
   - fd-find
+
+common_apt_packages:
+  - eza  # Modern ls replacement (from gierens repo)
 
 # ansible/roles/packages/vars/personal.yml
 personal_snap_packages:
@@ -374,10 +374,13 @@ System-level installation via Ansible, user-level via chezmoi:
 - name: Clone Catppuccin GTK theme
   git:
     repo: https://github.com/catppuccin/gtk
-    dest: /usr/share/themes/catppuccin
+    dest: ~/.local/share/themes/catppuccin
 
-# chezmoi: User-level icon theme
-# chezmoi/dot_icons/volantes_cursors/...
+# Ansible: Download and install cursor theme at runtime
+- name: Download Volantes cursors
+  get_url:
+    url: https://github.com/varlesh/volantes-cursors/releases/download/v1.0.0/volantes-cursors.tar.gz
+    dest: /tmp/volantes-cursors.tar.gz
 ```
 
 ## Secret Management
@@ -488,7 +491,7 @@ export PROFILE
 # Step 2: Install minimal dependencies
 echo "[1/5] Installing dependencies..."
 sudo apt update
-sudo apt install -y ansible git curl
+sudo apt install -y ansible git
 
 # Step 3: Run Ansible playbook
 echo "[2/5] Running Ansible playbook..."

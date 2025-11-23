@@ -1,0 +1,27 @@
+---
+# Load base GNOME dconf settings from files
+# These are loaded FIRST and can be overridden by later tasks
+
+- name: Ensure dconf is installed
+  apt:
+    name: dconf-cli
+    state: present
+  become: yes
+  tags: ['gnome-settings']
+
+- name: Apply common GNOME base settings
+  shell: |
+    dconf load / < "{{ playbook_dir }}/roles/gnome/files/dconf/common.conf"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
+  when: gnome_common_settings is defined
+  tags: ['gnome-settings']
+
+- name: Apply profile-specific GNOME base settings
+  shell: |
+    dconf load / < "{{ playbook_dir }}/roles/gnome/files/dconf/{{ profile }}.conf"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
+  when: gnome_profile_settings is defined
+  ignore_errors: yes
+  tags: ['gnome-settings']

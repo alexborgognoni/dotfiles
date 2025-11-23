@@ -1,5 +1,11 @@
 ---
 # Main tasks for GNOME role
+# ORDER MATTERS:
+# 1. Load base dconf settings FIRST (common.conf provides defaults)
+# 2. Extensions (override shell settings)
+# 3. Themes (override theme settings)
+# 4. Individual settings (override specific values)
+# 5. Keybindings LAST (override all keyboard shortcuts)
 
 - name: Load common GNOME variables
   include_vars:
@@ -12,18 +18,45 @@
   ignore_errors: yes
   tags: ['gnome']
 
-- name: Apply GNOME settings
-  include_tasks: settings.yml
+# Detect D-Bus session address for dconf commands
+# Required when running from SSH or non-graphical terminals
+- name: Get D-Bus session address from GNOME session
+  shell: |
+    PID=$(pgrep -u {{ ansible_user_id }} gnome-session | head -1)
+    if [ -n "$PID" ]; then
+      cat /proc/$PID/environ 2>/dev/null | tr '\0' '\n' | grep ^DBUS_SESSION_BUS_ADDRESS= | cut -d= -f2-
+    fi
+  register: dbus_session_result
+  changed_when: false
+  failed_when: false
+  tags: ['gnome']
+
+- name: Set D-Bus session address fact
+  set_fact:
+    dbus_session_bus_address: "{{ dbus_session_result.stdout | default('unix:path=/run/user/' + ansible_user_uid|string + '/bus', true) }}"
+  tags: ['gnome']
+
+# 1. Load base dconf settings FIRST (as defaults)
+- name: Load base GNOME settings
+  include_tasks: base-settings.yml
   tags: ['gnome', 'gnome-settings']
 
+# 2. Install and configure extensions (overrides enabled-extensions from base)
 - name: Install and configure GNOME extensions
   include_tasks: extensions.yml
   tags: ['gnome', 'gnome-extensions']
 
-- name: Configure keyboard shortcuts
-  include_tasks: keybindings.yml
-  tags: ['gnome', 'gnome-keybindings']
-
+# 3. Apply themes (overrides theme settings from base)
 - name: Install and apply themes
   include_tasks: themes.yml
   tags: ['gnome', 'gnome-themes']
+
+# 4. Apply individual GNOME settings (overrides specific values)
+- name: Apply GNOME settings
+  include_tasks: settings.yml
+  tags: ['gnome', 'gnome-settings']
+
+# 5. Configure keyboard shortcuts LAST (overrides all keybindings)
+- name: Configure keyboard shortcuts
+  include_tasks: keybindings.yml
+  tags: ['gnome', 'gnome-keybindings']

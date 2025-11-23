@@ -62,6 +62,45 @@
   tags: ['gnome-themes']
 
 ###############################################################################
+# Install Volantes Cursors
+###############################################################################
+
+- name: Ensure icons directory exists
+  file:
+    path: "{{ ansible_env.HOME }}/.icons"
+    state: directory
+    mode: '0755'
+  tags: ['gnome-themes']
+
+- name: Check if Volantes cursors are installed
+  stat:
+    path: "{{ ansible_env.HOME }}/.icons/volantes_light_cursors"
+  register: volantes_check
+  tags: ['gnome-themes']
+
+- name: Download Volantes cursors
+  get_url:
+    url: https://github.com/varlesh/volantes-cursors/releases/download/v1.0.0/volantes-cursors.tar.gz
+    dest: /tmp/volantes-cursors.tar.gz
+  when: not volantes_check.stat.exists
+  tags: ['gnome-themes']
+
+- name: Extract Volantes cursors
+  unarchive:
+    src: /tmp/volantes-cursors.tar.gz
+    dest: "{{ ansible_env.HOME }}/.icons/"
+    remote_src: yes
+  when: not volantes_check.stat.exists
+  tags: ['gnome-themes']
+
+- name: Clean up Volantes archive
+  file:
+    path: /tmp/volantes-cursors.tar.gz
+    state: absent
+  when: not volantes_check.stat.exists
+  tags: ['gnome-themes']
+
+###############################################################################
 # Install fonts
 ###############################################################################
 
@@ -113,6 +152,8 @@
   dconf:
     key: "/org/gnome/desktop/interface/gtk-theme"
     value: "'{{ gtk_theme }}'"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
   when: gtk_theme is defined
   tags: ['gnome-themes']
 
@@ -120,6 +161,8 @@
   dconf:
     key: "/org/gnome/desktop/interface/icon-theme"
     value: "'{{ icon_theme }}'"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
   when: icon_theme is defined
   tags: ['gnome-themes']
 
@@ -127,6 +170,8 @@
   dconf:
     key: "/org/gnome/desktop/interface/cursor-theme"
     value: "'{{ cursor_theme }}'"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
   when: cursor_theme is defined
   tags: ['gnome-themes']
 
@@ -134,6 +179,8 @@
   dconf:
     key: "/org/gnome/desktop/interface/{{ item.key }}"
     value: "'{{ item.value }}'"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
   loop: "{{ font_settings }}"
   when: font_settings is defined
   tags: ['gnome-themes']
@@ -142,5 +189,7 @@
   dconf:
     key: "/org/gnome/desktop/interface/color-scheme"
     value: "'prefer-dark'"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
   when: dark_mode is defined and dark_mode
   tags: ['gnome-themes']

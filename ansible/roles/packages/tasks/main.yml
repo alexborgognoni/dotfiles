@@ -11,17 +11,30 @@
   include_vars:
     file: "../vars/{{ profile }}.yml"
     name: profile_packages
+  register: profile_load_result
   ignore_errors: yes
+  tags: ['packages']
+
+- name: Initialize empty profile packages if load failed
+  set_fact:
+    profile_packages:
+      apt_packages: []
+      snap_packages: []
+      cargo_packages: []
+      pip_packages: []
+      npm_packages: []
+      brew_packages: []
+  when: profile_load_result is failed or profile_packages is not defined
   tags: ['packages']
 
 - name: Merge package lists
   set_fact:
-    all_apt_packages: "{{ common_packages.apt_packages | default([]) + profile_packages.apt_packages | default([]) }}"
-    all_snap_packages: "{{ common_packages.snap_packages | default([]) + profile_packages.snap_packages | default([]) }}"
-    all_cargo_packages: "{{ common_packages.cargo_packages | default([]) + profile_packages.cargo_packages | default([]) }}"
-    all_pip_packages: "{{ common_packages.pip_packages | default([]) + profile_packages.pip_packages | default([]) }}"
-    all_npm_packages: "{{ common_packages.npm_packages | default([]) + profile_packages.npm_packages | default([]) }}"
-    all_brew_packages: "{{ common_packages.brew_packages | default([]) + profile_packages.brew_packages | default([]) }}"
+    all_apt_packages: "{{ (common_packages.apt_packages | default([])) + (profile_packages.apt_packages | default([])) }}"
+    all_snap_packages: "{{ (common_packages.snap_packages | default([])) + (profile_packages.snap_packages | default([])) }}"
+    all_cargo_packages: "{{ (common_packages.cargo_packages | default([])) + (profile_packages.cargo_packages | default([])) }}"
+    all_pip_packages: "{{ (common_packages.pip_packages | default([])) + (profile_packages.pip_packages | default([])) }}"
+    all_npm_packages: "{{ (common_packages.npm_packages | default([])) + (profile_packages.npm_packages | default([])) }}"
+    all_brew_packages: "{{ (common_packages.brew_packages | default([])) + (profile_packages.brew_packages | default([])) }}"
   tags: ['packages']
 
 - name: Add APT repositories

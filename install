@@ -107,7 +107,7 @@ fi
 echo ""
 echo "╔═══════════════════════════════════════════════════════════╗"
 echo "║                                                           ║"
-echo "║            🚀 Dotfiles Bootstrap Script 🚀               ║"
+echo "║               🚀 Borgo's Bootstrap Script 🚀              ║"
 echo "║                                                           ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo ""
@@ -150,11 +150,29 @@ info "Dotfiles directory: $DOTFILES_DIR"
 
 step "[1/6] Installing dependencies..."
 
+info "Removing conflicting apt sources if present..."
+sudo rm -f /etc/apt/sources.list.d/github-cli.list \
+    /etc/apt/sources.list.d/docker.list \
+    /etc/apt/sources.list.d/azure-cli.list \
+    /etc/apt/sources.list.d/hashicorp.list \
+    /etc/apt/sources.list.d/cloudfoundry-cli.list \
+    /etc/apt/sources.list.d/vscode.list \
+    /etc/apt/sources.list.d/google-chrome.list \
+    /etc/apt/sources.list.d/kubecolor.list \
+    /etc/apt/sources.list.d/rabbitmq-erlang.list \
+    /etc/apt/sources.list.d/rabbitmq-server.list \
+    /etc/apt/sources.list.d/microsoft-prod.list \
+    /etc/apt/sources.list.d/microsoft-edge.list \
+    >/dev/null 2>&1 || true
+
 info "Updating package cache..."
 sudo apt update -qq
 
 info "Installing software-properties-common (for PPA support)..."
 sudo apt install -y -qq software-properties-common
+
+info "Removing old Ansible package if present..."
+sudo apt remove -y -qq ansible >/dev/null 2>&1 || true
 
 info "Adding Ansible PPA..."
 sudo apt-add-repository -y ppa:ansible/ansible >/dev/null 2>&1
@@ -214,14 +232,26 @@ fi
 step "[4/6] Initializing chezmoi..."
 
 CHEZMOI_SOURCE="$DOTFILES_DIR/chezmoi"
+CHEZMOI_DEFAULT="$HOME/.local/share/chezmoi"
 
-if [[ -d "$HOME/.local/share/chezmoi" ]]; then
-    warning "chezmoi source directory already exists. Skipping initialization."
+# Create symlink from default chezmoi location to our source directory
+mkdir -p "$HOME/.local/share"
+if [[ -L "$CHEZMOI_DEFAULT" ]]; then
+    info "chezmoi symlink already exists"
+elif [[ -d "$CHEZMOI_DEFAULT" ]]; then
+    warning "chezmoi directory exists but is not a symlink. Backing up and replacing."
+    mv "$CHEZMOI_DEFAULT" "$CHEZMOI_DEFAULT.backup.$(date +%s)"
+    ln -s "$CHEZMOI_SOURCE" "$CHEZMOI_DEFAULT"
+    success "chezmoi symlink created (old directory backed up)"
 else
-    info "Initializing chezmoi with source directory: $CHEZMOI_SOURCE"
-    chezmoi init --source="$CHEZMOI_SOURCE"
-    success "chezmoi initialized"
+    ln -s "$CHEZMOI_SOURCE" "$CHEZMOI_DEFAULT"
+    success "chezmoi symlink created"
 fi
+
+# Initialize chezmoi
+info "Initializing chezmoi..."
+chezmoi init
+success "chezmoi initialized"
 
 ###############################################################################
 # Step 5: Review Changes (Optional)
@@ -231,10 +261,10 @@ step "[5/6] Reviewing changes..."
 
 info "The following changes will be made to your home directory:"
 echo ""
-chezmoi diff --color=always || true
+chezmoi diff || true
 echo ""
 
-read -p "Apply these changes? [Y/n]: " -n 1 -r
+read -p "Apply these changes? [Y/n]: " -r
 echo ""
 if [[ ! ${REPLY:-} =~ ^[Nn]$ ]]; then
     info "Applying dotfiles..."
@@ -273,7 +303,7 @@ fi
 echo ""
 echo "╔═══════════════════════════════════════════════════════════╗"
 echo "║                                                           ║"
-echo "║                    🎉 Setup Complete! 🎉                 ║"
+echo "║                   🎉 Setup Complete! 🎉                   ║"
 echo "║                                                           ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo ""
