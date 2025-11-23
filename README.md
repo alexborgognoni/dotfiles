@@ -121,6 +121,8 @@ All other dependencies are installed automatically.
 
 ## Future Improvements
 
+- **User-level installation**: Complete user-level only installation (or option to choose between system and user)
+- **Package cleanup**: Detect and remove unused packages
 - **Asset management**: Drop-in system for fonts, icons, wallpapers with manifests
 - **Browser/editor configs**: Chrome and VS Code settings sync
 - **Split keyboard**: Configuration management (when ready to redo)
