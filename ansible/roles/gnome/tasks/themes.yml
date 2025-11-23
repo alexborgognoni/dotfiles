@@ -78,24 +78,39 @@
   register: volantes_check
   tags: ['gnome-themes']
 
-- name: Download Volantes cursors
-  get_url:
-    url: https://github.com/varlesh/volantes-cursors/releases/download/v1.0.0/volantes-cursors.tar.gz
-    dest: /tmp/volantes-cursors.tar.gz
+- name: Install Volantes cursor build dependencies
+  apt:
+    name:
+      - inkscape
+      - x11-apps
+    state: present
+  become: yes
   when: not volantes_check.stat.exists
   tags: ['gnome-themes']
 
-- name: Extract Volantes cursors
-  unarchive:
-    src: /tmp/volantes-cursors.tar.gz
-    dest: "{{ ansible_env.HOME }}/.icons/"
-    remote_src: yes
+- name: Clone Volantes cursors repository
+  git:
+    repo: https://github.com/varlesh/volantes-cursors.git
+    dest: /tmp/volantes-cursors
+    depth: 1
   when: not volantes_check.stat.exists
   tags: ['gnome-themes']
 
-- name: Clean up Volantes archive
+- name: Build Volantes cursors
+  shell: make build
+  args:
+    chdir: /tmp/volantes-cursors
+  when: not volantes_check.stat.exists
+  tags: ['gnome-themes']
+
+- name: Install Volantes cursors to user icons
+  shell: cp -r /tmp/volantes-cursors/dist/* "{{ ansible_env.HOME }}/.icons/"
+  when: not volantes_check.stat.exists
+  tags: ['gnome-themes']
+
+- name: Clean up Volantes repository
   file:
-    path: /tmp/volantes-cursors.tar.gz
+    path: /tmp/volantes-cursors
     state: absent
   when: not volantes_check.stat.exists
   tags: ['gnome-themes']
