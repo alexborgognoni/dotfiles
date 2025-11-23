@@ -153,6 +153,15 @@
   when: gtk_theme is defined
   tags: ['gnome-themes']
 
+- name: Apply shell theme (requires user-theme extension)
+  dconf:
+    key: "/org/gnome/shell/extensions/user-theme/name"
+    value: "'{{ shell_theme }}'"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
+  when: shell_theme is defined
+  tags: ['gnome-themes']
+
 - name: Apply icon theme
   dconf:
     key: "/org/gnome/desktop/interface/icon-theme"

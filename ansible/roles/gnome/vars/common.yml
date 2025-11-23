@@ -48,8 +48,12 @@ icon_theme: "Yaru"
 cursor_theme: "volantes_light_cursors"
 dark_mode: true
 
-# Background settings (will be overridden by chezmoi-managed wallpaper)
+# Background settings
 background_settings:
+  - key: "picture-uri"
+    value: "'file://{{ ansible_env.HOME }}/Pictures/Wallpapers/catppuccin-spiderman.png'"
+  - key: "picture-uri-dark"
+    value: "'file://{{ ansible_env.HOME }}/Pictures/Wallpapers/catppuccin-spiderman.png'"
   - key: "picture-options"
     value: "'zoom'"
   - key: "color-shading-type"
@@ -185,7 +189,6 @@ gnome_extensions_disabled:
   - "places-menu@gnome-shell-extensions.gcampax.github.com"
   - "native-window-placement@gnome-shell-extensions.gcampax.github.com"
   - "launch-new-instance@gnome-shell-extensions.gcampax.github.com"
-  - "auto-move-windows@gnome-shell-extensions.gcampax.github.com"
   - "apps-menu@gnome-shell-extensions.gcampax.github.com"
 
 # Peripherals settings
