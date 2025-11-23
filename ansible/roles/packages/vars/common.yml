@@ -69,6 +69,7 @@ snap_packages:
 
 cargo_packages:
   - name: neovide
+  - name: starship
 
 pip_packages:
   - name: click
