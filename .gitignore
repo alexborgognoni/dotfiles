@@ -46,9 +46,6 @@ __pycache__/
 .Python
 *.egg-info/
 
-# Old/legacy configs (preserved but not active)
-old/
-
 # These were in the old gitignore
 tmux/plugins
 chezmoi/dot_config/tmux/plugins/
