@@ -3,14 +3,21 @@
 [user]
 	name = {{ .name }}
 	email = {{ .email }}
-{{- /* signingkey is configured by ansible secrets role if GPG keys are set up */ -}}
+{{- if eq .profile "personal" }}
+	signingkey = D5A5A7F2739FC452
+{{- else if eq .profile "work" }}
+	signingkey = 83E2B86EB1BD39F2
+{{- end }}
 
 [commit]
-{{- /* gpgsign is configured by ansible secrets role if GPG keys are set up */ -}}
+	gpgsign = true
 
 {{- if eq .profile "work" }}
 
-[includeIf "gitdir:~/Personal/"]
+[includeIf "gitdir:~/personal/"]
+	path = ~/.gitconfig-personal
+
+[includeIf "gitdir:~/dotfiles/"]
 	path = ~/.gitconfig-personal
 {{- end }}
 
@@ -58,8 +65,11 @@
 [credential "https://github.com"]
 	helper = !/usr/bin/gh auth git-credential
 
+[url "git@github.com:"]
+	insteadOf = https://github.com/
+
 {{- if eq .profile "work" }}
 
-[url "ssh://git@github.deutsche-boerse.de/"]
+[url "git@github.deutsche-boerse.de:"]
 	insteadOf = https://github.deutsche-boerse.de/
 {{- end }}
