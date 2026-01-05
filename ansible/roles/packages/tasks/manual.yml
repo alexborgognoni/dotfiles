@@ -161,11 +161,12 @@
   when: not nvm_check.stat.exists
   tags: ['manual', 'nvm']
 
-- name: Install Node.js via NVM
+- name: Install Node.js 24 via NVM and set as default
   shell: |
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    nvm install node
+    nvm install 24
+    nvm alias default 24
   args:
     executable: /bin/bash
   when: not nvm_check.stat.exists

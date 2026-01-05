@@ -8,6 +8,27 @@
   become: yes
   tags: ['pip']
 
+- name: Ensure pip config directory exists (work profile)
+  file:
+    path: "{{ ansible_env.HOME }}/.config/pip"
+    state: directory
+    mode: '0755'
+  when: profile == 'work'
+  tags: ['pip']
+
+- name: Create pip.conf for work profile (artifactory)
+  copy:
+    dest: "{{ ansible_env.HOME }}/.config/pip/pip.conf"
+    content: |
+      [global]
+      index-url = https://artifactory.dbgcloud.io/artifactory/api/pypi/pypi.python.org/simple
+      trusted-host = pypi.org
+          artifactory.dbgcloud.io
+      extra-index-url = https://pypi.org/simple
+    mode: '0644'
+  when: profile == 'work'
+  tags: ['pip']
+
 - name: Install Pip packages
   pip:
     name: "{{ item.name }}"

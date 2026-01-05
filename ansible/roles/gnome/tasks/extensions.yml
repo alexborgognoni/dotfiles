@@ -35,6 +35,15 @@
   when: gnome_shell_check.rc == 0
   tags: ['gnome-extensions']
 
+- name: Inject SSL certificates into gnome-extensions-cli (work profile)
+  shell: |
+    pipx inject gnome-extensions-cli certifi
+    pipx inject gnome-extensions-cli pip-system-certs
+  when:
+    - gnome_shell_check.rc == 0
+    - profile == 'work'
+  tags: ['gnome-extensions']
+
 - name: Install GNOME extensions from extensions.gnome.org
   shell: |
     {{ ansible_env.HOME }}/.local/bin/gext install {{ item }}
