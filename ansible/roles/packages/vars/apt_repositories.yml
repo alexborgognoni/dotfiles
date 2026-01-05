@@ -1,0 +1,207 @@
+---
+# APT Repository Definitions
+# Data-driven repository configuration for clean, maintainable apt setup
+#
+# Key types:
+#   binary    - Direct .gpg file download (get_url)
+#   asc       - ASCII armored key, no dearmor needed (get_url)
+#   armored   - ASCII key needing gpg --dearmor (curl | gpg --dearmor)
+#   keyserver - Fetch from Ubuntu keyserver by key_id
+#
+# Template variables (replaced at runtime):
+#   {{ arch }}    - dpkg --print-architecture (amd64, arm64, etc.)
+#   {{ release }} - ansible_distribution_release (jammy, noble, etc.)
+#   {{ version }} - ansible_distribution_version (22.04, 24.04, etc.)
+
+# Shared GPG keys (downloaded once, used by multiple repos)
+shared_gpg_keys:
+  microsoft:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    file: microsoft.gpg
+
+# Legacy files to remove (version-agnostic cleanup)
+legacy_repo_files:
+  # Old PPA format files (apt-add-repository creates these)
+  - "ppa_apandada1_foliate_{{ ansible_distribution_release }}.list"
+  - "ppa_deadsnakes_ppa_{{ ansible_distribution_release }}.list"
+  - "ppa_touchegg_stable_{{ ansible_distribution_release }}.list"
+  # Legacy names that might exist
+  - microsoft.list
+  - microsoft.sources
+  - dotnetdev.list
+  - dotnetdev.sources
+  - microsoft-prod.list
+  - microsoft-prod.sources
+
+# Repository definitions
+apt_repositories:
+  # GitHub CLI
+  - name: github-cli
+    key_url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+    key_file: githubcli-archive-keyring.gpg
+    key_type: binary
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
+    filename: github-cli
+    required_packages:
+      - gh
+
+  # Docker
+  - name: docker
+    key_url: https://download.docker.com/linux/ubuntu/gpg
+    key_file: docker.asc
+    key_type: asc
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ release }} stable"
+    filename: docker
+    required_packages:
+      - docker-ce
+      - containerd.io
+      - docker-ce-cli
+      - docker-buildx-plugin
+      - docker-compose-plugin
+
+  # HashiCorp (Terraform)
+  - name: hashicorp
+    key_url: https://apt.releases.hashicorp.com/gpg
+    key_file: hashicorp.gpg
+    key_type: armored
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/hashicorp.gpg] https://apt.releases.hashicorp.com {{ release }} main"
+    filename: hashicorp
+    required_packages:
+      - terraform
+
+  # VS Code (uses shared Microsoft key)
+  - name: vscode
+    shared_key: microsoft
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main"
+    filename: vscode
+    required_packages:
+      - code
+
+  # Microsoft .NET (uses shared Microsoft key)
+  - name: microsoft-dotnet
+    shared_key: microsoft
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/{{ version }}/prod {{ release }} main"
+    filename: microsoft-dotnet
+    required_packages:
+      - dotnet-sdk-6.0
+      - dotnet-sdk-7.0
+      - dotnet-sdk-8.0
+      - aspnetcore-runtime-6.0
+      - aspnetcore-runtime-7.0
+      - aspnetcore-runtime-8.0
+
+  # Azure CLI (uses shared Microsoft key, work only)
+  - name: azure-cli
+    shared_key: microsoft
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ release }} main"
+    filename: azure-cli
+    required_packages:
+      - azure-cli
+    profiles:
+      - work
+
+  # Azure Functions Core Tools (uses shared Microsoft key, work only)
+  - name: azure-functions
+    shared_key: microsoft
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-{{ release }}-prod {{ release }} main"
+    filename: azure-functions
+    required_packages:
+      - azure-functions-core-tools-4
+    profiles:
+      - work
+
+  # Microsoft Edge (uses shared Microsoft key, work only)
+  - name: microsoft-edge
+    shared_key: microsoft
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main"
+    filename: microsoft-edge
+    required_packages:
+      - microsoft-edge-stable
+    profiles:
+      - work
+
+  # Google Chrome
+  - name: google-chrome
+    key_url: https://dl.google.com/linux/linux_signing_key.pub
+    key_file: google-chrome.gpg
+    key_type: armored
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main"
+    filename: google-chrome
+    required_packages:
+      - google-chrome-stable
+
+  # Cloud Foundry CLI (work only)
+  - name: cloudfoundry
+    key_url: https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key
+    key_file: cloudfoundry.asc
+    key_type: asc
+    repo: "deb [signed-by=/etc/apt/keyrings/cloudfoundry.asc] https://packages.cloudfoundry.org/debian stable main"
+    filename: cloudfoundry-cli
+    required_packages:
+      - cf8-cli
+    profiles:
+      - work
+
+  # eza (modern ls replacement)
+  - name: eza
+    key_url: https://raw.githubusercontent.com/eza-community/eza/main/deb.asc
+    key_file: gierens.gpg
+    key_type: armored
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main"
+    filename: gierens
+    required_packages:
+      - eza
+
+  # Touchegg PPA (work only)
+  - name: touchegg
+    key_id: "0xC0FCE32AF6B96252"
+    key_file: touchegg.gpg
+    key_type: keyserver
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/touchegg.gpg] https://ppa.launchpadcontent.net/touchegg/stable/ubuntu {{ release }} main"
+    filename: touchegg
+    required_packages:
+      - touchegg
+    profiles:
+      - work
+
+  # Foliate PPA (e-book reader)
+  - name: foliate
+    key_id: "0xA507B2BBA7803E3B"
+    key_file: foliate.gpg
+    key_type: keyserver
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/foliate.gpg] https://ppa.launchpadcontent.net/apandada1/foliate/ubuntu {{ release }} main"
+    filename: foliate
+    required_packages:
+      - foliate
+
+  # Deadsnakes PPA (Python versions)
+  - name: deadsnakes
+    key_id: "0xF23C5A6CF475977595C89F51BA6932366A755776"
+    key_file: deadsnakes.gpg
+    key_type: keyserver
+    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/deadsnakes.gpg] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu {{ release }} main"
+    filename: deadsnakes
+    required_packages:
+      - python3.9
+      - python3.10
+      - python3.11
+      - python3.12
+      - python3.10-venv
+      - python3.11-venv
+      - python3.12-venv
+
+# Packages to remove before Docker installation
+docker_conflicting_packages:
+  - docker.io
+  - docker-compose
+  - docker-compose-v2
+  - docker-doc
+  - podman-docker
+  - containerd
+  - runc
+
+# Legacy apt-key IDs to remove from deprecated trusted.gpg
+legacy_apt_keys:
+  - A507B2BBA7803E3B                            # Foliate
+  - F23C5A6CF475977595C89F51BA6932366A755776    # Deadsnakes
+  - C0FCE32AF6B96252                            # Touchegg

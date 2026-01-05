@@ -1,12 +1,6 @@
 ---
 # APT package installation
-
-- name: Update apt cache
-  apt:
-    update_cache: yes
-    cache_valid_time: 3600
-  become: yes
-  tags: ['apt']
+# Repositories and cache already updated by repositories.yml
 
 - name: Install APT packages
   apt:
@@ -14,6 +8,8 @@
     state: "{{ item.state | default('present') }}"
     install_recommends: "{{ item.install_recommends | default(false) }}"
   loop: "{{ all_apt_packages }}"
+  loop_control:
+    label: "{{ item.name }}"
   become: yes
   when: all_apt_packages is defined and all_apt_packages | length > 0
   tags: ['apt']

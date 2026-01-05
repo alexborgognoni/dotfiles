@@ -1,6 +1,10 @@
 ---
 # Main tasks for packages role
 
+###############################################################################
+# Load package variables
+###############################################################################
+
 - name: Load common package variables
   include_vars:
     file: "../vars/common.yml"
@@ -36,6 +40,23 @@
     all_npm_packages: "{{ (common_packages.npm_packages | default([])) + (profile_packages.npm_packages | default([])) }}"
     all_brew_packages: "{{ (common_packages.brew_packages | default([])) + (profile_packages.brew_packages | default([])) }}"
   tags: ['packages']
+
+- name: Load APT repository definitions
+  include_vars:
+    file: "../vars/apt_repositories.yml"
+  tags: ['packages']
+
+###############################################################################
+# APT: Cleanup, GPG keys, repositories, packages
+###############################################################################
+
+- name: Cleanup old repositories and conflicting packages
+  include_tasks: cleanup.yml
+  tags: ['packages', 'cleanup']
+
+- name: Download GPG keys for APT repositories
+  include_tasks: gpg_keys.yml
+  tags: ['packages', 'gpg-keys']
 
 - name: Add APT repositories
   include_tasks: repositories.yml

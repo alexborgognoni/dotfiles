@@ -1,0 +1,90 @@
+---
+# Cleanup old repository files, legacy keys, and conflicting packages
+# This runs before GPG key downloads and repository additions
+
+###############################################################################
+# System setup
+###############################################################################
+
+- name: Get dpkg architecture
+  command: dpkg --print-architecture
+  register: dpkg_arch
+  changed_when: false
+  tags: ['cleanup']
+
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  tags: ['cleanup']
+
+###############################################################################
+# Remove old repository files
+###############################################################################
+
+- name: Build list of managed repository files to clean
+  set_fact:
+    managed_repo_files: >-
+      {{
+        (apt_repositories | map(attribute='filename') | map('regex_replace', '$', '.list') | list) +
+        (apt_repositories | map(attribute='filename') | map('regex_replace', '$', '.sources') | list)
+      }}
+  tags: ['cleanup']
+
+- name: Remove old/conflicting repository files
+  file:
+    path: "/etc/apt/sources.list.d/{{ item }}"
+    state: absent
+  loop: "{{ managed_repo_files + legacy_repo_files }}"
+  become: yes
+  ignore_errors: yes
+  tags: ['cleanup']
+
+###############################################################################
+# Remove legacy apt-key entries
+###############################################################################
+
+- name: Remove keys from legacy trusted.gpg keyring
+  shell: |
+    apt-key del {{ item }} 2>/dev/null || true
+  loop: "{{ legacy_apt_keys }}"
+  become: yes
+  ignore_errors: yes
+  changed_when: false
+  tags: ['cleanup']
+
+- name: Remove old keyring files from deprecated location
+  file:
+    path: "/usr/share/keyrings/{{ item }}"
+    state: absent
+  loop:
+    - githubcli-archive-keyring.gpg
+    - docker-archive-keyring.gpg
+    - microsoft.gpg
+    - microsoft-prod.gpg
+    - microsoft-edge.gpg
+    - google-chrome.gpg
+  become: yes
+  ignore_errors: yes
+  tags: ['cleanup']
+
+###############################################################################
+# Remove conflicting Docker packages
+###############################################################################
+
+- name: Check if Docker CE is in package list
+  set_fact:
+    docker_requested: "{{ 'docker-ce' in (all_apt_packages | map(attribute='name') | list) }}"
+  tags: ['cleanup']
+
+- name: Remove conflicting Docker packages
+  apt:
+    name: "{{ docker_conflicting_packages }}"
+    state: absent
+    purge: yes
+  become: yes
+  ignore_errors: yes
+  when: docker_requested
+  tags: ['cleanup']
