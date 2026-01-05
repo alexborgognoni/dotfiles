@@ -353,7 +353,7 @@
   git:
     repo: https://github.com/zdharma-continuum/zinit
     dest: "{{ ansible_env.HOME }}/.local/share/zinit/zinit.git"
-    version: master
+    version: main
   when: not zinit_check.stat.exists
   tags: ['manual', 'zinit']
 
