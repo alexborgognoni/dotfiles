@@ -8,30 +8,16 @@
 #   armored   - ASCII key needing gpg --dearmor (curl | gpg --dearmor)
 #   keyserver - Fetch from Ubuntu keyserver by key_id
 #
-# Template variables (replaced at runtime):
-#   {{ arch }}    - dpkg --print-architecture (amd64, arm64, etc.)
-#   {{ release }} - ansible_distribution_release (jammy, noble, etc.)
-#   {{ version }} - ansible_distribution_version (22.04, 24.04, etc.)
+# Placeholder variables (replaced at runtime in repositories.yml):
+#   __ARCH__    - dpkg --print-architecture (amd64, arm64, etc.)
+#   __RELEASE__ - ansible_distribution_release (jammy, noble, etc.)
+#   __VERSION__ - ansible_distribution_version (22.04, 24.04, etc.)
 
 # Shared GPG keys (downloaded once, used by multiple repos)
 shared_gpg_keys:
   microsoft:
     url: https://packages.microsoft.com/keys/microsoft.asc
     file: microsoft.gpg
-
-# Legacy files to remove (version-agnostic cleanup)
-legacy_repo_files:
-  # Old PPA format files (apt-add-repository creates these)
-  - "ppa_apandada1_foliate_{{ ansible_distribution_release }}.list"
-  - "ppa_deadsnakes_ppa_{{ ansible_distribution_release }}.list"
-  - "ppa_touchegg_stable_{{ ansible_distribution_release }}.list"
-  # Legacy names that might exist
-  - microsoft.list
-  - microsoft.sources
-  - dotnetdev.list
-  - dotnetdev.sources
-  - microsoft-prod.list
-  - microsoft-prod.sources
 
 # Repository definitions
 apt_repositories:
@@ -40,7 +26,7 @@ apt_repositories:
     key_url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
     key_file: githubcli-archive-keyring.gpg
     key_type: binary
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
     filename: github-cli
     required_packages:
       - gh
@@ -50,7 +36,7 @@ apt_repositories:
     key_url: https://download.docker.com/linux/ubuntu/gpg
     key_file: docker.asc
     key_type: asc
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ release }} stable"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu __RELEASE__ stable"
     filename: docker
     required_packages:
       - docker-ce
@@ -64,7 +50,7 @@ apt_repositories:
     key_url: https://apt.releases.hashicorp.com/gpg
     key_file: hashicorp.gpg
     key_type: armored
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/hashicorp.gpg] https://apt.releases.hashicorp.com {{ release }} main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/hashicorp.gpg] https://apt.releases.hashicorp.com __RELEASE__ main"
     filename: hashicorp
     required_packages:
       - terraform
@@ -72,7 +58,7 @@ apt_repositories:
   # VS Code (uses shared Microsoft key)
   - name: vscode
     shared_key: microsoft
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main"
     filename: vscode
     required_packages:
       - code
@@ -80,7 +66,7 @@ apt_repositories:
   # Microsoft .NET (uses shared Microsoft key)
   - name: microsoft-dotnet
     shared_key: microsoft
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/{{ version }}/prod {{ release }} main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/__VERSION__/prod __RELEASE__ main"
     filename: microsoft-dotnet
     required_packages:
       - dotnet-sdk-6.0
@@ -93,7 +79,7 @@ apt_repositories:
   # Azure CLI (uses shared Microsoft key, work only)
   - name: azure-cli
     shared_key: microsoft
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ release }} main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ __RELEASE__ main"
     filename: azure-cli
     required_packages:
       - azure-cli
@@ -103,7 +89,7 @@ apt_repositories:
   # Azure Functions Core Tools (uses shared Microsoft key, work only)
   - name: azure-functions
     shared_key: microsoft
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-{{ release }}-prod {{ release }} main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-__RELEASE__-prod __RELEASE__ main"
     filename: azure-functions
     required_packages:
       - azure-functions-core-tools-4
@@ -113,7 +99,7 @@ apt_repositories:
   # Microsoft Edge (uses shared Microsoft key, work only)
   - name: microsoft-edge
     shared_key: microsoft
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main"
     filename: microsoft-edge
     required_packages:
       - microsoft-edge-stable
@@ -125,7 +111,7 @@ apt_repositories:
     key_url: https://dl.google.com/linux/linux_signing_key.pub
     key_file: google-chrome.gpg
     key_type: armored
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main"
     filename: google-chrome
     required_packages:
       - google-chrome-stable
@@ -147,7 +133,7 @@ apt_repositories:
     key_url: https://raw.githubusercontent.com/eza-community/eza/main/deb.asc
     key_file: gierens.gpg
     key_type: armored
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main"
     filename: gierens
     required_packages:
       - eza
@@ -157,7 +143,7 @@ apt_repositories:
     key_id: "0xC0FCE32AF6B96252"
     key_file: touchegg.gpg
     key_type: keyserver
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/touchegg.gpg] https://ppa.launchpadcontent.net/touchegg/stable/ubuntu {{ release }} main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/touchegg.gpg] https://ppa.launchpadcontent.net/touchegg/stable/ubuntu __RELEASE__ main"
     filename: touchegg
     required_packages:
       - touchegg
@@ -169,7 +155,7 @@ apt_repositories:
     key_id: "0xA507B2BBA7803E3B"
     key_file: foliate.gpg
     key_type: keyserver
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/foliate.gpg] https://ppa.launchpadcontent.net/apandada1/foliate/ubuntu {{ release }} main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/foliate.gpg] https://ppa.launchpadcontent.net/apandada1/foliate/ubuntu __RELEASE__ main"
     filename: foliate
     required_packages:
       - foliate
@@ -179,7 +165,7 @@ apt_repositories:
     key_id: "0xF23C5A6CF475977595C89F51BA6932366A755776"
     key_file: deadsnakes.gpg
     key_type: keyserver
-    repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/deadsnakes.gpg] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu {{ release }} main"
+    repo: "deb [arch=__ARCH__ signed-by=/etc/apt/keyrings/deadsnakes.gpg] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu __RELEASE__ main"
     filename: deadsnakes
     required_packages:
       - python3.9

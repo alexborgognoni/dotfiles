@@ -3,44 +3,20 @@
 # Handles different key types: binary, asc, armored, keyserver
 
 ###############################################################################
-# Helper: Build list of needed repositories based on packages and profile
+# Build list of needed repositories (filtering by packages and profile)
 ###############################################################################
 
-- name: Build list of needed repositories
-  set_fact:
-    needed_repos: >-
-      {{
-        apt_repositories | selectattr('required_packages', 'defined') | list | json_query(
-          "[?(" ~ (all_apt_packages | map(attribute='name') | map('regex_replace', '^(.*)$', "contains(required_packages, '\\1')") | join(' || ')) ~ ")]"
-        ) | default([])
-      }}
-  tags: ['gpg-keys']
-
-# Simpler approach: filter repos that have at least one required package in all_apt_packages
-- name: Filter repositories by required packages and profile
-  set_fact:
-    active_repos: >-
-      {{
-        apt_repositories | selectattr('required_packages', 'defined') | list |
-        select('search', '.*') | list |
-        rejectattr('profiles', 'defined') | list +
-        apt_repositories | selectattr('profiles', 'defined') |
-        selectattr('profiles', 'contains', profile) | list
-      }}
-  tags: ['gpg-keys']
-
-# Actually, let's use a cleaner approach with a custom filter
-- name: Determine which repositories are needed
+- name: Initialize repos_needed list
   set_fact:
     repos_needed: []
   tags: ['gpg-keys']
 
-- name: Check each repository for needed packages
+- name: Filter repositories by required packages and profile
   set_fact:
     repos_needed: "{{ repos_needed + [item] }}"
   loop: "{{ apt_repositories }}"
   when:
-    - (item.required_packages | intersect(all_apt_packages | map(attribute='name') | list) | length > 0)
+    - item.required_packages | intersect(all_apt_packages | map(attribute='name') | list) | length > 0
     - (item.profiles is not defined) or (profile in item.profiles)
   loop_control:
     label: "{{ item.name }}"
@@ -50,7 +26,7 @@
 # Download shared GPG keys (Microsoft, etc.)
 ###############################################################################
 
-- name: Check which shared keys are needed
+- name: Get list of shared keys needed
   set_fact:
     shared_keys_needed: "{{ repos_needed | selectattr('shared_key', 'defined') | map(attribute='shared_key') | unique | list }}"
   tags: ['gpg-keys']

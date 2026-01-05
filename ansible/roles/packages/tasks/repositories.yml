@@ -8,7 +8,7 @@
 
 - name: Add APT repositories
   apt_repository:
-    repo: "{{ item.repo | replace('{{ arch }}', dpkg_arch.stdout) | replace('{{ release }}', ansible_distribution_release) | replace('{{ version }}', ansible_distribution_version) }}"
+    repo: "{{ item.repo | replace('__ARCH__', dpkg_arch.stdout) | replace('__RELEASE__', ansible_distribution_release) | replace('__VERSION__', ansible_distribution_version) }}"
     state: present
     filename: "{{ item.filename }}"
   loop: "{{ repos_needed }}"

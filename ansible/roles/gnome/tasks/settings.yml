@@ -69,3 +69,26 @@
     DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
   when: shell_theme is defined
   tags: ['gnome-settings']
+
+- name: Check if kitty is installed
+  stat:
+    path: "{{ ansible_env.HOME }}/.local/kitty.app/bin/kitty"
+  register: kitty_check
+  tags: ['gnome-settings']
+
+- name: Register kitty as terminal alternative
+  command: update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emulator {{ ansible_env.HOME }}/.local/kitty.app/bin/kitty 50
+  become: yes
+  when: kitty_check.stat.exists
+  register: kitty_register
+  changed_when: kitty_register.rc == 0
+  failed_when: false
+  tags: ['gnome-settings']
+
+- name: Set kitty as default terminal
+  alternatives:
+    name: x-terminal-emulator
+    path: "{{ ansible_env.HOME }}/.local/kitty.app/bin/kitty"
+  become: yes
+  when: kitty_check.stat.exists
+  tags: ['gnome-settings']

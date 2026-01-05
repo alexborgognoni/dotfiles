@@ -24,20 +24,52 @@
 # Remove old repository files
 ###############################################################################
 
-- name: Build list of managed repository files to clean
-  set_fact:
-    managed_repo_files: >-
-      {{
-        (apt_repositories | map(attribute='filename') | map('regex_replace', '$', '.list') | list) +
-        (apt_repositories | map(attribute='filename') | map('regex_replace', '$', '.sources') | list)
-      }}
-  tags: ['cleanup']
-
+# Static list of managed repository filenames (must match apt_repositories.yml)
 - name: Remove old/conflicting repository files
   file:
     path: "/etc/apt/sources.list.d/{{ item }}"
     state: absent
-  loop: "{{ managed_repo_files + legacy_repo_files }}"
+  loop:
+    # Managed repos (.list and .sources variants)
+    - github-cli.list
+    - github-cli.sources
+    - docker.list
+    - docker.sources
+    - hashicorp.list
+    - hashicorp.sources
+    - vscode.list
+    - vscode.sources
+    - microsoft-dotnet.list
+    - microsoft-dotnet.sources
+    - azure-cli.list
+    - azure-cli.sources
+    - azure-functions.list
+    - azure-functions.sources
+    - microsoft-edge.list
+    - microsoft-edge.sources
+    - google-chrome.list
+    - google-chrome.sources
+    - cloudfoundry-cli.list
+    - cloudfoundry-cli.sources
+    - gierens.list
+    - gierens.sources
+    - touchegg.list
+    - touchegg.sources
+    - foliate.list
+    - foliate.sources
+    - deadsnakes.list
+    - deadsnakes.sources
+    # Legacy names
+    - microsoft.list
+    - microsoft.sources
+    - dotnetdev.list
+    - dotnetdev.sources
+    - microsoft-prod.list
+    - microsoft-prod.sources
+    # Old PPA format (apt-add-repository)
+    - "ppa_apandada1_foliate_{{ ansible_distribution_release }}.list"
+    - "ppa_deadsnakes_ppa_{{ ansible_distribution_release }}.list"
+    - "ppa_touchegg_stable_{{ ansible_distribution_release }}.list"
   become: yes
   ignore_errors: yes
   tags: ['cleanup']

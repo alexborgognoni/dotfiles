@@ -113,6 +113,28 @@
   ignore_errors: yes
   tags: ['gnome-extensions']
 
+- name: Set space-bar workspace names (personal profile)
+  dconf:
+    key: "/org/gnome/shell/extensions/space-bar/state/workspace-names"
+    value: "{'1': 'Terminal', '2': 'Browser'}"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
+  when:
+    - gnome_shell_check.rc == 0
+    - profile == 'personal'
+  tags: ['gnome-extensions']
+
+- name: Set space-bar workspace names (work profile)
+  dconf:
+    key: "/org/gnome/shell/extensions/space-bar/state/workspace-names"
+    value: "{'1': 'Terminal', '2': 'Browser', '3': 'Teams', '4': 'Mail'}"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
+  when:
+    - gnome_shell_check.rc == 0
+    - profile == 'work'
+  tags: ['gnome-extensions']
+
 - name: Display extension installation message
   debug:
     msg: |

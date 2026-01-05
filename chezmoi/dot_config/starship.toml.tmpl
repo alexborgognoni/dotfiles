@@ -15,23 +15,3 @@ disabled = true
 [directory]
 truncation_length = 0
 truncate_to_repo = false
-
-{{- if eq .profile "work" }}
-
-# Work profile indicator
-[env_var.PROFILE]
-variable = "PROFILE"
-format = "[$env_value](bold yellow) "
-disabled = false
-{{- end }}
-
-# Show current profile in prompt
-[custom.profile]
-{{- if eq .profile "personal" }}
-command = "echo '🏠 personal'"
-{{- else if eq .profile "work" }}
-command = "echo '💼 work'"
-{{- end }}
-when = true
-format = "[$output]($style) "
-style = "bold blue"
