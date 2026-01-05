@@ -3,15 +3,15 @@
 [user]
 	name = {{ .name }}
 	email = {{ .email }}
-{{- if eq .profile "personal" }}
-	signingkey = CDAA1309229CF3B46B7446F221D072CC9982C9BB
-{{- end }}
+{{- /* signingkey is configured by ansible secrets role if GPG keys are set up */ -}}
 
 [commit]
-{{- if eq .profile "personal" }}
-	gpgsign = true
-{{- else }}
-	gpgsign = false
+{{- /* gpgsign is configured by ansible secrets role if GPG keys are set up */ -}}
+
+{{- if eq .profile "work" }}
+
+[includeIf "gitdir:~/Personal/"]
+	path = ~/.gitconfig-personal
 {{- end }}
 
 [alias]

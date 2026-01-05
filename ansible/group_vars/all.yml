@@ -10,6 +10,14 @@ user_name: "{{ ansible_env.USER }}"
 user_email: "alex.bor0419@gmail.com"  # Will be overridden in profile-specific vars
 user_full_name: "Alex Borgognoni"
 
+# Personal identity (used across profiles)
+personal_email: "alex.bor0419@gmail.com"
+personal_name: "Alex Borgognoni"
+
+# Work identity (used in work profile)
+work_email: "alex.borgognoni@deutsche-boerse.com"
+work_name: "Alex Borgognoni"
+
 # Bitwarden configuration
 bitwarden_email: "alex.bor0419@gmail.com"  # Update this
 use_bitwarden: true

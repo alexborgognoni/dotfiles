@@ -10,8 +10,15 @@ set -euo pipefail
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/alexborgognoni/dotfiles/main/install | bash
 #   OR
-#   ./install
+#   ./install [--skip-secrets] [--profile personal|work]
+#
+# Options:
+#   --skip-secrets    Skip SSH/GPG key setup
+#   --profile         Set profile (personal or work)
 ###############################################################################
+
+# Script options (can be set via environment or flags)
+SKIP_SECRETS="${SKIP_SECRETS:-false}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -101,6 +108,38 @@ if ! ping -c 1 google.com &>/dev/null; then
 fi
 
 ###############################################################################
+# Parse Command Line Arguments
+###############################################################################
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --skip-secrets)
+            SKIP_SECRETS=true
+            shift
+            ;;
+        --profile)
+            PROFILE="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: ./install [--skip-secrets] [--profile personal|work]"
+            echo ""
+            echo "Options:"
+            echo "  --skip-secrets    Skip SSH/GPG key setup"
+            echo "  --profile         Set profile (personal or work)"
+            echo ""
+            echo "Environment variables:"
+            echo "  PROFILE           Set profile (personal or work)"
+            echo "  SKIP_SECRETS      Set to 'true' to skip secrets setup"
+            exit 0
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+###############################################################################
 # Profile Selection
 ###############################################################################
 
@@ -113,7 +152,7 @@ echo "╚═══════════════════════�
 echo ""
 
 # Prompt for profile
-# Check if PROFILE is already set via environment variable
+# Check if PROFILE is already set via environment variable or command line
 if [[ -z "${PROFILE:-}" ]]; then
     # Check if running interactively
     if [[ -t 0 ]]; then
@@ -143,6 +182,27 @@ success "Profile selected: $PROFILE"
 # Get directory where this script is located
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 info "Dotfiles directory: $DOTFILES_DIR"
+
+###############################################################################
+# Secrets Setup Prompt
+###############################################################################
+
+# Interactive secrets prompt (if not skipped via flag)
+if [[ "$SKIP_SECRETS" != "true" ]] && [[ -t 0 ]]; then
+    echo ""
+    read -p "Set up SSH/GPG keys? [Y/n]: " -r REPLY </dev/tty
+    REPLY=${REPLY:-Y}
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        SKIP_SECRETS=true
+        info "Skipping SSH/GPG key setup"
+    fi
+fi
+
+if [[ "$SKIP_SECRETS" == "true" ]]; then
+    info "SSH/GPG key setup will be skipped"
+else
+    info "SSH/GPG key setup will be included"
+fi
 
 ###############################################################################
 # Step 1: Install Dependencies
@@ -211,8 +271,15 @@ cd "$DOTFILES_DIR/ansible"
 info "This will install packages and configure GNOME settings..."
 info "You may be prompted for your sudo password."
 
+# Build ansible command
+ANSIBLE_CMD="ansible-playbook -i inventory.yml playbook.yml -e profile=$PROFILE --ask-become-pass"
+
+if [[ "$SKIP_SECRETS" == "true" ]]; then
+    ANSIBLE_CMD="$ANSIBLE_CMD --skip-tags secrets"
+fi
+
 # Run ansible playbook with profile
-if ansible-playbook -i inventory.yml playbook.yml -e "profile=$PROFILE" --ask-become-pass; then
+if $ANSIBLE_CMD; then
     success "Ansible playbook completed successfully"
 else
     error "Ansible playbook failed. Check the output above for errors."

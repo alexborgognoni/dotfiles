@@ -21,8 +21,38 @@ pip_extra_index_url:
 node_extra_ca_certs: "/etc/ssl/certs/ca-certificates.crt"  # Path to corporate CAs
 
 # Git configuration
-git_signing_key: ""  # Add if you use GPG signing for work
-git_sign_commits: false
+git_signing_key: "83E2B86EB1BD39F2"  # Work GPG key for enterprise github
+git_sign_commits: true
 
 # Work-specific tools
 azure_tenant_id: ""  # Add if you use Azure CLI
+
+###############################################################################
+# SSH Keys (for secrets role)
+###############################################################################
+ssh_keys:
+  # Work enterprise key (default)
+  - name: "default"
+    bw_name: "ssh-work-enterprise"
+    path: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
+    email: "{{ work_email }}"
+  # Personal GitHub key (secondary)
+  - name: "personal"
+    bw_name: "ssh-personal-github"
+    path: "{{ ansible_env.HOME }}/.ssh/id_ed25519_personal"
+    email: "{{ personal_email }}"
+
+###############################################################################
+# GPG Keys (for secrets role)
+###############################################################################
+gpg_keys:
+  # Work GPG key (default)
+  - name: "default"
+    bw_name: "gpg-work"
+    email: "{{ work_email }}"
+    name_real: "{{ work_name }}"
+  # Personal GPG key (for personal projects)
+  - name: "personal"
+    bw_name: "gpg-personal"
+    email: "{{ personal_email }}"
+    name_real: "{{ personal_name }}"

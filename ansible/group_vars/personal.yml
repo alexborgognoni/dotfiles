@@ -7,7 +7,25 @@ user_email: "alex.bor0419@gmail.com"
 personal_env_vars:
   EDITOR: "nvim"
   VISUAL: "nvim"
-  
+
 # Git configuration
-git_signing_key: "CDAA1309229CF3B46B7446F221D072CC9982C9BB"  # Personal GPG key for github.com
+git_signing_key: "D5A5A7F2739FC452"  # Personal GPG key for github.com
 git_sign_commits: true
+
+###############################################################################
+# SSH Keys (for secrets role)
+###############################################################################
+ssh_keys:
+  - name: "default"
+    bw_name: "ssh-personal-github"
+    path: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
+    email: "{{ personal_email }}"
+
+###############################################################################
+# GPG Keys (for secrets role)
+###############################################################################
+gpg_keys:
+  - name: "default"
+    bw_name: "gpg-personal"
+    email: "{{ personal_email }}"
+    name_real: "{{ personal_name }}"

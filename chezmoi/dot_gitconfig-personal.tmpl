@@ -1,0 +1,12 @@
+{{- if eq .profile "work" -}}
+{{ template "header.tmpl" . }}
+
+# Personal overrides for ~/Personal/ directory
+# Included via gitconfig: [includeIf "gitdir:~/Personal/"]
+# signingkey is configured by ansible secrets role if GPG keys are set up
+
+[user]
+	email = alex.bor0419@gmail.com
+{{- else -}}
+{{- /* Empty file for personal profile - not needed */ -}}
+{{- end -}}

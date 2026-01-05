@@ -1,0 +1,29 @@
+{{ template "header.tmpl" . }}
+
+{{- if eq .profile "work" }}
+# Work Enterprise GitHub (uses default key)
+Host github.deutsche-boerse.de
+    HostName github.deutsche-boerse.de
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+
+# Personal GitHub (uses personal key)
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_personal
+    IdentitiesOnly yes
+{{- else }}
+# Personal GitHub
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+{{- end }}
+
+# Default settings for all hosts
+Host *
+    AddKeysToAgent yes
+    IdentitiesOnly yes

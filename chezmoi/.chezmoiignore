@@ -20,6 +20,7 @@ LICENSE
 # Ignore work-specific files in personal profile
 .config/work/
 .Xmodmap  # Only used on work laptop for keyboard remapping
+.gitconfig-personal  # Only used on work profile for ~/Personal/ directory
 {{- end }}
 
 {{- if eq .profile "work" }}

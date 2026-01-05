@@ -37,7 +37,7 @@
   roles:
     - base
     - packages
+    - secrets
     - gnome
     # Additional roles will be added in later phases:
     # - dotfiles
-    # - secrets
