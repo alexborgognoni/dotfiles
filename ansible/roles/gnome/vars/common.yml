@@ -44,7 +44,7 @@ font_settings:
 # Theme settings
 gtk_theme: "catppuccin-macchiato-lavender-standard+default"
 shell_theme: "catppuccin-macchiato-lavender-standard+default"
-icon_theme: "Yaru"
+icon_theme: "Yaru-blue-dark"
 cursor_theme: "volantes_light_cursors"
 dark_mode: true
 
@@ -133,6 +133,11 @@ mutter_keybindings:
   - key: "toggle-tiled-right"
     value: "['<Shift><Super>l']"
 
+# Mutter Wayland keybindings
+mutter_wayland_keybindings:
+  - key: "restore-shortcuts"
+    value: "@as []"
+
 # Shell keybindings
 shell_keybindings:
   - key: "toggle-application-view"
@@ -206,6 +211,6 @@ peripherals_touchpad:
   - key: "speed"
     value: "0.29197080291970812"
   - key: "tap-to-click"
-    value: "true"
+    value: "false"
   - key: "two-finger-scrolling-enabled"
     value: "true"

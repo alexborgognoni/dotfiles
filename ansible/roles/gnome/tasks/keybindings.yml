@@ -41,6 +41,16 @@
   when: mutter_keybindings is defined
   tags: ['gnome-keybindings']
 
+- name: Set mutter wayland keybindings
+  dconf:
+    key: "/org/gnome/mutter/wayland/keybindings/{{ item.key }}"
+    value: "{{ item.value }}"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
+  loop: "{{ mutter_wayland_keybindings | default([]) }}"
+  when: mutter_wayland_keybindings is defined
+  tags: ['gnome-keybindings']
+
 - name: Clear existing custom keybindings
   dconf:
     key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
