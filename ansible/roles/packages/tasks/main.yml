@@ -45,6 +45,10 @@
   include_tasks: apt.yml
   tags: ['packages', 'apt']
 
+- name: Run post-install tasks
+  include_tasks: post-install.yml
+  tags: ['packages', 'post-install']
+
 - name: Install Snap packages
   include_tasks: snap.yml
   tags: ['packages', 'snap']

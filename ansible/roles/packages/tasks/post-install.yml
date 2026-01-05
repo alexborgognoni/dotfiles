@@ -1,0 +1,30 @@
+---
+# Post-installation configuration tasks
+
+###############################################################################
+# Docker post-install
+###############################################################################
+
+- name: Remove .docker directory (fix permission issues)
+  file:
+    path: "{{ ansible_env.HOME }}/.docker"
+    state: absent
+  when: "'docker-ce' in all_apt_packages | map(attribute='name') | list"
+  tags: ['post-install', 'docker']
+
+- name: Create docker group
+  group:
+    name: docker
+    state: present
+  become: yes
+  when: "'docker-ce' in all_apt_packages | map(attribute='name') | list"
+  tags: ['post-install', 'docker']
+
+- name: Add user to docker group
+  user:
+    name: "{{ ansible_env.USER }}"
+    groups: docker
+    append: yes
+  become: yes
+  when: "'docker-ce' in all_apt_packages | map(attribute='name') | list"
+  tags: ['post-install', 'docker']

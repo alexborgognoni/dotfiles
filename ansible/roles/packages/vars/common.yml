@@ -15,6 +15,7 @@ apt_packages:
   - name: code  # VS Code
   - name: google-chrome-stable
   - name: curl
+  - name: containerd.io
   - name: docker-buildx-plugin
   - name: docker-ce
   - name: docker-ce-cli
@@ -28,6 +29,7 @@ apt_packages:
   - name: gh  # GitHub CLI
   - name: git
   - name: gnome-shell-extensions
+  - name: gnupg
   - name: gnome-themes-extra
   - name: gnome-tweaks
   - name: gtk2-engines-murrine

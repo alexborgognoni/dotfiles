@@ -26,6 +26,8 @@
     - docker.list
     - hashicorp.list
     - azure-cli.list
+    - azure-functions.list
+    - dotnetdev.list  # old Azure Functions filename from MS docs
     - cloudfoundry-cli.list
     - vscode.list
     - google-chrome.list
@@ -46,6 +48,7 @@
     - docker.sources
     - hashicorp.sources
     - azure-cli.sources
+    - azure-functions.sources
     - cloudfoundry-cli.sources
     - vscode.sources
     - google-chrome.sources
@@ -136,12 +139,20 @@
 # Docker
 ###############################################################################
 
-- name: Ensure keyrings directory exists (Docker)
-  file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: '0755'
+- name: Remove conflicting Docker packages
+  apt:
+    name:
+      - docker.io
+      - docker-compose
+      - docker-compose-v2
+      - docker-doc
+      - podman-docker
+      - containerd
+      - runc
+    state: absent
+    purge: yes
   become: yes
+  ignore_errors: yes
   when: "'docker-ce' in all_apt_packages | map(attribute='name') | list"
   tags: ['repositories']
 
@@ -176,6 +187,21 @@
   when:
     - profile == 'work'
     - "'azure-cli' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+###############################################################################
+# Azure Functions Core Tools (work profile only)
+###############################################################################
+
+- name: Add Azure Functions repository
+  apt_repository:
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-{{ ansible_distribution_release }}-prod {{ ansible_distribution_release }} main"
+    state: present
+    filename: azure-functions
+  become: yes
+  when:
+    - profile == 'work'
+    - "'azure-functions-core-tools-4' in all_apt_packages | map(attribute='name') | list"
   tags: ['repositories']
 
 ###############################################################################
