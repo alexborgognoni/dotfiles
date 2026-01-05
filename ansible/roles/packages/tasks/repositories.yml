@@ -3,6 +3,16 @@
 # Using modern keyring approach (not deprecated apt-key)
 
 ###############################################################################
+# Get system architecture (dpkg format: amd64, arm64, etc.)
+###############################################################################
+
+- name: Get dpkg architecture
+  command: dpkg --print-architecture
+  register: dpkg_arch
+  changed_when: false
+  tags: ['repositories']
+
+###############################################################################
 # Clean up potentially conflicting old repositories
 ###############################################################################
 
@@ -11,18 +21,55 @@
     path: "/etc/apt/sources.list.d/{{ item }}"
     state: absent
   loop:
+    # Repository files we manage (remove to ensure clean recreation with correct arch)
     - github-cli.list
     - docker.list
     - hashicorp.list
-    - microsoft.list
-    - microsoft-edge.list
-    - microsoft-prod.list
+    - azure-cli.list
+    - cloudfoundry-cli.list
     - vscode.list
     - google-chrome.list
     - gierens.list
-    - cloudfoundry-cli.list
-    - azure-cli.list
+    - touchegg.list
     - foliate.list
+    - deadsnakes.list
+    - microsoft-prod.list
+    - microsoft-edge.list
+    # Legacy names that might exist
+    - microsoft.list
+    # Old PPA format files (created by apt-add-repository)
+    - ppa_apandada1_foliate_jammy.list
+    - ppa_deadsnakes_ppa_jammy.list
+    - ppa_touchegg_stable_jammy.list
+    # DEB822 .sources format (created by some installers)
+    - github-cli.sources
+    - docker.sources
+    - hashicorp.sources
+    - azure-cli.sources
+    - cloudfoundry-cli.sources
+    - vscode.sources
+    - google-chrome.sources
+    - gierens.sources
+    - touchegg.sources
+    - foliate.sources
+    - deadsnakes.sources
+    - microsoft-prod.sources
+    - microsoft-edge.sources
+    - microsoft.sources
+    - ppa_apandada1_foliate_jammy.sources
+    - ppa_deadsnakes_ppa_jammy.sources
+    - ppa_touchegg_stable_jammy.sources
+  become: yes
+  ignore_errors: yes
+  tags: ['repositories']
+
+- name: Remove keys from legacy trusted.gpg keyring
+  shell: |
+    apt-key del {{ item }} 2>/dev/null || true
+  loop:
+    - A507B2BBA7803E3B  # Foliate
+    - F23C5A6CF475977595C89F51BA6932366A755776  # Deadsnakes
+    - C0FCE32AF6B96252                            # Touchegg
   become: yes
   ignore_errors: yes
   tags: ['repositories']
@@ -34,12 +81,16 @@
   loop:
     - githubcli-archive-keyring.gpg
     - docker-archive-keyring.gpg
+    - microsoft.gpg
+    - microsoft-prod.gpg
+    - microsoft-edge.gpg
+    - google-chrome.gpg
   become: yes
   ignore_errors: yes
   tags: ['repositories']
 
 ###############################################################################
-# GitHub CLI
+# Shared: Microsoft GPG key (used by VS Code, Azure CLI, .NET, Edge)
 ###############################################################################
 
 - name: Ensure keyrings directory exists
@@ -48,8 +99,20 @@
     state: directory
     mode: '0755'
   become: yes
-  when: "'gh' in all_apt_packages | map(attribute='name') | list"
   tags: ['repositories']
+
+- name: Download and install Microsoft GPG key (shared by all Microsoft repos)
+  shell: |
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg
+    chmod 644 /etc/apt/keyrings/microsoft.gpg
+  args:
+    creates: /etc/apt/keyrings/microsoft.gpg
+  become: yes
+  tags: ['repositories']
+
+###############################################################################
+# GitHub CLI
+###############################################################################
 
 - name: Download GitHub CLI GPG key
   get_url:
@@ -62,7 +125,7 @@
 
 - name: Add GitHub CLI repository
   apt_repository:
-    repo: "deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
     state: present
     filename: github-cli
   become: yes
@@ -93,7 +156,7 @@
 
 - name: Add Docker repository
   apt_repository:
-    repo: "deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
     filename: docker
   become: yes
@@ -104,41 +167,9 @@
 # Azure CLI (work profile only)
 ###############################################################################
 
-- name: Ensure keyrings directory exists (Azure CLI)
-  file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: '0755'
-  become: yes
-  when:
-    - profile == 'work'
-    - "'azure-cli' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Download Microsoft GPG key
-  get_url:
-    url: https://packages.microsoft.com/keys/microsoft.asc
-    dest: /tmp/microsoft.asc
-  when:
-    - profile == 'work'
-    - "'azure-cli' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Convert Microsoft GPG key to binary format
-  shell: |
-    cat /tmp/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg
-    chmod 644 /etc/apt/keyrings/microsoft.gpg
-  args:
-    creates: /etc/apt/keyrings/microsoft.gpg
-  become: yes
-  when:
-    - profile == 'work'
-    - "'azure-cli' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
 - name: Add Azure CLI repository
   apt_repository:
-    repo: "deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_distribution_release }} main"
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_distribution_release }} main"
     state: present
     filename: azure-cli
   become: yes
@@ -179,7 +210,7 @@
 
 - name: Add HashiCorp repository
   apt_repository:
-    repo: "deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
     state: present
     filename: hashicorp
   become: yes
@@ -227,35 +258,9 @@
 # VS Code (Microsoft)
 ###############################################################################
 
-- name: Ensure keyrings directory exists (VS Code)
-  file:
-    path: /usr/share/keyrings
-    state: directory
-    mode: '0755'
-  become: yes
-  when: "'code' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Download Microsoft GPG key for VS Code
-  get_url:
-    url: https://packages.microsoft.com/keys/microsoft.asc
-    dest: /tmp/microsoft-vscode.asc
-  when: "'code' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Convert Microsoft GPG key to binary format for VS Code
-  shell: |
-    cat /tmp/microsoft-vscode.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg
-    chmod 644 /usr/share/keyrings/microsoft.gpg
-  args:
-    creates: /usr/share/keyrings/microsoft.gpg
-  become: yes
-  when: "'code' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
 - name: Add VS Code repository
   apt_repository:
-    repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main"
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main"
     state: present
     filename: vscode
   become: yes
@@ -266,26 +271,28 @@
 # Google Chrome
 ###############################################################################
 
-- name: Download Google Chrome GPG key
-  get_url:
-    url: https://dl.google.com/linux/linux_signing_key.pub
-    dest: /tmp/google-chrome.asc
+- name: Ensure keyrings directory exists (Google Chrome)
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
   when: "'google-chrome-stable' in all_apt_packages | map(attribute='name') | list"
   tags: ['repositories']
 
-- name: Convert Google Chrome GPG key to binary format
+- name: Download and install Google Chrome GPG key
   shell: |
-    cat /tmp/google-chrome.asc | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
-    chmod 644 /usr/share/keyrings/google-chrome.gpg
+    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg
+    chmod 644 /etc/apt/keyrings/google-chrome.gpg
   args:
-    creates: /usr/share/keyrings/google-chrome.gpg
+    creates: /etc/apt/keyrings/google-chrome.gpg
   become: yes
   when: "'google-chrome-stable' in all_apt_packages | map(attribute='name') | list"
   tags: ['repositories']
 
 - name: Add Google Chrome repository
   apt_repository:
-    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main"
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main"
     state: present
     filename: google-chrome
   become: yes
@@ -296,10 +303,34 @@
 # Touchegg (work profile only)
 ###############################################################################
 
-- name: Add Touchegg PPA
+- name: Ensure keyrings directory exists (Touchegg)
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when:
+    - profile == 'work'
+    - "'touchegg' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download Touchegg PPA signing key
+  shell: |
+    curl -fsSL 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xC0FCE32AF6B96252' | gpg --dearmor -o /etc/apt/keyrings/touchegg.gpg
+    chmod 644 /etc/apt/keyrings/touchegg.gpg
+  args:
+    creates: /etc/apt/keyrings/touchegg.gpg
+  become: yes
+  when:
+    - profile == 'work'
+    - "'touchegg' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add Touchegg repository
   apt_repository:
-    repo: ppa:touchegg/stable
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/touchegg.gpg] https://ppa.launchpadcontent.net/touchegg/stable/ubuntu {{ ansible_distribution_release }} main"
     state: present
+    filename: touchegg
   become: yes
   when:
     - profile == 'work'
@@ -338,7 +369,7 @@
 
 - name: Add eza repository
   apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main"
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main"
     state: present
     filename: gierens
   become: yes
@@ -349,10 +380,30 @@
 # Foliate (e-book reader)
 ###############################################################################
 
-- name: Add Foliate PPA
+- name: Ensure keyrings directory exists (Foliate)
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  when: "'foliate' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Download Foliate PPA signing key
+  shell: |
+    curl -fsSL 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xA507B2BBA7803E3B' | gpg --dearmor -o /etc/apt/keyrings/foliate.gpg
+    chmod 644 /etc/apt/keyrings/foliate.gpg
+  args:
+    creates: /etc/apt/keyrings/foliate.gpg
+  become: yes
+  when: "'foliate' in all_apt_packages | map(attribute='name') | list"
+  tags: ['repositories']
+
+- name: Add Foliate repository
   apt_repository:
-    repo: ppa:apandada1/foliate
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/foliate.gpg] https://ppa.launchpadcontent.net/apandada1/foliate/ubuntu {{ ansible_distribution_release }} main"
     state: present
+    filename: foliate
   become: yes
   when: "'foliate' in all_apt_packages | map(attribute='name') | list"
   tags: ['repositories']
@@ -361,10 +412,28 @@
 # Deadsnakes PPA (Python versions)
 ###############################################################################
 
-- name: Add Deadsnakes PPA for Python versions
+- name: Ensure keyrings directory exists (Deadsnakes)
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  become: yes
+  tags: ['repositories']
+
+- name: Download Deadsnakes PPA signing key
+  shell: |
+    curl -fsSL 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xF23C5A6CF475977595C89F51BA6932366A755776' | gpg --dearmor -o /etc/apt/keyrings/deadsnakes.gpg
+    chmod 644 /etc/apt/keyrings/deadsnakes.gpg
+  args:
+    creates: /etc/apt/keyrings/deadsnakes.gpg
+  become: yes
+  tags: ['repositories']
+
+- name: Add Deadsnakes repository
   apt_repository:
-    repo: ppa:deadsnakes/ppa
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/deadsnakes.gpg] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu {{ ansible_distribution_release }} main"
     state: present
+    filename: deadsnakes
   become: yes
   tags: ['repositories']
 
@@ -372,32 +441,9 @@
 # Microsoft .NET
 ###############################################################################
 
-- name: Ensure keyrings directory exists (Microsoft .NET)
-  file:
-    path: /usr/share/keyrings
-    state: directory
-    mode: '0755'
-  become: yes
-  tags: ['repositories']
-
-- name: Download Microsoft .NET GPG key
-  get_url:
-    url: https://packages.microsoft.com/keys/microsoft.asc
-    dest: /tmp/microsoft-prod.asc
-  tags: ['repositories']
-
-- name: Convert Microsoft .NET GPG key to binary format
-  shell: |
-    cat /tmp/microsoft-prod.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
-    chmod 644 /usr/share/keyrings/microsoft-prod.gpg
-  args:
-    creates: /usr/share/keyrings/microsoft-prod.gpg
-  become: yes
-  tags: ['repositories']
-
 - name: Add Microsoft .NET repository
   apt_repository:
-    repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/ubuntu/{{ ansible_distribution_version }}/prod {{ ansible_distribution_release }} main"
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/{{ ansible_distribution_version }}/prod {{ ansible_distribution_release }} main"
     state: present
     filename: microsoft-prod
   become: yes
@@ -407,41 +453,9 @@
 # Microsoft Edge (work profile only)
 ###############################################################################
 
-- name: Ensure keyrings directory exists (Microsoft Edge)
-  file:
-    path: /usr/share/keyrings
-    state: directory
-    mode: '0755'
-  become: yes
-  when:
-    - profile == 'work'
-    - "'microsoft-edge-stable' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Download Microsoft Edge GPG key
-  get_url:
-    url: https://packages.microsoft.com/keys/microsoft.asc
-    dest: /tmp/microsoft-edge.asc
-  when:
-    - profile == 'work'
-    - "'microsoft-edge-stable' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
-- name: Convert Microsoft Edge GPG key to binary format
-  shell: |
-    cat /tmp/microsoft-edge.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-edge.gpg
-    chmod 644 /usr/share/keyrings/microsoft-edge.gpg
-  args:
-    creates: /usr/share/keyrings/microsoft-edge.gpg
-  become: yes
-  when:
-    - profile == 'work'
-    - "'microsoft-edge-stable' in all_apt_packages | map(attribute='name') | list"
-  tags: ['repositories']
-
 - name: Add Microsoft Edge repository
   apt_repository:
-    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-edge.gpg] https://packages.microsoft.com/repos/edge stable main"
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main"
     state: present
     filename: microsoft-edge
   become: yes

@@ -151,6 +151,7 @@ info "Dotfiles directory: $DOTFILES_DIR"
 step "[1/6] Installing dependencies..."
 
 info "Removing conflicting apt sources if present..."
+# Remove old .list files
 sudo rm -f /etc/apt/sources.list.d/github-cli.list \
     /etc/apt/sources.list.d/docker.list \
     /etc/apt/sources.list.d/azure-cli.list \
@@ -163,6 +164,18 @@ sudo rm -f /etc/apt/sources.list.d/github-cli.list \
     /etc/apt/sources.list.d/rabbitmq-server.list \
     /etc/apt/sources.list.d/microsoft-prod.list \
     /etc/apt/sources.list.d/microsoft-edge.list \
+    >/dev/null 2>&1 || true
+# Remove old .sources files (DEB822 format)
+sudo rm -f /etc/apt/sources.list.d/github-cli.sources \
+    /etc/apt/sources.list.d/docker.sources \
+    /etc/apt/sources.list.d/azure-cli.sources \
+    /etc/apt/sources.list.d/hashicorp.sources \
+    /etc/apt/sources.list.d/cloudfoundry-cli.sources \
+    /etc/apt/sources.list.d/vscode.sources \
+    /etc/apt/sources.list.d/google-chrome.sources \
+    /etc/apt/sources.list.d/microsoft-prod.sources \
+    /etc/apt/sources.list.d/microsoft-edge.sources \
+    /etc/apt/sources.list.d/gierens.sources \
     >/dev/null 2>&1 || true
 
 info "Updating package cache..."
