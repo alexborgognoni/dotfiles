@@ -5,6 +5,7 @@
 apt_packages:
   - name: 7zip
   - name: ansible
+  - name: apt-transport-https
   - name: autojump
   - name: automake
   - name: bat
@@ -36,7 +37,10 @@ apt_packages:
   - name: imagemagick
   - name: inkscape
   - name: jq
+  - name: kubecolor  # marker for manual install
   - name: libevent-dev
+  - name: libfontconfig1-dev
+  - name: libfreetype-dev
   - name: libncurses-dev
   - name: luarocks
   - name: lynx

@@ -13,3 +13,9 @@
   become: yes
   when: all_apt_packages is defined and all_apt_packages | length > 0
   tags: ['apt']
+
+- name: Upgrade all apt packages
+  apt:
+    upgrade: safe
+  become: yes
+  tags: ['apt', 'upgrade']

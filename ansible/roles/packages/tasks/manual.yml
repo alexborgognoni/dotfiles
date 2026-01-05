@@ -256,7 +256,7 @@
 
 - name: Download Kubecolor deb package
   get_url:
-    url: "https://kubecolor.github.io/packages/deb/pool/main/k/kubecolor/kubecolor_{{ kubecolor_version.stdout }}_{{ ansible_architecture }}.deb"
+    url: "https://kubecolor.github.io/packages/deb/pool/main/k/kubecolor/kubecolor_{{ kubecolor_version.stdout }}_{{ dpkg_arch.stdout }}.deb"
     dest: /tmp/kubecolor.deb
   when:
     - "'kubecolor' in all_apt_packages | map(attribute='name') | list"
@@ -398,3 +398,74 @@
   become: yes
   when: obsidian_check.rc != 0
   tags: ['manual', 'obsidian']
+
+###############################################################################
+# Claude Code CLI
+###############################################################################
+
+- name: Check if Claude Code is installed
+  command: which claude
+  register: claude_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'claude']
+
+- name: Install Claude Code CLI
+  shell: |
+    curl -fsSL https://claude.ai/install.sh | bash
+  when: claude_check.rc != 0
+  tags: ['manual', 'claude']
+
+###############################################################################
+# Bun (JavaScript runtime)
+###############################################################################
+
+- name: Check if Bun is installed
+  command: which bun
+  register: bun_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'bun']
+
+- name: Install Bun
+  shell: |
+    curl -fsSL https://bun.sh/install | bash
+  when: bun_check.rc != 0
+  tags: ['manual', 'bun']
+
+###############################################################################
+# PHP 8.3
+###############################################################################
+
+- name: Check if PHP is installed
+  command: which php
+  register: php_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'php']
+
+- name: Install PHP 8.3
+  shell: |
+    /bin/bash -c "$(curl -fsSL https://php.new/install/linux/8.3)"
+  when: php_check.rc != 0
+  tags: ['manual', 'php']
+
+###############################################################################
+# kubectl
+###############################################################################
+
+- name: Check if kubectl is installed
+  command: which kubectl
+  register: kubectl_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'kubectl']
+
+- name: Install kubectl
+  shell: |
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    rm -f kubectl
+  become: yes
+  when: kubectl_check.rc != 0
+  tags: ['manual', 'kubectl']
