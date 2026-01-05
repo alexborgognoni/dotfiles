@@ -378,3 +378,23 @@
     curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
   when: zoxide_check.rc != 0
   tags: ['manual', 'zoxide']
+
+###############################################################################
+# Obsidian
+###############################################################################
+
+- name: Check if Obsidian is installed
+  command: which obsidian
+  register: obsidian_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'obsidian']
+
+- name: Install latest Obsidian
+  shell: |
+    curl -sI https://github.com/obsidianmd/obsidian-releases/releases/latest | grep -oP 'v\K[0-9.]+' | xargs -I{} curl -Lo /tmp/obsidian.deb "https://github.com/obsidianmd/obsidian-releases/releases/download/v{}/obsidian_{}_amd64.deb"
+    dpkg -i /tmp/obsidian.deb || apt-get -f install -y
+    rm -f /tmp/obsidian.deb
+  become: yes
+  when: obsidian_check.rc != 0
+  tags: ['manual', 'obsidian']
