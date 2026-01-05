@@ -108,6 +108,7 @@ if [[ ! -f $ZINIT_BIN/zinit.zsh ]]; then
 fi
 
 source "$ZINIT_BIN/zinit.zsh"
+unalias zi  # Remove zinit's zi alias to avoid conflict with zoxide's zi function
 
 # Zinit plugins - using turbo mode for non-critical plugins
 zinit light-mode for \
