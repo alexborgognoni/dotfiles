@@ -376,6 +376,13 @@ if [[ -d "$HOME/.fonts" ]]; then
     success "Font cache refreshed"
 fi
 
+# Install TPM plugins (now that tmux.conf exists from chezmoi)
+if [[ -x "$HOME/.config/tmux/plugins/tpm/bin/install_plugins" ]]; then
+    info "Installing tmux plugins..."
+    "$HOME/.config/tmux/plugins/tpm/bin/install_plugins" >/dev/null 2>&1 || true
+    success "Tmux plugins installed"
+fi
+
 ###############################################################################
 # Completion
 ###############################################################################
