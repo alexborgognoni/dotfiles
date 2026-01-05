@@ -49,7 +49,7 @@ __pycache__/
 # These were in the old gitignore
 tmux/plugins
 chezmoi/dot_config/tmux/plugins/
-nvim/lazy-lock.json
+**/lazy-lock.json
 
 # Fonts (installed by Ansible, not tracked)
 .fonts/

@@ -31,6 +31,9 @@ LICENSE
 # Ignore tmux plugins (managed by tpm)
 .config/tmux/plugins/
 
+# Ignore nvim lazy-lock (changes frequently, machine-specific)
+.config/nvim/lazy-lock.json
+
 # Ignore files containing secrets
 .config/gh/hosts.yml  # Contains OAuth tokens
 
