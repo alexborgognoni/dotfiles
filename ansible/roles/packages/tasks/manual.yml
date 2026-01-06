@@ -41,7 +41,9 @@
   loop: "{{ curl_tool_stat.results + curl_tool_cmd.results }}"
   loop_control:
     label: "{{ item.item.name if item.item is defined else 'skip' }}"
-  when: item.item is defined
+  when:
+    - item.item is defined
+    - not (item.skipped | default(false))
   tags: ['manual']
 
 - name: "Install {{ item.name }}"
