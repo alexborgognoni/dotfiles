@@ -83,9 +83,9 @@ if [[ ! -d "$(dirname "${BASH_SOURCE[0]:-}")/.git" ]]; then
     git clone https://github.com/alexborgognoni/dotfiles.git "$DOTFILES_DIR"
     success "Repository cloned to $DOTFILES_DIR"
 
-    # Execute the install script from the cloned repo
+    # Execute the install script from the cloned repo, preserving env vars
     cd "$DOTFILES_DIR"
-    exec bash install
+    exec env PROFILE="${PROFILE:-}" SKIP_SECRETS="${SKIP_SECRETS:-false}" bash install
     exit 0
 fi
 
@@ -172,7 +172,7 @@ if [[ -z "${PROFILE:-}" ]]; then
         # Non-interactive mode (piped from curl) - default to personal
         PROFILE="personal"
         info "Running in non-interactive mode, defaulting to 'personal' profile"
-        info "To use 'work' profile, set PROFILE=work before running: PROFILE=work curl -fsSL ... | bash"
+        info "To use 'work' profile: export PROFILE=work && wget -qO- ... | bash"
     fi
 fi
 

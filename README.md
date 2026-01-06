@@ -23,6 +23,11 @@ Modern dotfiles for Ubuntu GNOME, managed with **chezmoi** and **Ansible**.
 **One-line install:**
 ```bash
 wget -qO- https://raw.githubusercontent.com/alexborgognoni/dotfiles/main/install | bash
+
+# With options:
+wget -qO- ... | PROFILE=work bash                      # Work profile
+wget -qO- ... | SKIP_SECRETS=true bash                 # Skip secrets
+wget -qO- ... | PROFILE=work SKIP_SECRETS=true bash    # Both
 ```
 
 **Or manually:**
