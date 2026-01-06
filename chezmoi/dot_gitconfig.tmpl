@@ -3,14 +3,6 @@
 [user]
 	name = {{ .name }}
 	email = {{ .email }}
-{{- if eq .profile "personal" }}
-	signingkey = D5A5A7F2739FC452
-{{- else if eq .profile "work" }}
-	signingkey = 83E2B86EB1BD39F2
-{{- end }}
-
-[commit]
-	gpgsign = true
 
 {{- if eq .profile "work" }}
 
