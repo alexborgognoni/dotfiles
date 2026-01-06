@@ -266,22 +266,34 @@
 
 - name: Install Tmux from source
   block:
-    - name: Get latest Tmux version
-      uri:
-        url: https://api.github.com/repos/tmux/tmux/releases/latest
-        return_content: yes
-      register: tmux_release
+    - name: Install Tmux build dependencies
+      apt:
+        name:
+          - libevent-dev
+          - ncurses-dev
+          - build-essential
+          - bison
+          - pkg-config
+          - autoconf
+          - automake
+        state: present
+      become: yes
 
-    - name: Compile and install Tmux
+    - name: Clone Tmux repository
+      git:
+        repo: https://github.com/tmux/tmux.git
+        dest: /tmp/tmux-build
+        version: master
+        force: yes
+
+    - name: Build and install Tmux
       shell: |
-        TMUX_VERSION="{{ tmux_release.json.tag_name }}"
-        TEMP_DIR=$(mktemp -d)
-        curl -Lo "$TEMP_DIR/tmux.tar.gz" "https://github.com/tmux/tmux/releases/download/${TMUX_VERSION}/tmux-${TMUX_VERSION}.tar.gz"
-        tar xf "$TEMP_DIR/tmux.tar.gz" -C "$TEMP_DIR"
-        cd "$TEMP_DIR/tmux-${TMUX_VERSION}"
-        ./configure && make
+        cd /tmp/tmux-build
+        sh autogen.sh
+        ./configure
+        make
         make install
-        rm -rf "$TEMP_DIR"
+        rm -rf /tmp/tmux-build
       become: yes
   when: tmux_check.rc != 0
   tags: ['manual', 'tmux']
