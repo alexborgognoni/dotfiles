@@ -10,6 +10,11 @@
   include_vars: manual_tools.yml
   tags: ['manual']
 
+- name: Set extended PATH for tool checks
+  set_fact:
+    extended_path: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.HOME }}/.bun/bin:{{ ansible_env.HOME }}/google-cloud-sdk/bin:/home/linuxbrew/.linuxbrew/bin:/opt/nvim-linux-x86_64/bin:/usr/local/bin:{{ ansible_env.PATH }}"
+  tags: ['manual']
+
 ###############################################################################
 # Curl/Shell Script Installers (data-driven)
 ###############################################################################
@@ -26,6 +31,8 @@
 
 - name: "Check if {{ item.name }} is installed (command)"
   command: "which {{ item.check_command }}"
+  environment:
+    PATH: "{{ extended_path }}"
   register: curl_tool_cmd
   ignore_errors: yes
   changed_when: false
@@ -107,6 +114,8 @@
 
 - name: Check if Bitwarden CLI is installed
   command: which bw
+  environment:
+    PATH: "{{ extended_path }}"
   register: bw_check
   ignore_errors: yes
   changed_when: false
@@ -151,6 +160,8 @@
 
 - name: Check if Kitty is installed
   command: which kitty
+  environment:
+    PATH: "{{ extended_path }}"
   register: kitty_check
   ignore_errors: yes
   changed_when: false
@@ -175,6 +186,8 @@
 
 - name: Check if Lazygit is installed
   command: which lazygit
+  environment:
+    PATH: "{{ extended_path }}"
   register: lazygit_check
   ignore_errors: yes
   changed_when: false
@@ -206,6 +219,8 @@
 
 - name: Check if Neovim is installed
   command: which nvim
+  environment:
+    PATH: "{{ extended_path }}"
   register: nvim_check
   ignore_errors: yes
   changed_when: false
@@ -228,6 +243,8 @@
 
 - name: Check if Yazi is installed
   command: which yazi
+  environment:
+    PATH: "{{ extended_path }}"
   register: yazi_check
   ignore_errors: yes
   changed_when: false
@@ -261,6 +278,8 @@
 
 - name: Check if Tmux is installed
   command: which tmux
+  environment:
+    PATH: "{{ extended_path }}"
   register: tmux_check
   ignore_errors: yes
   changed_when: false
@@ -306,6 +325,8 @@
 
 - name: Check if Kubecolor is installed
   command: which kubecolor
+  environment:
+    PATH: "{{ extended_path }}"
   register: kubecolor_check
   ignore_errors: yes
   changed_when: false
@@ -350,6 +371,8 @@
 
 - name: Check if Obsidian is installed
   command: which obsidian
+  environment:
+    PATH: "{{ extended_path }}"
   register: obsidian_check
   ignore_errors: yes
   changed_when: false
@@ -370,6 +393,8 @@
 
 - name: Check if kubectl is installed
   command: which kubectl
+  environment:
+    PATH: "{{ extended_path }}"
   register: kubectl_check
   ignore_errors: yes
   changed_when: false
@@ -390,6 +415,8 @@
 
 - name: Check if gcloud is installed
   command: which gcloud
+  environment:
+    PATH: "{{ extended_path }}"
   register: gcloud_check
   ignore_errors: yes
   changed_when: false
