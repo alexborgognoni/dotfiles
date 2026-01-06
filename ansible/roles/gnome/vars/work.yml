@@ -3,8 +3,3 @@
 
 # Enable work-specific dconf settings
 gnome_profile_settings: true
-
-# Work may have different wallpaper preferences
-# background_settings:
-#   - key: "picture-uri"
-#     value: "'file:///home/{{ ansible_env.USER }}/Pictures/Wallpapers/work-wallpaper.png'"

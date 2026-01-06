@@ -113,6 +113,17 @@
   ignore_errors: yes
   tags: ['gnome-extensions']
 
+- name: Set auto-move-windows application list
+  dconf:
+    key: "/org/gnome/shell/extensions/auto-move-windows/application-list"
+    value: "{{ auto_move_windows_apps }}"
+  environment:
+    DBUS_SESSION_BUS_ADDRESS: "{{ dbus_session_bus_address }}"
+  when:
+    - gnome_shell_check.rc == 0
+    - auto_move_windows_apps is defined
+  tags: ['gnome-extensions']
+
 - name: Set space-bar workspace names
   dconf:
     key: "/org/gnome/shell/extensions/space-bar/state/workspace-names"
