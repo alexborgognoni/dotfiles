@@ -381,3 +381,42 @@
   become: yes
   when: kubectl_check.rc != 0
   tags: ['manual', 'kubectl']
+
+###############################################################################
+# Google Cloud CLI (special: tarball to home directory)
+###############################################################################
+
+- name: Check if gcloud is installed
+  command: which gcloud
+  register: gcloud_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'gcloud']
+
+- name: Install Google Cloud CLI
+  block:
+    - name: Download gcloud CLI tarball
+      get_url:
+        url: https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz
+        dest: /tmp/google-cloud-cli.tar.gz
+
+    - name: Remove existing gcloud installation
+      file:
+        path: "{{ ansible_env.HOME }}/google-cloud-sdk"
+        state: absent
+
+    - name: Extract gcloud CLI to home directory
+      unarchive:
+        src: /tmp/google-cloud-cli.tar.gz
+        dest: "{{ ansible_env.HOME }}"
+        remote_src: yes
+
+    - name: Run gcloud install script
+      shell: "{{ ansible_env.HOME }}/google-cloud-sdk/install.sh --quiet --path-update=false --command-completion=false"
+
+    - name: Clean up tarball
+      file:
+        path: /tmp/google-cloud-cli.tar.gz
+        state: absent
+  when: gcloud_check.rc != 0
+  tags: ['manual', 'gcloud']
