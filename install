@@ -336,25 +336,13 @@ chezmoi init
 success "chezmoi initialized"
 
 ###############################################################################
-# Step 5: Review Changes (Optional)
+# Step 5: Apply Dotfiles
 ###############################################################################
 
-step "[5/6] Reviewing changes..."
+step "[5/6] Applying dotfiles..."
 
-info "The following changes will be made to your home directory:"
-echo ""
-chezmoi diff --no-pager || true
-echo ""
-
-read -p "Apply these changes? [Y/n]: " -r </dev/tty
-echo ""
-if [[ ! ${REPLY:-} =~ ^[Nn]$ ]]; then
-    info "Applying dotfiles..."
-    chezmoi apply
-    success "Dotfiles applied"
-else
-    warning "Dotfiles not applied. You can apply them later with: chezmoi apply"
-fi
+chezmoi apply
+success "Dotfiles applied"
 
 ###############################################################################
 # Step 6: Post-Install Tasks
@@ -365,7 +353,7 @@ step "[6/6] Running post-install tasks..."
 # Set zsh as default shell if not already
 if [[ "${SHELL:-}" != *"zsh"* ]]; then
     info "Setting zsh as default shell..."
-    chsh -s "$(which zsh)"
+    sudo chsh -s "$(which zsh)" "$USER"
     success "Default shell changed to zsh"
 else
     info "zsh is already the default shell"
