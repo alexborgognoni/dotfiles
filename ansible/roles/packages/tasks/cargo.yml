@@ -2,7 +2,7 @@
 # Cargo (Rust) package installation
 
 - name: Check if cargo is installed
-  command: which cargo
+  shell: "{{ ansible_env.HOME }}/.cargo/bin/cargo --version"
   register: cargo_check
   ignore_errors: yes
   changed_when: false
@@ -16,14 +16,8 @@
   when: cargo_check.rc != 0
   tags: ['cargo']
 
-- name: Add cargo to PATH for current session
-  set_fact:
-    ansible_env: "{{ ansible_env | combine({'PATH': ansible_env.HOME + '/.cargo/bin:' + ansible_env.PATH}) }}"
-  when: cargo_check.rc != 0
-  tags: ['cargo']
-
 - name: Check installed cargo packages
-  shell: cargo install --list | grep "^{{ item.name }} v" | head -1 || echo "not_installed"
+  shell: "{{ ansible_env.HOME }}/.cargo/bin/cargo install --list | grep '^{{ item.name }} v' | head -1 || echo 'not_installed'"
   register: cargo_installed
   loop: "{{ all_cargo_packages }}"
   changed_when: false
@@ -31,7 +25,7 @@
   tags: ['cargo']
 
 - name: Install Cargo packages
-  command: "cargo install {{ item.item.name }}{{ ' --version ' + item.item.version if item.item.version is defined else '' }}"
+  shell: "{{ ansible_env.HOME }}/.cargo/bin/cargo install {{ item.item.name }}{{ ' --version ' + item.item.version if item.item.version is defined else '' }}"
   loop: "{{ cargo_installed.results }}"
   when:
     - all_cargo_packages is defined
