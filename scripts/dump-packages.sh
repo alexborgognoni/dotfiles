@@ -3,17 +3,40 @@ set -euo pipefail
 
 ###############################################################################
 # Package Dump Script
-# Exports all currently installed packages to YAML files
+# Exports currently installed packages to YAML files
+# Uses existing Ansible vars as the source of truth for filtering
 ###############################################################################
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
-OUTPUT_DIR="$DOTFILES_DIR/ansible/roles/packages/vars"
-
-mkdir -p "$OUTPUT_DIR"
+VARS_DIR="$DOTFILES_DIR/ansible/roles/packages/vars"
 
 echo "Dumping packages from current system..."
-echo "Output directory: $OUTPUT_DIR"
+echo "Using existing Ansible vars as filter source"
+echo ""
+
+###############################################################################
+# Extract existing package names from Ansible vars (source of truth)
+###############################################################################
+
+extract_packages_from_yaml() {
+    local file="$1"
+    local prefix="$2"
+    if [[ -f "$file" ]]; then
+        grep -E "^\s+-\s+name:\s+" "$file" 2>/dev/null | sed 's/.*name:\s*//' | tr -d '"' | tr -d "'" || true
+    fi
+}
+
+# Build filter list from existing Ansible vars
+echo "Reading existing package definitions from Ansible vars..."
+{
+    extract_packages_from_yaml "$VARS_DIR/common.yml" "common"
+    extract_packages_from_yaml "$VARS_DIR/personal.yml" "personal"
+    extract_packages_from_yaml "$VARS_DIR/work.yml" "work"
+} | sort -u > /tmp/known-packages.txt
+
+known_count=$(wc -l < /tmp/known-packages.txt)
+echo "Found $known_count known packages in Ansible vars"
 echo ""
 
 ###############################################################################
@@ -21,79 +44,26 @@ echo ""
 ###############################################################################
 
 echo "📦 Dumping apt packages..."
-
-# Get manually installed packages only (not dependencies)
 apt-mark showmanual | sort > /tmp/apt-manual-all.txt
 
-# Filter for common development tools and applications
-cat > /tmp/apt-packages-filtered.txt << 'EOF'
-7zip
-ansible
-autojump
-automake
-azure-cli
-azure-functions-core-tools-4
-bat
-build-essential
-cf8-cli
-chafa
-chrome-gnome-shell
-cmake
-code
-curl
-dconf-cli
-docker-buildx-plugin
-docker-ce
-docker-ce-cli
-docker-compose-plugin
-eza
-fd-find
-ffmpeg
-fzf
-gh
-git
-gnome-shell-extensions
-gnome-themes-extra
-gnome-tweaks
-gtk2-engines-murrine
-imagemagick
-inkscape
-jq
-libevent-dev
-libncurses-dev
-luarocks
-lynx
-make
-moreutils
-mysql-server
-neofetch
-pkg-config
-poppler-utils
-postgresql
-python3
-python3-pip
-python3.10-venv
-ripgrep
-sassc
-software-properties-common
-terraform
-tmux
-tree
-vim
-wget
-xclip
-xcursorgen
-yacc
-zoxide
-zsh
-zsh-autosuggestions
-zsh-syntax-highlighting
-EOF
+# Filter to only known packages (from Ansible vars)
+if [[ -s /tmp/known-packages.txt ]]; then
+    grep -Fxf /tmp/known-packages.txt /tmp/apt-manual-all.txt > /tmp/apt-final.txt 2>/dev/null || true
+else
+    # If no known packages, show all manual packages
+    cp /tmp/apt-manual-all.txt /tmp/apt-final.txt
+fi
 
-# Only keep packages that are actually installed
-grep -Fxf /tmp/apt-packages-filtered.txt /tmp/apt-manual-all.txt > /tmp/apt-final.txt || true
+apt_count=$(wc -l < /tmp/apt-final.txt)
+apt_total=$(wc -l < /tmp/apt-manual-all.txt)
+echo "Found $apt_count apt packages (of $apt_total total manually installed)"
 
-echo "Found $(wc -l < /tmp/apt-final.txt) apt packages"
+# Show new packages not in Ansible vars
+comm -23 /tmp/apt-manual-all.txt /tmp/known-packages.txt > /tmp/apt-new.txt 2>/dev/null || true
+new_count=$(wc -l < /tmp/apt-new.txt)
+if [[ $new_count -gt 0 ]]; then
+    echo "  ⚠ $new_count packages not in Ansible vars (run with --show-new to see)"
+fi
 
 ###############################################################################
 # Snap Packages
@@ -122,8 +92,12 @@ echo "Found $(wc -l < /tmp/cargo-packages.txt) cargo packages"
 echo "📦 Dumping pip packages..."
 pip list --format=freeze 2>/dev/null | grep -v "^-e" | cut -d'=' -f1 | sort > /tmp/pip-all-packages.txt || echo "" > /tmp/pip-all-packages.txt
 
-# Filter for commonly used packages (not system dependencies)
-grep -E "^(poetry|pre-commit|black|ruff|mypy|pytest|requests|fastapi|uvicorn|pydantic|click|rich|typer|httpx)" /tmp/pip-all-packages.txt > /tmp/pip-packages.txt || echo "" > /tmp/pip-packages.txt
+# Filter to known packages from Ansible vars
+if [[ -s /tmp/known-packages.txt ]]; then
+    grep -Fxf /tmp/known-packages.txt /tmp/pip-all-packages.txt > /tmp/pip-packages.txt 2>/dev/null || echo "" > /tmp/pip-packages.txt
+else
+    cp /tmp/pip-all-packages.txt /tmp/pip-packages.txt
+fi
 echo "Found $(wc -l < /tmp/pip-packages.txt) pip packages"
 
 ###############################################################################
@@ -151,128 +125,42 @@ fi
 echo "Found $(wc -l < /tmp/brew-packages.txt) brew packages"
 
 ###############################################################################
-# Generate YAML Files
+# Show new packages if requested
+###############################################################################
+
+if [[ "${1:-}" == "--show-new" ]]; then
+    echo ""
+    echo "New APT packages not in Ansible vars:"
+    echo "======================================"
+    cat /tmp/apt-new.txt
+    echo ""
+    echo "To add these, edit: $VARS_DIR/common.yml"
+fi
+
+###############################################################################
+# Generate Report
 ###############################################################################
 
 echo ""
-echo "Generating YAML files..."
-
-# Common packages (for all profiles)
-cat > "$OUTPUT_DIR/common.yml" << 'YAML_END'
----
-# Common packages for all profiles
-# These packages are installed regardless of profile
-
-apt_packages:
-YAML_END
-
-while IFS= read -r pkg; do
-    [[ -z "$pkg" ]] && continue
-    echo "  - name: $pkg" >> "$OUTPUT_DIR/common.yml"
-done < /tmp/apt-final.txt
-
-# Add other package managers
-cat >> "$OUTPUT_DIR/common.yml" << 'YAML_END'
-
-snap_packages:
-YAML_END
-
-while IFS= read -r pkg; do
-    [[ -z "$pkg" ]] && continue
-    echo "  - name: $pkg" >> "$OUTPUT_DIR/common.yml"
-done < /tmp/snap-packages.txt
-
-cat >> "$OUTPUT_DIR/common.yml" << 'YAML_END'
-
-cargo_packages:
-YAML_END
-
-while IFS= read -r pkg; do
-    [[ -z "$pkg" ]] && continue
-    echo "  - name: $pkg" >> "$OUTPUT_DIR/common.yml"
-done < /tmp/cargo-packages.txt
-
-cat >> "$OUTPUT_DIR/common.yml" << 'YAML_END'
-
-pip_packages:
-YAML_END
-
-while IFS= read -r pkg; do
-    [[ -z "$pkg" ]] && continue
-    echo "  - name: $pkg" >> "$OUTPUT_DIR/common.yml"
-done < /tmp/pip-packages.txt
-
-cat >> "$OUTPUT_DIR/common.yml" << 'YAML_END'
-
-npm_packages:
-YAML_END
-
-while IFS= read -r pkg; do
-    [[ -z "$pkg" ]] && continue
-    echo "  - name: $pkg" >> "$OUTPUT_DIR/common.yml"
-done < /tmp/npm-packages.txt
-
-cat >> "$OUTPUT_DIR/common.yml" << 'YAML_END'
-
-brew_packages:
-YAML_END
-
-while IFS= read -r pkg; do
-    [[ -z "$pkg" ]] && continue
-    echo "  - name: $pkg" >> "$OUTPUT_DIR/common.yml"
-done < /tmp/brew-packages.txt
-
-# Create empty personal and work files for user to customize
-cat > "$OUTPUT_DIR/personal.yml" << 'YAML_END'
----
-# Personal profile packages
-# Add packages that should only be installed on personal machines
-
-apt_packages: []
-  # - name: spotify-client
-  # - name: discord
-
-snap_packages: []
-  # - name: spotify
-
-cargo_packages: []
-
-pip_packages: []
-
-npm_packages: []
-
-brew_packages: []
-YAML_END
-
-cat > "$OUTPUT_DIR/work.yml" << 'YAML_END'
----
-# Work profile packages
-# Add packages that should only be installed on work machines
-
-apt_packages: []
-  # - name: microsoft-edge
-
-snap_packages: []
-
-cargo_packages: []
-
-pip_packages: []
-
-npm_packages: []
-
-brew_packages: []
-YAML_END
-
+echo "════════════════════════════════════════════════════════════"
+echo "                    PACKAGE DUMP COMPLETE"
+echo "════════════════════════════════════════════════════════════"
 echo ""
-echo "✅ Package dump complete!"
+echo "Package counts:"
+echo "  APT:   $apt_count packages"
+echo "  Snap:  $(wc -l < /tmp/snap-packages.txt) packages"
+echo "  Cargo: $(wc -l < /tmp/cargo-packages.txt) packages"
+echo "  Pip:   $(wc -l < /tmp/pip-packages.txt) packages"
+echo "  NPM:   $(wc -l < /tmp/npm-packages.txt) packages"
+echo "  Brew:  $(wc -l < /tmp/brew-packages.txt) packages"
 echo ""
-echo "Files created:"
-echo "  - $OUTPUT_DIR/common.yml ($(grep -c "name:" "$OUTPUT_DIR/common.yml") packages)"
-echo "  - $OUTPUT_DIR/personal.yml (empty - add personal-only packages)"
-echo "  - $OUTPUT_DIR/work.yml (empty - add work-only packages)"
+echo "Package lists saved to /tmp/*-packages.txt"
 echo ""
-echo "Next steps:"
-echo "  1. Review $OUTPUT_DIR/common.yml"
-echo "  2. Move profile-specific packages to personal.yml or work.yml"
-echo "  3. Add version pinning where needed (e.g., 'version: \"1.2.3\"')"
+echo "To see new packages not in Ansible vars:"
+echo "  $0 --show-new"
+echo ""
+echo "To update Ansible vars, manually edit:"
+echo "  $VARS_DIR/common.yml"
+echo "  $VARS_DIR/personal.yml"
+echo "  $VARS_DIR/work.yml"
 echo ""

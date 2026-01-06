@@ -50,7 +50,7 @@ apt_packages:
   - name: pkg-config
   - name: poppler-utils
   - name: python3
-  - name: python3.10-venv
+  - name: python3-venv
   - name: python3-pip
   - name: ripgrep
   - name: sassc

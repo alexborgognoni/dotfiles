@@ -57,10 +57,10 @@ Choose your profile when prompted:
 Run tests before deploying:
 
 ```bash
-# Quick test (5 min) - Docker container
+# Quick test (~5 min) - Docker container
 ./scripts/test-docker.sh
 
-# Full test (30 min) - Profile system validation
+# Profile system validation (~2 min)
 ./scripts/test-profile-switching.sh
 
 # Complete test - Fresh Ubuntu VM (recommended)
@@ -81,34 +81,36 @@ After changing system settings, update the repository:
 
 ## Documentation
 
+- [**Design & Architecture**](docs/DESIGN.md) - System architecture and decisions
 - [**Profile System**](docs/PROFILES.md) - How work/personal profiles work
-- [**Secret Management**](docs/SECRETS.md) - Using Bitwarden for secrets
+- [**Secret Management**](docs/SECRETS.md) - SSH/GPG keys with Bitwarden
 - [**Testing Guide**](docs/TESTING.md) - Docker and VM testing
-- [**Obsidian Setup**](docs/obsidian-setup.md) - Setting up Obsidian vault configs
+- [**Roadmap**](docs/ROADMAP.md) - Future improvements
 
 ## Project Structure
 
 ```
 dotfiles/
 ├── install              # Bootstrap script
-├── ansible/            # System automation
-│   ├── playbook.yml   # Main playbook
-│   └── roles/         # Packages, GNOME config
-├── chezmoi/           # Dotfiles source
+├── ansible/             # System automation
+│   ├── playbook.yml     # Main playbook
+│   ├── group_vars/      # Profile variables
+│   └── roles/           # base, packages, secrets, gnome
+├── chezmoi/             # Dotfiles source
 │   ├── dot_zshrc.tmpl
 │   ├── dot_gitconfig.tmpl
-│   └── dot_config/    # All .config files
-├── scripts/           # Utility scripts
-└── docs/             # Documentation
+│   └── dot_config/      # All .config files
+├── scripts/             # Utility scripts
+└── docs/                # Documentation
 ```
 
 ## Architecture
 
 - **chezmoi**: Manages dotfiles with Go templating for profile-specific configs
-- **Ansible**: Automates system setup (packages, GNOME, repositories)
+- **Ansible**: Automates system setup (packages, GNOME, repositories, secrets)
 - **Profile System**: Single codebase for multiple machine types via templates
 
-See [DESIGN.md](DESIGN.md) for detailed architecture decisions.
+See [DESIGN.md](docs/DESIGN.md) for detailed architecture decisions.
 
 ## Requirements
 
@@ -118,19 +120,3 @@ The bootstrap script will install:
 - git
 
 All other dependencies are installed automatically.
-
-## Future Improvements
-
-- **User-level installation**: Complete user-level only installation (or option to choose between system and user)
-- **Package cleanup**: Detect and remove unused packages
-- **Asset management**: Drop-in system for fonts, icons, wallpapers with manifests
-- **Browser/editor configs**: Chrome and VS Code settings sync
-- **Split keyboard**: Configuration management (when ready to redo)
-- **Obsidian vault**: Auto-clone personal vault during bootstrap
-- **Automated syncing**: Cronjob to keep package lists and GNOME settings updated
-- **Theme system**: Unified theme management with one-command switching across all apps
-- **Multi-OS support**: Arch Linux + Hyprland when Ubuntu+GNOME is stable
-
-## License
-
-MIT

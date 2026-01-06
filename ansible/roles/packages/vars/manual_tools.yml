@@ -1,0 +1,91 @@
+---
+# Manual software installations
+# Tools not available in standard package managers
+
+# Tools installed via curl/shell scripts (simple pattern)
+curl_install_tools:
+  - name: homebrew
+    check_path: /home/linuxbrew/.linuxbrew/bin/brew
+    check_type: stat
+    script: 'NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+    become: false
+
+  - name: nvm
+    check_path: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+    check_type: stat
+    script: 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash'
+    become: false
+    post_install: |
+      export NVM_DIR="$HOME/.nvm"
+      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+      nvm install 24
+      nvm alias default 24
+
+  - name: zoxide
+    check_command: zoxide
+    script: 'curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh'
+    become: false
+
+  - name: claude
+    check_command: claude
+    script: 'curl -fsSL https://claude.ai/install.sh | bash'
+    become: false
+
+  - name: bun
+    check_command: bun
+    script: 'curl -fsSL https://bun.sh/install | bash'
+    become: false
+
+  - name: php
+    check_command: php
+    script: '/bin/bash -c "$(curl -fsSL https://php.new/install/linux/8.3)"'
+    become: false
+
+  - name: k9s
+    check_command: k9s
+    script: 'curl -sS https://webinstall.dev/k9s | bash'
+    become: false
+
+# Tools installed via tarball download (binary releases)
+tarball_install_tools:
+  - name: lazygit
+    check_command: lazygit
+    github_repo: jesseduffield/lazygit
+    asset_pattern: "lazygit_{version}_Linux_x86_64.tar.gz"
+    binary_name: lazygit
+    become: true
+
+  - name: neovim
+    check_command: nvim
+    url: https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+    extract_to: /opt
+    become: true
+
+  - name: yazi
+    check_command: yazi
+    github_repo: sxyazi/yazi
+    asset_pattern: "x86_64-unknown-linux-gnu.tar.gz"
+    binary_name: yazi
+    become: true
+
+# Tools installed via git clone
+git_clone_tools:
+  - name: tpm
+    check_path: "{{ ansible_env.HOME }}/.config/tmux/plugins/tpm"
+    repo: https://github.com/tmux-plugins/tpm
+    dest: "{{ ansible_env.HOME }}/.config/tmux/plugins/tpm"
+    version: master
+
+  - name: zinit
+    check_path: "{{ ansible_env.HOME }}/.local/share/zinit/zinit.git"
+    repo: https://github.com/zdharma-continuum/zinit
+    dest: "{{ ansible_env.HOME }}/.local/share/zinit/zinit.git"
+    version: main
+
+# Tools with special installation (keep as custom blocks)
+# - bitwarden: zip extraction + sudo install
+# - kitty: special installer with symlinks
+# - tmux: compile from source
+# - kubecolor: deb package with version detection
+# - obsidian: deb package from github
+# - kubectl: binary download with sudo

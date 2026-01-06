@@ -1,264 +1,227 @@
-# Secret Management with Bitwarden
+# Secret Management
 
-This guide explains how to manage secrets (passwords, API tokens, SSH keys) using Bitwarden CLI integration with chezmoi.
+This guide covers SSH/GPG key management via Bitwarden and the secrets Ansible role.
 
 ## Overview
 
-Secrets are managed using:
-- **Bitwarden CLI** (`bw`) for storing and retrieving secrets
-- **chezmoi's Bitwarden integration** for templating secrets into configs
-- **Interactive authentication** during bootstrap (master password never stored)
+The secrets system handles:
+- **SSH keys** - Generated or retrieved from Bitwarden
+- **GPG keys** - Generated or retrieved from Bitwarden
+- **Git signing** - Automatic configuration for commit signing
 
-## Initial Setup
+## Quick Start
 
-### 1. Install Bitwarden CLI
-
-The bootstrap script automatically installs Bitwarden CLI to `/usr/local/bin/bw`.
-
-### 2. Login to Bitwarden
-
-Before running the bootstrap, login to Bitwarden:
+### 1. Login to Bitwarden
 
 ```bash
-# Login (one-time setup per machine)
 bw login
-
-# You'll be prompted for:
-# - Email address
-# - Master password
-# - 2FA/OTP code (if enabled)
+export BW_SESSION=$(bw unlock --raw)
 ```
 
-### 3. Unlock and Get Session Key
-
-Before running `./install` or `chezmoi apply`:
+### 2. Run Bootstrap
 
 ```bash
-# Unlock vault and export session key
-export BW_SESSION=$(bw unlock --raw)
-
-# Alternative: manual unlock and copy session
-bw unlock
-# Then export the session key shown
-```
-
-**Important**: The session key expires after a period of inactivity. You'll need to unlock again when it expires.
-
-## Using Secrets in Templates
-
-chezmoi provides several template functions to retrieve secrets from Bitwarden:
-
-### Get Password from Item
-
-```go
-{{- /* Get password from Bitwarden item */ -}}
-{{ (bitwarden "item-id").login.password }}
-```
-
-### Get Username from Item
-
-```go
-{{- /* Get username from Bitwarden item */ -}}
-{{ (bitwarden "item-id").login.username }}
-```
-
-### Get Custom Field
-
-```go
-{{- /* Get custom field from Bitwarden item */ -}}
-{{ (bitwardenFields "item-id").fieldName.value }}
-```
-
-### Get Secure Note
-
-```go
-{{- /* Get secure note content */ -}}
-{{ (bitwarden "item-id").notes }}
-```
-
-## Finding Item IDs
-
-To find the ID of a Bitwarden item:
-
-```bash
-# Ensure you're logged in and unlocked
-export BW_SESSION=$(bw unlock --raw)
-
-# List all items
-bw list items
-
-# Search for specific item
-bw list items --search "github"
-
-# Get item by name
-bw get item "GitHub Personal Token"
-```
-
-The `id` field in the output is what you use in templates.
-
-## Example: Storing API Tokens
-
-### 1. Store in Bitwarden
-
-Create a new item in Bitwarden:
-- **Type**: Login or Secure Note
-- **Name**: "GitHub Personal Token"
-- **Custom Fields**: Add a field named "token" with your API token
-
-### 2. Use in Template
-
-```zsh
-# chezmoi/dot_zshrc.tmpl
-{{- /* GitHub API token from Bitwarden */ -}}
-export GITHUB_TOKEN="{{ (bitwardenFields "item-id").token.value }}"
-```
-
-## Workflow
-
-### Initial Bootstrap on New Machine
-
-```bash
-# 1. Clone dotfiles
-git clone https://github.com/yourusername/dotfiles.git ~/dotfiles
-cd ~/dotfiles
-
-# 2. Login to Bitwarden
-bw login
-
-# 3. Unlock and get session
-export BW_SESSION=$(bw unlock --raw)
-
-# 4. Run bootstrap
 ./install
+# When prompted, choose to set up SSH/GPG keys
 ```
 
-### Regular Updates
+### 3. Skip Secrets (Optional)
 
 ```bash
-# Unlock Bitwarden
+# Skip secrets setup entirely
+SKIP_SECRETS=true ./install
+
+# Or via flag
+./install --skip-secrets
+```
+
+## How It Works
+
+### Secrets Role Flow
+
+```
+1. Bitwarden Session Setup
+   └── Verify BW_SESSION is set
+
+2. SSH Key Setup (per key in profile)
+   ├── Check if key exists in Bitwarden
+   ├── If exists: Extract and write to disk
+   └── If not: Generate new key, upload to Bitwarden
+
+3. GPG Key Setup (per key in profile)
+   ├── Check if key exists in Bitwarden
+   ├── If exists: Import from Bitwarden
+   └── If not: Generate new key, upload to Bitwarden
+
+4. Git Signing Configuration
+   └── Configure git to sign commits with GPG key
+
+5. Lock Bitwarden Vault
+```
+
+### Profile Configuration
+
+Keys are defined per-profile in `ansible/group_vars/`:
+
+```yaml
+# personal.yml
+ssh_keys:
+  - name: "default"
+    bw_name: "ssh-personal-github"
+    path: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
+    email: "{{ personal_email }}"
+
+gpg_keys:
+  - name: "default"
+    bw_name: "gpg-personal"
+    email: "{{ personal_email }}"
+    name_real: "{{ personal_name }}"
+```
+
+```yaml
+# work.yml
+ssh_keys:
+  - name: "default"
+    bw_name: "ssh-work-enterprise"
+    path: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
+    email: "{{ work_email }}"
+  - name: "personal"
+    bw_name: "ssh-personal-github"
+    path: "{{ ansible_env.HOME }}/.ssh/id_ed25519_personal"
+    email: "{{ personal_email }}"
+
+gpg_keys:
+  - name: "default"
+    bw_name: "gpg-work"
+    email: "{{ work_email }}"
+    name_real: "{{ work_name }}"
+  - name: "personal"
+    bw_name: "gpg-personal"
+    email: "{{ personal_email }}"
+    name_real: "{{ personal_name }}"
+```
+
+## Bitwarden Item Structure
+
+### SSH Keys
+
+Store in Bitwarden as a Secure Note:
+- **Name**: `ssh-personal-github` (matches `bw_name`)
+- **Notes**: Private key content (full PEM format)
+- **Custom Field** `public_key`: Public key content
+
+### GPG Keys
+
+Store in Bitwarden as a Secure Note:
+- **Name**: `gpg-personal` (matches `bw_name`)
+- **Notes**: ASCII-armored private key (`gpg --armor --export-secret-keys`)
+- **Custom Field** `public_key`: ASCII-armored public key
+
+## Commands
+
+### Bitwarden Session
+
+```bash
+# Login (one-time)
+bw login
+
+# Unlock vault (required before bootstrap)
 export BW_SESSION=$(bw unlock --raw)
 
-# Apply dotfiles (will fetch secrets)
-chezmoi apply
-```
-
-### Session Management
-
-```bash
-# Check login status
+# Check status
 bw status
 
-# Lock vault (destroy session)
+# Lock vault
 bw lock
-
-# Logout completely
-bw logout
 ```
 
-## Security Best Practices
+### Manual Key Export
 
-### ✅ DO
+```bash
+# Export SSH public key
+cat ~/.ssh/id_ed25519.pub
 
-- **Keep master password in your head only** - Never write it down digitally
-- **Use 2FA** on your Bitwarden account
-- **Lock vault** when away from computer: `bw lock`
-- **Set session timeout** in Bitwarden settings
-- **Use strong master password** (randomly generated, 20+ characters)
-- **Review vault regularly** for outdated/unused secrets
+# Export GPG public key for GitHub
+gpg --armor --export your@email.com
 
-### ❌ DON'T
+# Export GPG private key for Bitwarden backup
+gpg --armor --export-secret-keys your@email.com
+```
 
-- **Don't commit secrets** to git (even in private repos)
-- **Don't store master password** in environment variables
-- **Don't put master password** in GitHub secrets
-- **Don't share session keys** between machines
-- **Don't skip 2FA** - always enable it
-- **Don't use weak master password** - this is your single point of failure
+### Run Secrets Role Only
+
+```bash
+cd ansible
+ansible-playbook playbook.yml -e "profile=personal" --tags secrets
+```
+
+### Skip Secrets Role
+
+```bash
+cd ansible
+ansible-playbook playbook.yml -e "profile=personal" --skip-tags secrets
+```
+
+## Git Signing
+
+The secrets role automatically configures:
+
+```ini
+[user]
+    signingkey = <GPG_KEY_ID>
+
+[commit]
+    gpgsign = true
+```
+
+For work profile with multiple identities, it also creates `~/.gitconfig-personal` for personal repos.
 
 ## Troubleshooting
 
-### Session Expired
+### "Bitwarden vault is locked"
 
 ```bash
-# Error: "You are not logged in"
 export BW_SESSION=$(bw unlock --raw)
 ```
 
-### Not Logged In
+### "Item not found in Bitwarden"
 
+The key will be generated locally and uploaded to Bitwarden.
+
+### "GPG key already exists"
+
+The existing key is used. To regenerate, delete the key first:
 ```bash
-# Error: "User not logged in"
-bw login
+gpg --delete-secret-keys your@email.com
+gpg --delete-keys your@email.com
 ```
 
-### Can't Find Item
+### SSH key permissions
 
-```bash
-# Make sure you're unlocked
-bw unlock
+Keys are automatically set to correct permissions:
+- Private key: `600`
+- Public key: `644`
+- `.ssh` directory: `700`
 
-# Sync with server
-bw sync
+## Security Notes
 
-# List items to find correct ID
-bw list items --search "item-name"
-```
+- **Master password**: Never stored, always prompted
+- **Session keys**: Temporary, expire on inactivity
+- **Private keys**: Only stored in Bitwarden and locally
+- **Vault locked**: Automatically locked after secrets setup
 
-### Template Errors
+## Adding Keys to Services
 
-If chezmoi fails with Bitwarden errors:
+After setup, add public keys to:
 
-```bash
-# Check Bitwarden status
-bw status
+**GitHub (Personal)**
+- SSH: https://github.com/settings/keys
+- GPG: https://github.com/settings/gpg
 
-# Verify session is set
-echo $BW_SESSION
+**GitHub Enterprise (Work)**
+- SSH: https://github.yourcompany.com/settings/keys
+- GPG: https://github.yourcompany.com/settings/gpg
 
-# Test getting item directly
-bw get item "item-id"
-```
+---
 
-## Alternative: Local Overrides (Without Bitwarden)
-
-For secrets you don't want in Bitwarden, use local override files:
-
-```bash
-# Create local secret file (not tracked)
-echo 'export SECRET_TOKEN="value"' > ~/.env.local
-
-# Source in .zshrc
-[ -f "$HOME/.env.local" ] && source "$HOME/.env.local"
-```
-
-Add `~/.env.local` to `.gitignore` and `.chezmoiignore`.
-
-## Common Secrets to Store
-
-### Development
-- GitHub Personal Access Token
-- npm auth token
-- PyPI credentials
-- Docker registry credentials
-
-### Cloud Providers
-- AWS Access Key ID / Secret
-- Azure credentials
-- Google Cloud credentials
-
-### APIs
-- Slack webhooks
-- Discord bot tokens
-- API keys for external services
-
-### SSH/GPG
-- SSH private key passphrases
-- GPG key passphrases
-- Certificate passwords
-
-## Notes
-
-- Session keys are temporary and expire - you'll need to re-unlock periodically
-- `bw` CLI requires an active internet connection to sync
-- First sync after login may take a moment
-- chezmoi caches Bitwarden responses during a single run for performance
+**Next**: See [TESTING.md](TESTING.md) for testing the complete setup.

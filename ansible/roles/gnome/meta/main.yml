@@ -1,0 +1,17 @@
+---
+# Role metadata for gnome role
+
+galaxy_info:
+  role_name: gnome
+  description: GNOME desktop configuration (themes, extensions, settings, keybindings)
+  author: Alex Borgognoni
+  min_ansible_version: "2.9"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+        - noble
+
+dependencies:
+  - role: packages

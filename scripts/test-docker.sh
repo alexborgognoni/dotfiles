@@ -38,40 +38,8 @@ fi
 
 # Check if we have a Dockerfile
 if [[ ! -f "$SCRIPT_DIR/tests/Dockerfile" ]]; then
-    error "Dockerfile not found. Creating test infrastructure..."
-    mkdir -p "$SCRIPT_DIR/tests"
-
-    cat > "$SCRIPT_DIR/tests/Dockerfile" << 'EOF'
-FROM ubuntu:22.04
-
-# Prevent interactive prompts
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PROFILE=personal
-
-# Install basic dependencies
-RUN apt-get update && apt-get install -y \
-    sudo \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create test user with sudo
-RUN useradd -m -s /bin/bash testuser && \
-    echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-# Switch to test user
-USER testuser
-WORKDIR /home/testuser
-
-# Copy dotfiles
-COPY --chown=testuser:testuser . /home/testuser/dotfiles
-
-# Set working directory
-WORKDIR /home/testuser/dotfiles
-
-CMD ["/bin/bash"]
-EOF
-    success "Created Dockerfile at tests/Dockerfile"
+    error "Dockerfile not found at tests/Dockerfile"
+    exit 1
 fi
 
 section "Building Docker Image"

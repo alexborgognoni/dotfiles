@@ -1,0 +1,11 @@
+---
+# Handlers for gnome role
+
+- name: Refresh font cache
+  command: fc-cache -fv
+  listen: "fonts changed"
+
+- name: Reload GNOME Shell
+  command: "busctl --user call org.gnome.Shell /org/gnome/Shell org.gnome.Shell Eval s 'Meta.restart(\"Reloading\")'"
+  listen: "gnome shell reload"
+  ignore_errors: yes

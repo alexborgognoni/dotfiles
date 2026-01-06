@@ -3,23 +3,104 @@
 # For software not available in standard package managers
 
 ###############################################################################
-# Homebrew (Linux)
+# Load tool definitions
 ###############################################################################
 
-- name: Check if Homebrew is installed
+- name: Include manual tools variables
+  include_vars: manual_tools.yml
+  tags: ['manual']
+
+###############################################################################
+# Curl/Shell Script Installers (data-driven)
+###############################################################################
+
+- name: "Check if {{ item.name }} is installed (stat)"
   stat:
-    path: /home/linuxbrew/.linuxbrew/bin/brew
-  register: brew_check
-  tags: ['manual', 'homebrew']
+    path: "{{ item.check_path }}"
+  register: curl_tool_stat
+  when: item.check_type | default('command') == 'stat'
+  loop: "{{ curl_install_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: ['manual']
 
-- name: Install Homebrew
-  shell: |
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  when: not brew_check.stat.exists
-  tags: ['manual', 'homebrew']
+- name: "Check if {{ item.name }} is installed (command)"
+  command: "which {{ item.check_command }}"
+  register: curl_tool_cmd
+  ignore_errors: yes
+  changed_when: false
+  when: item.check_type | default('command') == 'command'
+  loop: "{{ curl_install_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: ['manual']
+
+- name: Build curl tools installation status
+  set_fact:
+    curl_tools_status: "{{ curl_tools_status | default({}) | combine({item.item.name: (item.stat.exists if item.stat is defined else item.rc == 0)}) }}"
+  loop: "{{ curl_tool_stat.results + curl_tool_cmd.results }}"
+  loop_control:
+    label: "{{ item.item.name if item.item is defined else 'skip' }}"
+  when: item.item is defined
+  tags: ['manual']
+
+- name: "Install {{ item.name }}"
+  shell: "{{ item.script }}"
+  become: "{{ item.become | default(false) }}"
+  when: not (curl_tools_status[item.name] | default(false))
+  loop: "{{ curl_install_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: ['manual']
+
+- name: "Run post-install for {{ item.name }}"
+  shell: "{{ item.post_install }}"
+  args:
+    executable: /bin/bash
+  when:
+    - item.post_install is defined
+    - not (curl_tools_status[item.name] | default(false))
+  loop: "{{ curl_install_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: ['manual']
 
 ###############################################################################
-# Bitwarden CLI
+# Git Clone Tools (data-driven)
+###############################################################################
+
+- name: Ensure parent directories exist for git tools
+  file:
+    path: "{{ item.dest | dirname }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ git_clone_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: ['manual']
+
+- name: "Check if {{ item.name }} is installed"
+  stat:
+    path: "{{ item.check_path }}"
+  register: git_tool_check
+  loop: "{{ git_clone_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: ['manual']
+
+- name: "Install {{ item.0.name }}"
+  git:
+    repo: "{{ item.0.repo }}"
+    dest: "{{ item.0.dest }}"
+    version: "{{ item.0.version }}"
+  when: not item.1.stat.exists
+  loop: "{{ git_clone_tools | zip(git_tool_check.results) | list }}"
+  loop_control:
+    label: "{{ item.0.name }}"
+  tags: ['manual']
+
+###############################################################################
+# Bitwarden CLI (special: zip extraction)
 ###############################################################################
 
 - name: Check if Bitwarden CLI is installed
@@ -29,47 +110,41 @@
   changed_when: false
   tags: ['manual', 'bitwarden']
 
-- name: Create temporary directory for Bitwarden CLI
-  tempfile:
-    state: directory
-  register: bw_temp_dir
-  when: bw_check.rc != 0
-  tags: ['manual', 'bitwarden']
+- name: Install Bitwarden CLI
+  block:
+    - name: Create temporary directory for Bitwarden CLI
+      tempfile:
+        state: directory
+      register: bw_temp_dir
 
-- name: Download Bitwarden CLI
-  get_url:
-    url: https://vault.bitwarden.com/download/?app=cli&platform=linux
-    dest: "{{ bw_temp_dir.path }}/bw.zip"
-  when: bw_check.rc != 0
-  tags: ['manual', 'bitwarden']
+    - name: Download Bitwarden CLI
+      get_url:
+        url: https://vault.bitwarden.com/download/?app=cli&platform=linux
+        dest: "{{ bw_temp_dir.path }}/bw.zip"
 
-- name: Unzip Bitwarden CLI
-  unarchive:
-    src: "{{ bw_temp_dir.path }}/bw.zip"
-    dest: "{{ bw_temp_dir.path }}"
-    remote_src: yes
-  when: bw_check.rc != 0
-  tags: ['manual', 'bitwarden']
+    - name: Unzip Bitwarden CLI
+      unarchive:
+        src: "{{ bw_temp_dir.path }}/bw.zip"
+        dest: "{{ bw_temp_dir.path }}"
+        remote_src: yes
 
-- name: Install Bitwarden CLI to /usr/local/bin
-  copy:
-    src: "{{ bw_temp_dir.path }}/bw"
-    dest: /usr/local/bin/bw
-    mode: '0755'
-    remote_src: yes
-  become: yes
-  when: bw_check.rc != 0
-  tags: ['manual', 'bitwarden']
+    - name: Install Bitwarden CLI to /usr/local/bin
+      copy:
+        src: "{{ bw_temp_dir.path }}/bw"
+        dest: /usr/local/bin/bw
+        mode: '0755'
+        remote_src: yes
+      become: yes
 
-- name: Clean up Bitwarden CLI temp directory
-  file:
-    path: "{{ bw_temp_dir.path }}"
-    state: absent
+    - name: Clean up Bitwarden CLI temp directory
+      file:
+        path: "{{ bw_temp_dir.path }}"
+        state: absent
   when: bw_check.rc != 0
   tags: ['manual', 'bitwarden']
 
 ###############################################################################
-# Kitty Terminal
+# Kitty Terminal (special: custom installer with symlinks)
 ###############################################################################
 
 - name: Check if Kitty is installed
@@ -93,7 +168,7 @@
   tags: ['manual', 'kitty']
 
 ###############################################################################
-# Lazygit
+# Lazygit (special: GitHub release with version detection)
 ###############################################################################
 
 - name: Check if Lazygit is installed
@@ -103,28 +178,28 @@
   changed_when: false
   tags: ['manual', 'lazygit']
 
-- name: Get latest Lazygit version
-  uri:
-    url: https://api.github.com/repos/jesseduffield/lazygit/releases/latest
-    return_content: yes
-  register: lazygit_release
-  when: lazygit_check.rc != 0
-  tags: ['manual', 'lazygit']
-
 - name: Install Lazygit
-  shell: |
-    LAZYGIT_VERSION="{{ lazygit_release.json.tag_name | regex_replace('^v', '') }}"
-    TEMP_DIR=$(mktemp -d)
-    curl -Lo "$TEMP_DIR/lazygit.tar.gz" "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-    tar xf "$TEMP_DIR/lazygit.tar.gz" -C "$TEMP_DIR" lazygit
-    sudo install "$TEMP_DIR/lazygit" -D -t /usr/local/bin/
-    rm -rf "$TEMP_DIR"
+  block:
+    - name: Get latest Lazygit version
+      uri:
+        url: https://api.github.com/repos/jesseduffield/lazygit/releases/latest
+        return_content: yes
+      register: lazygit_release
+
+    - name: Download and install Lazygit
+      shell: |
+        LAZYGIT_VERSION="{{ lazygit_release.json.tag_name | regex_replace('^v', '') }}"
+        TEMP_DIR=$(mktemp -d)
+        curl -Lo "$TEMP_DIR/lazygit.tar.gz" "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+        tar xf "$TEMP_DIR/lazygit.tar.gz" -C "$TEMP_DIR" lazygit
+        install "$TEMP_DIR/lazygit" -D -t /usr/local/bin/
+        rm -rf "$TEMP_DIR"
+      become: yes
   when: lazygit_check.rc != 0
-  become: yes
   tags: ['manual', 'lazygit']
 
 ###############################################################################
-# Neovim
+# Neovim (special: tarball to /opt)
 ###############################################################################
 
 - name: Check if Neovim is installed
@@ -138,42 +213,15 @@
   shell: |
     TEMP_DIR=$(mktemp -d)
     curl -Lo "$TEMP_DIR/nvim.tar.gz" https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
-    sudo rm -rf /opt/nvim-linux-x86_64
-    sudo tar -C /opt -xzf "$TEMP_DIR/nvim.tar.gz"
+    rm -rf /opt/nvim-linux-x86_64
+    tar -C /opt -xzf "$TEMP_DIR/nvim.tar.gz"
     rm -rf "$TEMP_DIR"
-  when: nvim_check.rc != 0
   become: yes
+  when: nvim_check.rc != 0
   tags: ['manual', 'neovim']
 
 ###############################################################################
-# NVM (Node Version Manager)
-###############################################################################
-
-- name: Check if NVM is installed
-  stat:
-    path: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
-  register: nvm_check
-  tags: ['manual', 'nvm']
-
-- name: Install NVM
-  shell: |
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-  when: not nvm_check.stat.exists
-  tags: ['manual', 'nvm']
-
-- name: Install Node.js 24 via NVM and set as default
-  shell: |
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    nvm install 24
-    nvm alias default 24
-  args:
-    executable: /bin/bash
-  when: not nvm_check.stat.exists
-  tags: ['manual', 'nvm']
-
-###############################################################################
-# Yazi File Manager
+# Yazi File Manager (special: GitHub release)
 ###############################################################################
 
 - name: Check if Yazi is installed
@@ -183,47 +231,63 @@
   changed_when: false
   tags: ['manual', 'yazi']
 
-- name: Get latest Yazi release URL
-  shell: |
-    curl -s https://api.github.com/repos/sxyazi/yazi/releases/latest \
-      | grep "browser_download_url" \
-      | grep "x86_64-unknown-linux-gnu.tar.gz" \
-      | cut -d '"' -f 4
-  register: yazi_url
-  when: yazi_check.rc != 0
-  changed_when: false
-  tags: ['manual', 'yazi']
-
 - name: Install Yazi
-  shell: |
-    TEMP_DIR=$(mktemp -d)
-    curl -L "{{ yazi_url.stdout }}" -o "$TEMP_DIR/yazi.tar.gz"
-    tar -xzf "$TEMP_DIR/yazi.tar.gz" -C "$TEMP_DIR"
-    sudo install "$TEMP_DIR/yazi"*/yazi /usr/local/bin/
-    rm -rf "$TEMP_DIR"
+  block:
+    - name: Get latest Yazi release URL
+      shell: |
+        curl -s https://api.github.com/repos/sxyazi/yazi/releases/latest \
+          | grep "browser_download_url" \
+          | grep "x86_64-unknown-linux-gnu.tar.gz" \
+          | cut -d '"' -f 4
+      register: yazi_url
+      changed_when: false
+
+    - name: Download and install Yazi
+      shell: |
+        TEMP_DIR=$(mktemp -d)
+        curl -L "{{ yazi_url.stdout }}" -o "$TEMP_DIR/yazi.tar.gz"
+        tar -xzf "$TEMP_DIR/yazi.tar.gz" -C "$TEMP_DIR"
+        install "$TEMP_DIR/yazi"*/yazi /usr/local/bin/
+        rm -rf "$TEMP_DIR"
+      become: yes
   when: yazi_check.rc != 0
-  become: yes
   tags: ['manual', 'yazi']
 
 ###############################################################################
-# k9s (Kubernetes CLI)
+# Tmux (special: compile from source)
 ###############################################################################
 
-- name: Check if k9s is installed
-  command: which k9s
-  register: k9s_check
+- name: Check if Tmux is installed
+  command: which tmux
+  register: tmux_check
   ignore_errors: yes
   changed_when: false
-  tags: ['manual', 'k9s']
+  tags: ['manual', 'tmux']
 
-- name: Install k9s
-  shell: |
-    curl -sS https://webinstall.dev/k9s | bash
-  when: k9s_check.rc != 0
-  tags: ['manual', 'k9s']
+- name: Install Tmux from source
+  block:
+    - name: Get latest Tmux version
+      uri:
+        url: https://api.github.com/repos/tmux/tmux/releases/latest
+        return_content: yes
+      register: tmux_release
+
+    - name: Compile and install Tmux
+      shell: |
+        TMUX_VERSION="{{ tmux_release.json.tag_name }}"
+        TEMP_DIR=$(mktemp -d)
+        curl -Lo "$TEMP_DIR/tmux.tar.gz" "https://github.com/tmux/tmux/releases/download/${TMUX_VERSION}/tmux-${TMUX_VERSION}.tar.gz"
+        tar xf "$TEMP_DIR/tmux.tar.gz" -C "$TEMP_DIR"
+        cd "$TEMP_DIR/tmux-${TMUX_VERSION}"
+        ./configure && make
+        make install
+        rm -rf "$TEMP_DIR"
+      become: yes
+  when: tmux_check.rc != 0
+  tags: ['manual', 'tmux']
 
 ###############################################################################
-# Kubecolor
+# Kubecolor (special: deb package with version detection)
 ###############################################################################
 
 - name: Check if Kubecolor is installed
@@ -234,148 +298,40 @@
   when: "'kubecolor' in all_apt_packages | map(attribute='name') | list"
   tags: ['manual', 'kubecolor']
 
-- name: Ensure apt-transport-https and wget are installed
-  apt:
-    name:
-      - apt-transport-https
-      - wget
-    state: present
-  become: yes
-  when:
-    - "'kubecolor' in all_apt_packages | map(attribute='name') | list"
-    - kubecolor_check.rc != 0
-  tags: ['manual', 'kubecolor']
-
-- name: Get Kubecolor version
-  shell: wget -q -O- https://kubecolor.github.io/packages/deb/version
-  register: kubecolor_version
-  when:
-    - "'kubecolor' in all_apt_packages | map(attribute='name') | list"
-    - kubecolor_check.rc != 0
-  changed_when: false
-  tags: ['manual', 'kubecolor']
-
-- name: Download Kubecolor deb package
-  get_url:
-    url: "https://kubecolor.github.io/packages/deb/pool/main/k/kubecolor/kubecolor_{{ kubecolor_version.stdout }}_{{ dpkg_arch.stdout }}.deb"
-    dest: /tmp/kubecolor.deb
-  when:
-    - "'kubecolor' in all_apt_packages | map(attribute='name') | list"
-    - kubecolor_check.rc != 0
-  tags: ['manual', 'kubecolor']
-
 - name: Install Kubecolor
-  apt:
-    deb: /tmp/kubecolor.deb
-  become: yes
+  block:
+    - name: Ensure apt-transport-https and wget are installed
+      apt:
+        name: [apt-transport-https, wget]
+        state: present
+      become: yes
+
+    - name: Get Kubecolor version
+      shell: wget -q -O- https://kubecolor.github.io/packages/deb/version
+      register: kubecolor_version
+      changed_when: false
+
+    - name: Download Kubecolor deb package
+      get_url:
+        url: "https://kubecolor.github.io/packages/deb/pool/main/k/kubecolor/kubecolor_{{ kubecolor_version.stdout }}_{{ dpkg_arch.stdout }}.deb"
+        dest: /tmp/kubecolor.deb
+
+    - name: Install Kubecolor
+      apt:
+        deb: /tmp/kubecolor.deb
+      become: yes
+
+    - name: Clean up Kubecolor deb package
+      file:
+        path: /tmp/kubecolor.deb
+        state: absent
   when:
     - "'kubecolor' in all_apt_packages | map(attribute='name') | list"
-    - kubecolor_check.rc != 0
-  tags: ['manual', 'kubecolor']
-
-- name: Clean up Kubecolor deb package
-  file:
-    path: /tmp/kubecolor.deb
-    state: absent
-  when:
-    - "'kubecolor' in all_apt_packages | map(attribute='name') | list"
-    - kubecolor_check.rc != 0
+    - kubecolor_check.rc | default(1) != 0
   tags: ['manual', 'kubecolor']
 
 ###############################################################################
-# Tmux (from source for latest version)
-###############################################################################
-
-- name: Check if Tmux is installed
-  command: which tmux
-  register: tmux_check
-  ignore_errors: yes
-  changed_when: false
-  tags: ['manual', 'tmux']
-
-- name: Get latest Tmux version
-  uri:
-    url: https://api.github.com/repos/tmux/tmux/releases/latest
-    return_content: yes
-  register: tmux_release
-  when: tmux_check.rc != 0
-  tags: ['manual', 'tmux']
-
-- name: Install Tmux from source
-  shell: |
-    TMUX_VERSION="{{ tmux_release.json.tag_name }}"
-    TEMP_DIR=$(mktemp -d)
-    curl -Lo "$TEMP_DIR/tmux.tar.gz" "https://github.com/tmux/tmux/releases/download/${TMUX_VERSION}/tmux-${TMUX_VERSION}.tar.gz"
-    tar xf "$TEMP_DIR/tmux.tar.gz" -C "$TEMP_DIR"
-    cd "$TEMP_DIR/tmux-${TMUX_VERSION}"
-    ./configure && make
-    sudo make install
-    rm -rf "$TEMP_DIR"
-  when: tmux_check.rc != 0
-  tags: ['manual', 'tmux']
-
-###############################################################################
-# Tmux Plugin Manager
-###############################################################################
-
-- name: Ensure tmux plugins directory exists
-  file:
-    path: "{{ ansible_env.HOME }}/.config/tmux/plugins"
-    state: directory
-    mode: '0755'
-  tags: ['manual', 'tmux']
-
-- name: Check if TPM is installed
-  stat:
-    path: "{{ ansible_env.HOME }}/.config/tmux/plugins/tpm"
-  register: tpm_check
-  tags: ['manual', 'tmux']
-
-- name: Install Tmux Plugin Manager
-  git:
-    repo: https://github.com/tmux-plugins/tpm
-    dest: "{{ ansible_env.HOME }}/.config/tmux/plugins/tpm"
-    version: master
-  when: not tpm_check.stat.exists
-  tags: ['manual', 'tmux']
-
-###############################################################################
-# Zinit (Zsh Plugin Manager)
-###############################################################################
-
-- name: Check if Zinit is installed
-  stat:
-    path: "{{ ansible_env.HOME }}/.local/share/zinit/zinit.git"
-  register: zinit_check
-  tags: ['manual', 'zinit']
-
-- name: Install Zinit
-  git:
-    repo: https://github.com/zdharma-continuum/zinit
-    dest: "{{ ansible_env.HOME }}/.local/share/zinit/zinit.git"
-    version: main
-  when: not zinit_check.stat.exists
-  tags: ['manual', 'zinit']
-
-###############################################################################
-# Zoxide
-###############################################################################
-
-- name: Check if Zoxide is installed
-  command: which zoxide
-  register: zoxide_check
-  ignore_errors: yes
-  changed_when: false
-  tags: ['manual', 'zoxide']
-
-- name: Install Zoxide
-  shell: |
-    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
-  when: zoxide_check.rc != 0
-  tags: ['manual', 'zoxide']
-
-###############################################################################
-# Obsidian
+# Obsidian (special: deb from GitHub)
 ###############################################################################
 
 - name: Check if Obsidian is installed
@@ -385,7 +341,7 @@
   changed_when: false
   tags: ['manual', 'obsidian']
 
-- name: Install latest Obsidian
+- name: Install Obsidian
   shell: |
     curl -sI https://github.com/obsidianmd/obsidian-releases/releases/latest | grep -oP 'v\K[0-9.]+' | xargs -I{} curl -Lo /tmp/obsidian.deb "https://github.com/obsidianmd/obsidian-releases/releases/download/v{}/obsidian_{}_amd64.deb"
     dpkg -i /tmp/obsidian.deb || apt-get -f install -y
@@ -395,58 +351,7 @@
   tags: ['manual', 'obsidian']
 
 ###############################################################################
-# Claude Code CLI
-###############################################################################
-
-- name: Check if Claude Code is installed
-  command: which claude
-  register: claude_check
-  ignore_errors: yes
-  changed_when: false
-  tags: ['manual', 'claude']
-
-- name: Install Claude Code CLI
-  shell: |
-    curl -fsSL https://claude.ai/install.sh | bash
-  when: claude_check.rc != 0
-  tags: ['manual', 'claude']
-
-###############################################################################
-# Bun (JavaScript runtime)
-###############################################################################
-
-- name: Check if Bun is installed
-  command: which bun
-  register: bun_check
-  ignore_errors: yes
-  changed_when: false
-  tags: ['manual', 'bun']
-
-- name: Install Bun
-  shell: |
-    curl -fsSL https://bun.sh/install | bash
-  when: bun_check.rc != 0
-  tags: ['manual', 'bun']
-
-###############################################################################
-# PHP 8.3
-###############################################################################
-
-- name: Check if PHP is installed
-  command: which php
-  register: php_check
-  ignore_errors: yes
-  changed_when: false
-  tags: ['manual', 'php']
-
-- name: Install PHP 8.3
-  shell: |
-    /bin/bash -c "$(curl -fsSL https://php.new/install/linux/8.3)"
-  when: php_check.rc != 0
-  tags: ['manual', 'php']
-
-###############################################################################
-# kubectl
+# kubectl (special: binary download)
 ###############################################################################
 
 - name: Check if kubectl is installed

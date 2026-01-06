@@ -1,0 +1,11 @@
+---
+# Handlers for packages role
+
+- name: Refresh font cache
+  command: fc-cache -fv
+  listen: "fonts changed"
+
+- name: Update user groups
+  command: newgrp docker
+  listen: "docker group changed"
+  ignore_errors: yes

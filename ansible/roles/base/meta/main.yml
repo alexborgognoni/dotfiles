@@ -1,0 +1,16 @@
+---
+# Role metadata for base role
+
+galaxy_info:
+  role_name: base
+  description: Base system preparation (apt cache, timezone, locale, directories)
+  author: Alex Borgognoni
+  min_ansible_version: "2.9"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+        - noble
+
+dependencies: []

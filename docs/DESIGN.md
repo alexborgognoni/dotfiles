@@ -22,23 +22,23 @@ This dotfiles system embodies a **one-command install** philosophy: minimal manu
 ┌─────────────────────────────────────────────────────────┐
 │                    Bootstrap Script                     │
 │              (Single entry point: ./install)            │
-└────────────────┬────────────────────────────────────────┘
-                 │
-        ┌────────┴────────┐
-        │                 │
-┌───────▼────────┐  ┌─────▼──────────┐
-│    Ansible     │  │    chezmoi     │
-│   Automation   │  │  Config Mgmt   │
-└───────┬────────┘  └─────┬──────────┘
-        │                 │
-        │                 │
-┌───────▼─────────────────▼──────────────┐
-│        System Configuration            │
-│  ┌──────────┬──────────┬────────────┐  │
-│  │ Packages │  GNOME   │  Dotfiles  │  │
-│  │          │ Settings │            │  │
-│  └──────────┴──────────┴────────────┘  │
-└────────────────────────────────────────┘
+└────────────────────────┬────────────────────────────────┘
+                         │
+                ┌────────┴────────┐
+                │                 │
+        ┌───────▼────────┐  ┌─────▼──────────┐
+        │    Ansible     │  │    chezmoi     │
+        │   Automation   │  │  Config Mgmt   │
+        └───────┬────────┘  └─────┬──────────┘
+                │                 │
+                │                 │
+        ┌───────▼─────────────────▼──────────────┐
+        │        System Configuration            │
+        │  ┌──────────┬──────────┬────────────┐  │
+        │  │ Packages │  GNOME   │  Dotfiles  │  │
+        │  │          │ Settings │            │  │
+        │  └──────────┴──────────┴────────────┘  │
+        └────────────────────────────────────────┘
 ```
 
 ### Why chezmoi?
@@ -78,7 +78,6 @@ This dotfiles system embodies a **one-command install** philosophy: minimal manu
 ```
 dotfiles/
 ├── README.md                      # Project overview and quick start
-├── DESIGN.md                      # This document
 ├── install                        # Bootstrap script (main entry point)
 │
 ├── chezmoi/                       # chezmoi source directory
@@ -109,55 +108,65 @@ dotfiles/
 │   │
 │   └── roles/                   # Ansible roles
 │       ├── base/                # Base system setup
+│       │   ├── tasks/main.yml
+│       │   ├── meta/main.yml    # Role dependencies
+│       │   └── README.md
+│       │
 │       ├── packages/            # Package installation
 │       │   ├── tasks/
 │       │   │   ├── main.yml
 │       │   │   ├── apt.yml
 │       │   │   ├── snap.yml
-│       │   │   ├── flatpak.yml
 │       │   │   ├── brew.yml
 │       │   │   ├── cargo.yml
 │       │   │   ├── pip.yml
+│       │   │   ├── npm.yml
 │       │   │   └── manual.yml    # Manually installed software
-│       │   └── vars/
-│       │       ├── common.yml    # Packages for all profiles
-│       │       ├── personal.yml  # Personal-only packages
-│       │       └── work.yml      # Work-only packages
+│       │   ├── vars/
+│       │   │   ├── common.yml    # Packages for all profiles
+│       │   │   ├── personal.yml  # Personal-only packages
+│       │   │   ├── work.yml      # Work-only packages
+│       │   │   ├── apt_repositories.yml  # APT repo definitions
+│       │   │   └── manual_tools.yml      # Manual tool definitions
+│       │   ├── handlers/main.yml  # Font cache, docker group
+│       │   ├── meta/main.yml      # Role dependencies
+│       │   └── README.md
 │       │
 │       ├── gnome/               # GNOME desktop configuration
 │       │   ├── tasks/
 │       │   │   ├── main.yml
+│       │   │   ├── base-settings.yml # dconf base settings
 │       │   │   ├── settings.yml      # dconf settings
 │       │   │   ├── extensions.yml    # GNOME extensions
 │       │   │   ├── keybindings.yml   # Keyboard shortcuts
 │       │   │   └── themes.yml        # GTK themes, icons, fonts
-│       │   ├── files/
-│       │   │   ├── dconf/           # dconf dumps
-│       │   │   │   ├── common.conf
-│       │   │   │   ├── personal.conf
-│       │   │   │   └── work.conf
-│       │   │   └── extensions/      # Extension configs
-│       │   └── vars/
-│       │       └── main.yml
-│       │
-│       ├── dotfiles/            # Chezmoi initialization
-│       │   └── tasks/
-│       │       └── main.yml     # Install chezmoi, init repo
+│       │   ├── files/dconf/          # dconf dumps
+│       │   ├── vars/common.yml       # GNOME configuration vars
+│       │   ├── handlers/main.yml     # Font cache, shell reload
+│       │   ├── meta/main.yml         # Role dependencies
+│       │   └── README.md
 │       │
 │       └── secrets/             # Secret management setup
-│           └── tasks/
-│               └── main.yml     # GPG, SSH key setup
+│           ├── tasks/
+│           │   ├── main.yml     # Orchestration
+│           │   ├── bitwarden.yml
+│           │   ├── ssh.yml
+│           │   └── gpg.yml
+│           ├── meta/main.yml    # Role dependencies
+│           └── README.md
 │
 ├── scripts/                     # Utility scripts
-│   ├── bootstrap-ubuntu.sh      # Pre-Ansible Ubuntu prep
 │   ├── dump-gnome-settings.sh   # Export current GNOME config
 │   ├── dump-packages.sh         # Export installed packages
-│   └── update-all.sh            # Update all package managers
+│   ├── test-docker.sh           # Docker-based testing
+│   └── test-profile-switching.sh # Profile system validation
 │
 └── docs/                        # Additional documentation
+    ├── DESIGN.md                # This document
     ├── PROFILES.md              # Profile system guide
     ├── SECRETS.md               # Secret management guide
-    └── TROUBLESHOOTING.md       # Common issues and solutions
+    ├── TESTING.md               # Testing strategy guide
+    └── ROADMAP.md               # Future improvements
 ```
 
 ## Configuration Profiles
@@ -663,6 +672,6 @@ Follow semantic versioning for playbook changes:
 
 ---
 
-**Last Updated**: 2025-11-21
+**Last Updated**: 2025-01-06
 **Target OS**: Ubuntu 22.04+ with GNOME
-**Status**: Design Phase
+**Status**: Stable

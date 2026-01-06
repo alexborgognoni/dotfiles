@@ -3,6 +3,9 @@
 
 user_email: "alex.borgognoni@deutsche-boerse.com"  # Update this
 
+# GNOME workspace names for space-bar extension
+workspace_names: "{'1': 'Terminal', '2': 'Browser', '3': 'Teams', '4': 'Mail'}"
+
 # Work-specific environment variables
 work_env_vars:
   EDITOR: "nvim"

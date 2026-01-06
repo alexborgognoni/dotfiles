@@ -8,6 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 ANSIBLE_DIR="${DOTFILES_DIR}/ansible"
 CHEZMOI_DIR="${DOTFILES_DIR}/chezmoi"
+SKIP_SECRETS="${SKIP_SECRETS:-false}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -91,14 +92,31 @@ test_ansible_group_vars() {
 # Test 4: Validate Ansible playbook syntax
 test_ansible_syntax() {
     print_test "Validating Ansible playbook syntax"
-    
+
     if ! ansible-playbook "${ANSIBLE_DIR}/playbook.yml" --syntax-check &>/dev/null; then
         print_fail "Ansible playbook syntax check failed"
         return 1
     fi
-    
+
     print_pass "Ansible playbook syntax valid"
     return 0
+}
+
+# Test 4b: Validate secrets skip functionality
+test_secrets_skip() {
+    print_test "Validating secrets skip functionality (--skip-tags secrets)"
+
+    # Verify the secrets role has proper tags
+    if grep -q "tags: \['secrets'\]" "${ANSIBLE_DIR}/roles/secrets/tasks/main.yml"; then
+        print_pass "Secrets role has proper 'secrets' tag for skipping"
+        if [[ "$SKIP_SECRETS" == "true" ]]; then
+            print_info "SKIP_SECRETS=true - secrets will be skipped in ansible runs"
+        fi
+        return 0
+    else
+        print_fail "Secrets role missing 'secrets' tag"
+        return 1
+    fi
 }
 
 # Test 5: Check chezmoi configuration
@@ -117,15 +135,28 @@ test_chezmoi_config() {
 # Test 6: Test chezmoi template rendering
 test_chezmoi_template_render() {
     print_test "Testing chezmoi template rendering for profile: $PROFILE"
-    
-    # Create temporary chezmoi source dir
+
+    # Create temporary directory for isolated chezmoi test
     TEMP_DIR=$(mktemp -d)
     trap "rm -rf $TEMP_DIR" EXIT
-    
+
     cp -r "${CHEZMOI_DIR}" "$TEMP_DIR/source"
-    
-    # Try to execute chezmoi with current profile
-    if PROFILE=$PROFILE chezmoi execute-template --source="$TEMP_DIR/source" "{{ .profile }}" 2>/dev/null | grep -q "$PROFILE"; then
+
+    # Generate config from template with the test profile
+    local config_content
+    config_content=$(PROFILE=$PROFILE chezmoi execute-template --source="$TEMP_DIR/source" < "$TEMP_DIR/source/.chezmoi.toml.tmpl" 2>/dev/null)
+
+    if [[ -z "$config_content" ]]; then
+        print_fail "chezmoi failed to render config template"
+        return 1
+    fi
+
+    # Write config to temp location
+    mkdir -p "$TEMP_DIR/config"
+    echo "$config_content" > "$TEMP_DIR/config/chezmoi.toml"
+
+    # Now test template rendering with the generated config
+    if chezmoi execute-template --config="$TEMP_DIR/config/chezmoi.toml" --source="$TEMP_DIR/source" '{{ .profile }}' 2>/dev/null | grep -q "$PROFILE"; then
         print_pass "chezmoi renders profile correctly: $PROFILE"
         return 0
     else
@@ -183,8 +214,20 @@ test_template_helpers() {
 # Test 9: Dry run chezmoi apply
 test_chezmoi_dry_run() {
     print_test "Testing chezmoi dry run for profile: $PROFILE"
-    
-    if PROFILE=$PROFILE chezmoi apply --source="${CHEZMOI_DIR}" --dry-run --verbose 2>&1 | head -20; then
+
+    # Create isolated config for testing
+    TEMP_DIR=$(mktemp -d)
+    trap "rm -rf $TEMP_DIR" EXIT
+
+    # Generate config from template with the test profile
+    local config_content
+    config_content=$(PROFILE=$PROFILE chezmoi execute-template --source="${CHEZMOI_DIR}" < "${CHEZMOI_DIR}/.chezmoi.toml.tmpl" 2>/dev/null)
+
+    mkdir -p "$TEMP_DIR/config"
+    echo "$config_content" > "$TEMP_DIR/config/chezmoi.toml"
+
+    # Run dry run with isolated config (suppress verbose output for cleaner test)
+    if chezmoi apply --config="$TEMP_DIR/config/chezmoi.toml" --source="${CHEZMOI_DIR}" --dry-run 2>&1 >/dev/null; then
         print_pass "chezmoi dry run successful"
         return 0
     else
@@ -230,6 +273,9 @@ main() {
     
     echo ""
     print_info "Testing with PROFILE=$PROFILE"
+    if [[ "$SKIP_SECRETS" == "true" ]]; then
+        print_info "SKIP_SECRETS=true (secrets role will be skipped)"
+    fi
     echo ""
     
     # Run all tests
@@ -240,6 +286,8 @@ main() {
     test_ansible_group_vars || true
     echo ""
     test_ansible_syntax || true
+    echo ""
+    test_secrets_skip || true
     echo ""
     test_chezmoi_config || true
     echo ""
