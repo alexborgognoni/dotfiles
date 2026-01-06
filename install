@@ -269,10 +269,12 @@ step "[2/6] Running Ansible playbook..."
 cd "$DOTFILES_DIR/ansible"
 
 info "This will install packages and configure GNOME settings..."
-info "You may be prompted for your sudo password."
 
-# Build ansible command
-ANSIBLE_CMD="ansible-playbook -i inventory.yml playbook.yml -e profile=$PROFILE --ask-become-pass"
+# Refresh sudo credentials (already cached from apt commands above)
+sudo -v
+
+# Build ansible command (no --ask-become-pass needed, sudo is cached)
+ANSIBLE_CMD="ansible-playbook -i inventory.yml playbook.yml -e profile=$PROFILE"
 
 if [[ "$SKIP_SECRETS" == "true" ]]; then
     ANSIBLE_CMD="$ANSIBLE_CMD --skip-tags secrets"
