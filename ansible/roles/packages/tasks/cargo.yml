@@ -17,7 +17,7 @@
   tags: ['cargo']
 
 - name: Check installed cargo packages
-  shell: "{{ ansible_env.HOME }}/.cargo/bin/cargo install --list | grep '^{{ item.name }} v' | head -1 || echo 'not_installed'"
+  shell: "{{ ansible_env.HOME }}/.cargo/bin/cargo install --list | grep -q '^{{ item.name }} v' && echo 'installed' || echo 'not_installed'"
   register: cargo_installed
   loop: "{{ all_cargo_packages }}"
   changed_when: false
@@ -30,5 +30,5 @@
   when:
     - all_cargo_packages is defined
     - all_cargo_packages | length > 0
-    - "'not_installed' in item.stdout"
+    - item.stdout == 'not_installed'
   tags: ['cargo']

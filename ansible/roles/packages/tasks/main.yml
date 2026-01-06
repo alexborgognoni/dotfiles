@@ -9,7 +9,7 @@
   include_vars:
     file: "../vars/common.yml"
     name: common_packages
-  tags: ['packages']
+  tags: ['packages', 'apt', 'snap', 'cargo', 'pip', 'npm', 'brew', 'manual']
 
 - name: Load profile-specific package variables
   include_vars:
@@ -17,7 +17,7 @@
     name: profile_packages
   register: profile_load_result
   ignore_errors: yes
-  tags: ['packages']
+  tags: ['packages', 'apt', 'snap', 'cargo', 'pip', 'npm', 'brew', 'manual']
 
 - name: Initialize empty profile packages if load failed
   set_fact:
@@ -29,7 +29,7 @@
       npm_packages: []
       brew_packages: []
   when: profile_load_result is failed or profile_packages is not defined
-  tags: ['packages']
+  tags: ['packages', 'apt', 'snap', 'cargo', 'pip', 'npm', 'brew', 'manual']
 
 - name: Merge package lists
   set_fact:
@@ -39,7 +39,7 @@
     all_pip_packages: "{{ (common_packages.pip_packages | default([])) + (profile_packages.pip_packages | default([])) }}"
     all_npm_packages: "{{ (common_packages.npm_packages | default([])) + (profile_packages.npm_packages | default([])) }}"
     all_brew_packages: "{{ (common_packages.brew_packages | default([])) + (profile_packages.brew_packages | default([])) }}"
-  tags: ['packages']
+  tags: ['packages', 'apt', 'snap', 'cargo', 'pip', 'npm', 'brew', 'manual']
 
 - name: Load APT repository definitions
   include_vars:
