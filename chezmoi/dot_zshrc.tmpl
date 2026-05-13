@@ -25,6 +25,7 @@ export PATH="$PATH:$HOME/.bun/bin"
 export PATH="$PATH:$HOME/.opencode/bin"
 export PATH="$PATH:$HOME/.config/herd-lite/bin"
 export PATH="$PATH:$HOME/.local/bin"
+export PATH="$PATH:$HOME/linuxbrew/.linuxbrew/bin"
 
 export PHP_INI_SCAN_DIR="$HOME/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 
@@ -82,6 +83,7 @@ fi
 # NVM - using zsh-nvm plugin for lazy loading
 export NVM_LAZY_LOAD=true
 export NVM_COMPLETION=true
+export NVM_LAZY_LOAD_EXTRA_COMMANDS=('nvim' 'vim' 'code' 'composer' 'artisan' 'php' 'tsc' 'eslint' 'prettier' 'yarn' 'pnpm' 'webpack' 'vite' 'claude' 'opencode')
 
 # Homebrew - cached for faster shell startup
 if [[ -f "$HOME/.brewenv_cache" ]]; then
@@ -135,9 +137,12 @@ zinit snippet OMZ::plugins/git/git.plugin.zsh
 zinit light lukechilds/zsh-nvm
 
 # Load plugins with default configuration
+# Order matters: fzf-tab must come BEFORE plugins that wrap widgets
+# (zsh-autosuggestions, zsh-syntax-highlighting), and zsh-syntax-highlighting
+# must be the LAST plugin sourced.
+zinit light Aloxaf/fzf-tab
 zinit light zsh-users/zsh-autosuggestions
 zinit light zsh-users/zsh-syntax-highlighting
-zinit light Aloxaf/fzf-tab
 
 zinit ice lucid wait'1'
 zinit light joshskidmore/zsh-fzf-history-search
