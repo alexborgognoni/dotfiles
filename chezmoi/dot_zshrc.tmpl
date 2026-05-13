@@ -86,7 +86,9 @@ export NVM_COMPLETION=true
 export NVM_LAZY_LOAD_EXTRA_COMMANDS=('nvim' 'vim' 'code' 'composer' 'artisan' 'php' 'tsc' 'eslint' 'prettier' 'yarn' 'pnpm' 'webpack' 'vite' 'claude' 'opencode')
 
 # Homebrew - cached for faster shell startup
-if [[ -f "$HOME/.brewenv_cache" ]]; then
+# Use -s (non-empty) not -f (exists): an empty cache file would silently
+# source nothing and keep brew off PATH forever.
+if [[ -s "$HOME/.brewenv_cache" ]]; then
     source "$HOME/.brewenv_cache"
 else
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
@@ -110,7 +112,7 @@ if [[ ! -f $ZINIT_BIN/zinit.zsh ]]; then
 fi
 
 source "$ZINIT_BIN/zinit.zsh"
-unalias zi  # Remove zinit's zi alias to avoid conflict with zoxide's zi function
+unalias zi 2>/dev/null  # Remove zinit's zi alias to avoid conflict with zoxide's zi function
 
 # Zinit plugins - using turbo mode for non-critical plugins
 zinit light-mode for \
@@ -146,6 +148,23 @@ zinit light zsh-users/zsh-syntax-highlighting
 
 zinit ice lucid wait'1'
 zinit light joshskidmore/zsh-fzf-history-search
+
+# Workaround for zsh-autosuggestions ghost text leaking into scrollback on
+# Enter: the plugin's clear hook unsets POSTDISPLAY but doesn't force a screen
+# refresh, so accept-line sometimes submits before the suggestion is erased
+# and the full suggested command ends up in the scrollback even though only
+# the typed prefix actually ran. Bind Enter to a widget that clears + refreshes
+# first, then delegates to the normal (wrapped) accept-line.
+_clear_autosuggest_then_accept() {
+    if [[ -n $POSTDISPLAY ]]; then
+        unset POSTDISPLAY
+        zle -R
+    fi
+    zle accept-line
+}
+zle -N _clear_autosuggest_then_accept
+bindkey '^M' _clear_autosuggest_then_accept
+bindkey '^J' _clear_autosuggest_then_accept
 
 #############################################
 #           Completion and FZF              #
