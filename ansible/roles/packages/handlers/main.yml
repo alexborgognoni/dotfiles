@@ -9,3 +9,10 @@
   command: newgrp docker
   listen: "docker group changed"
   ignore_errors: yes
+
+- name: Restart keyd
+  systemd:
+    name: keyd
+    state: restarted
+  become: yes
+  listen: "restart keyd"

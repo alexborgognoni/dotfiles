@@ -449,3 +449,74 @@
         state: absent
   when: gcloud_check.rc != 0
   tags: ['manual', 'gcloud']
+
+###############################################################################
+# keyd (special: build from source, system daemon for kernel-level key remap)
+###############################################################################
+
+- name: Check if keyd is installed
+  command: which keyd
+  environment:
+    PATH: "{{ extended_path }}"
+  register: keyd_check
+  ignore_errors: yes
+  changed_when: false
+  tags: ['manual', 'keyd']
+
+- name: Install keyd from source
+  block:
+    - name: Clone keyd repo
+      git:
+        repo: https://github.com/rvaiya/keyd
+        dest: /tmp/keyd
+        version: v2.6.0
+        depth: 1
+        force: yes
+
+    - name: Build keyd
+      command: make
+      args:
+        chdir: /tmp/keyd
+
+    - name: Install keyd
+      command: make install
+      args:
+        chdir: /tmp/keyd
+      become: yes
+
+    - name: Clean up keyd build dir
+      file:
+        path: /tmp/keyd
+        state: absent
+  when: keyd_check.rc != 0
+  tags: ['manual', 'keyd']
+
+- name: Ensure /etc/keyd exists
+  file:
+    path: /etc/keyd
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+  tags: ['manual', 'keyd']
+
+- name: Deploy keyd config
+  copy:
+    src: keyd/default.conf
+    dest: /etc/keyd/default.conf
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  notify: "restart keyd"
+  tags: ['manual', 'keyd']
+
+- name: Enable and start keyd service
+  systemd:
+    name: keyd
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  become: yes
+  tags: ['manual', 'keyd']
