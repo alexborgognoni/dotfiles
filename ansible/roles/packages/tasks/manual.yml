@@ -292,6 +292,7 @@
         name:
           - libevent-dev
           - ncurses-dev
+          - libutf8proc-dev
           - build-essential
           - bison
           - pkg-config
@@ -304,14 +305,14 @@
       git:
         repo: https://github.com/tmux/tmux.git
         dest: /tmp/tmux-build
-        version: master
+        version: 3.7c
         force: yes
 
     - name: Build and install Tmux
       shell: |
         cd /tmp/tmux-build
         sh autogen.sh
-        ./configure
+        ./configure --enable-utf8proc
         make
         make install
         rm -rf /tmp/tmux-build
