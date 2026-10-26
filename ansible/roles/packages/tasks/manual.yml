@@ -12,7 +12,7 @@
 
 - name: Set extended PATH for tool checks
   set_fact:
-    extended_path: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.HOME }}/.bun/bin:{{ ansible_env.HOME }}/google-cloud-sdk/bin:/home/linuxbrew/.linuxbrew/bin:/opt/nvim-linux-x86_64/bin:/usr/local/bin:{{ ansible_env.PATH }}"
+    extended_path: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.HOME }}/.bun/bin:{{ ansible_env.HOME }}/.local/opt/google-cloud-sdk/bin:/home/linuxbrew/.linuxbrew/bin:/opt/nvim-linux-x86_64/bin:/usr/local/bin:{{ ansible_env.PATH }}"
   tags: ['manual']
 
 ###############################################################################
@@ -432,17 +432,23 @@
 
     - name: Remove existing gcloud installation
       file:
-        path: "{{ ansible_env.HOME }}/google-cloud-sdk"
+        path: "{{ ansible_env.HOME }}/.local/opt/google-cloud-sdk"
         state: absent
 
-    - name: Extract gcloud CLI to home directory
+    - name: Ensure gcloud install parent directory exists
+      file:
+        path: "{{ ansible_env.HOME }}/.local/opt"
+        state: directory
+        mode: '0755'
+
+    - name: Extract gcloud CLI to ~/.local/opt
       unarchive:
         src: /tmp/google-cloud-cli.tar.gz
-        dest: "{{ ansible_env.HOME }}"
+        dest: "{{ ansible_env.HOME }}/.local/opt"
         remote_src: yes
 
     - name: Run gcloud install script
-      shell: "{{ ansible_env.HOME }}/google-cloud-sdk/install.sh --quiet --path-update=false --command-completion=false"
+      shell: "{{ ansible_env.HOME }}/.local/opt/google-cloud-sdk/install.sh --quiet --path-update=false --command-completion=false"
 
     - name: Clean up tarball
       file:
