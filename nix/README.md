@@ -182,7 +182,7 @@ theme's library; rotation defaults are set with `my.wallpaper.rotation`.
 | Super + S / Shift+S | special workspace / move window there |
 | Super + Shift + V | clipboard history |
 | Super + T / Shift+T | theme picker / accent picker |
-| Super + Escape | session menu (lock, log out, power) |
+| Super + Escape / Shift+Escape | lock screen / session menu (log out, power) |
 | Print / Shift+Print / Super+Print | screenshot region / screen / window (to ~/Pictures/Screenshots and the clipboard) |
 
 ## Checks

@@ -411,7 +411,8 @@ in
           # Additions
           (bind "${mod} + F" "hl.dsp.window.fullscreen({ action = \"toggle\" })")
           (exec "${mod} + SHIFT + V" "${noctalia} panel-toggle clipboard")
-          (exec "${mod} + ESCAPE" "${noctalia} panel-toggle session")
+          (exec "${mod} + ESCAPE" "${noctalia} session lock")
+          (exec "${mod} + SHIFT + ESCAPE" "${noctalia} panel-toggle session")
           (exec "${mod} + T" "kitty --class theme-picker --title Themes -e theme pick")
           (exec "${mod} + SHIFT + T" "kitty --class theme-picker --title Accent -e theme accent")
           (exec "PRINT" "${noctalia} screenshot-region")
