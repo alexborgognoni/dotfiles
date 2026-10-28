@@ -44,7 +44,10 @@ stdenvNoCC.mkDerivation {
     substituteInPlace $out/libexec/linux-entra-sso \
       --replace-fail '#!/usr/bin/env python3' '#!${python}/bin/python3' \
       --replace-fail 'LINUX_ENTRA_SSO_VERSION = "0.0.0-dev"' 'LINUX_ENTRA_SSO_VERSION = "${version}"'
+    # The browser's own LD_LIBRARY_PATH (Nix's Chrome sets one, possibly from
+    # another nixpkgs) would load mismatched libraries into this Python.
     wrapProgram $out/libexec/linux-entra-sso \
+      --unset LD_LIBRARY_PATH \
       --prefix GI_TYPELIB_PATH : ${
         lib.makeSearchPath "lib/girepository-1.0" [
           glib.out

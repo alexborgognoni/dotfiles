@@ -50,7 +50,9 @@ in
     executable = true;
     text = ''
       #!/bin/sh
-      # Chrome native host wrapper (managed by Home Manager, modules/home/apps)
+      # Chrome native host wrapper (managed by Home Manager, modules/home/apps);
+      # without the browser's LD_LIBRARY_PATH
+      unset LD_LIBRARY_PATH
       exec "${config.home.homeDirectory}/.nix-profile/bin/claude" --chrome-native-host
     '';
   };

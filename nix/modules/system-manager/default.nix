@@ -105,6 +105,43 @@ in
       text = ''KERNEL=="uinput", GROUP="input", MODE="0660", TAG+="uaccess"'' + "\n";
       replaceExisting = true;
     };
+    # Chrome from Nix does not pick up the corporate roots from NSS the way the
+    # distribution's Chrome did (ERR_CERT_AUTHORITY_INVALID behind Zscaler).
+    # Its enterprise policy CACertificates does: built from the CAs IT deploys
+    # to /usr/local/share/ca-certificates (nothing corporate in this repo), at
+    # boot and on every switch.
+    systemd.services.chrome-corporate-cas = {
+      description = "Chrome policy: trust the locally installed CA certificates";
+      wantedBy = [ "system-manager.target" ];
+      after = [ "local-fs.target" ];
+      path = [
+        pkgs.openssl
+        pkgs.coreutils
+        pkgs.jq
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      script = ''
+        dir=/etc/opt/chrome/policies/managed
+        out="$dir/system-manager-local-cas.json"
+        mkdir -p "$dir"
+        certs=()
+        for crt in /usr/local/share/ca-certificates/*.crt /usr/local/share/ca-certificates/*/*.crt; do
+          [ -f "$crt" ] || continue
+          certs+=("$(openssl x509 -in "$crt" -outform DER | base64 -w0)")
+        done
+        if [ ''${#certs[@]} -eq 0 ]; then
+          rm -f "$out"
+          exit 0
+        fi
+        printf '%s\n' "''${certs[@]}" | jq -R . | jq -s '{ CACertificates: . }' > "$out.tmp"
+        chmod 644 "$out.tmp"
+        mv "$out.tmp" "$out"
+      '';
+    };
+
     # Apply sysctl and udev changes on switch, not only at the next boot
     systemd.services.dotfiles-apply-etc = {
       description = "Apply sysctl and udev settings from system-manager";
