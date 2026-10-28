@@ -90,6 +90,10 @@ in
       package = if standalone then pkgs.hyprland else null;
       portalPackage = if standalone then pkgs.xdg-desktop-portal-hyprland else null;
       systemd.enable = standalone;
+      # The session's whole environment (cursor, Qt/GTK theming, PATH, ...) for
+      # apps systemd starts, e.g. files opened from Nautilus; without it
+      # XWayland apps guess their own cursor size.
+      systemd.variables = [ "--all" ];
       configType = "lua";
 
       # hl.curve() must run before hl.animation() references the curves.
