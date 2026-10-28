@@ -245,8 +245,13 @@ engine, libvirt/QEMU, keyd, database servers).
   install from GitHub, idempotent re-runs, real GDM login, and
   `tests/ubuntu-vm/verify.sh` 30/30 (network, audio, Hyprland session,
   portals, lock screen, GNOME, identity).
+- Audit of everything configured outside Nix (chezmoi, ~/.config, /etc,
+  packages); all of it ported or deliberately dropped. Neovim is AstroNvim
+  v6 with Nix-built plugins. Snapshot (automatic, encrypted) and cleanup
+  scripts tested end to end in the VM; verify.sh 38/38 after the cleanup.
 - Needs the real laptop: NVIDIA offload with the real driver, corporate
-  agents (Zscaler client, Intune) alongside, your existing chezmoi state.
+  agents (Zscaler client, Intune) alongside, your existing chezmoi state,
+  monitor layouts.
 
 ## 11. Sign-off
 

@@ -82,7 +82,7 @@ check "right password accepted" 'p=$(nix build --no-link --print-out-paths nixpk
 
 section "GNOME (settings in Home Manager)"
 check "all configured extensions enabled" '[ "$(gsettings get org.gnome.shell enabled-extensions | tr , "\n" | wc -l)" -ge 15 ]'
-check "Catppuccin GTK and Shell theme" 'gsettings get org.gnome.desktop.interface gtk-theme | grep -q catppuccin && gsettings get org.gnome.shell.extensions.user-theme name | grep -q catppuccin'
+check "Catppuccin GTK and Shell theme" 'gsettings get org.gnome.desktop.interface gtk-theme | grep -q catppuccin && dconf read /org/gnome/shell/extensions/user-theme/name | grep -q catppuccin'
 check "keybindings" '[ "$(gsettings get org.gnome.desktop.wm.keybindings close)" = "['"'"'<Shift><Super>q'"'"']" ]'
 
 section "Apps"
