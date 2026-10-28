@@ -1,5 +1,5 @@
 # Ubuntu 22.04 like the work laptop: user Alex (UID 1001), corporate CA,
-# system GnuPG, chezmoi, and Nix. Containers have no systemd, so Nix runs
+# system GnuPG, D-Bus and dconf (as on any Ubuntu desktop), chezmoi, and Nix. Containers have no systemd, so Nix runs
 # single-user here (the laptop uses the multi-user daemon).
 FROM ubuntu:22.04
 
@@ -7,6 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       ca-certificates curl xz-utils sudo git zsh gnupg locales openssh-client \
+      dbus dconf-service \
  && rm -rf /var/lib/apt/lists/* \
  && locale-gen en_US.UTF-8
 

@@ -21,6 +21,11 @@ section() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
 # Run in a fresh interactive login zsh, like a new terminal.
 inzsh() { zsh -lic "$1"; }
 
+# A session bus, as in a logged-in desktop (dconf settings are written
+# through it)
+DBUS_SESSION_BUS_ADDRESS="$(dbus-daemon --session --fork --print-address)"
+export DBUS_SESSION_BUS_ADDRESS
+
 section "Reproduce the current laptop state"
 PROFILE=work chezmoi init --source "$dotfiles/chezmoi" --apply --no-tty --force >/dev/null 2>&1 \
   && ok "chezmoi applied (work profile)" || bad "chezmoi apply"
@@ -119,7 +124,7 @@ check "fonts visible to fontconfig" inzsh 'nix shell nixpkgs#fontconfig -c fc-li
 section "Activate again (idempotent)"
 check "second switch succeeds" inzsh "home-manager switch --flake $dotfiles/nix#$config -b hm-backup"
 check "no duplicate GPG import" bash -c '[ "$(/usr/bin/gpg --list-secret-keys --with-colons | grep -c ^sec)" = 2 ]'
-check "migrating again moves nothing, keeps the chezmoi backup" bash -c 'before=$(readlink -f ~/.local/state/dotfiles-migration/latest); "'"$dotfiles"'/scripts/migrate-to-home-manager.sh" "'"$config"'" >/tmp/migrate2.log 2>&1 && grep -q "Already migrated" /tmp/migrate2.log && [ "$(readlink -f ~/.local/state/dotfiles-migration/latest)" = "$before" ] && test -e ~/.zshrc'
+check "migrating again moves nothing, keeps the chezmoi backup" bash -c 'before=$(readlink -f ~/.local/state/dotfiles-migration/latest); "'"$dotfiles"'/scripts/migrate-to-home-manager.sh" "'"$config"'" >/tmp/migrate2.log 2>&1 && grep -q "Already migrated" /tmp/migrate2.log && [ "$(readlink -f ~/.local/state/dotfiles-migration/latest)" = "$before" ] && test -e ~/.config/zsh/.zshrc || { grep -a "Moved\|Already" /tmp/migrate2.log; cat ~/.local/state/dotfiles-migration/latest/moved-files ~/.local/state/dotfiles-migration/latest/moved-bins 2>/dev/null | tr "\n" " "; false; }'
 
 section "Roll back to chezmoi"
 if "$dotfiles/scripts/rollback-to-chezmoi.sh" > /tmp/rollback.log 2>&1; then ok "rollback script"; else bad "rollback script" "$(tail -10 /tmp/rollback.log)"; fi

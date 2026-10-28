@@ -27,9 +27,12 @@ cp "$dotfiles/tests/ubuntu-hm/Dockerfile" "$ctx/"
 # works behind VPNs/Zscaler where Docker's bridge NAT does not.
 docker build --network host -t "$image" "$ctx"
 
-# Capped: evaluating the laptop configuration peaks around 13 GB; without a
-# limit, running this next to the test VMs can exhaust the host's memory.
-docker run --rm --network host --memory "${TEST_MEMORY:-18g}" --memory-swap "${TEST_MEMORY:-18g}" \
+# Capped: evaluating the laptop configuration peaks around 13 GB, plus
+# source builds (patched Noctalia); without limits this can exhaust the
+# host's memory, so memory and build parallelism are bounded. Don't run it
+# next to the test VMs.
+docker run --rm --network host --memory "${TEST_MEMORY:-24g}" --memory-swap "${TEST_MEMORY:-24g}" \
+  -e NIX_CONFIG=$'cores = 4\nmax-jobs = 2' \
   -v ubuntu-hm-nix:/nix \
   -v "$dotfiles:/home/Alex/dotfiles:ro" \
   -v "$agekey:/run/agekey:ro" \
