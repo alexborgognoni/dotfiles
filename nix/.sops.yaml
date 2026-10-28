@@ -1,0 +1,20 @@
+# Who can decrypt what. NixOS machines decrypt with their SSH host key
+# (converted to age); the admin key (~/.config/sops/age/keys.txt) edits all
+# files and is also how the Ubuntu work laptop (standalone Home Manager)
+# decrypts. After changing recipients: sops updatekeys secrets/<file>.yaml
+keys:
+  - &admin age10rmlqm2x94w6vlq603ea0krxc0vt43aj8watsvtv3t9u8euktpdq2ll8xc
+  - &vm age1edg2ykccnp475wm6ntd507r3a5hz9j2gt283l0cnwdsnfsdg25fqf38khx
+creation_rules:
+  # Host secrets (login password)
+  - path_regex: secrets/vm\.yaml$
+    key_groups:
+      - age: [*admin, *vm]
+  # Personal identity (SSH + GPG): every machine
+  - path_regex: secrets/personal\.yaml$
+    key_groups:
+      - age: [*admin, *vm]
+  # Work identity (SSH + GPG): only the work laptop (admin key)
+  - path_regex: secrets/work\.yaml$
+    key_groups:
+      - age: [*admin]
