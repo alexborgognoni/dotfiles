@@ -68,7 +68,7 @@ check "theme switch (nord and back)" 'before=$(theme current | cut -d" " -f1); t
 section "Session apps (my.desktop.autostart)"
 check "kitty on workspace 1" 'hyprctl -j clients | jq -e "any(.[]; .class == \"kitty\" and .workspace.id == 1)" >/dev/null'
 check "Chrome on workspace 2" 'hyprctl -j clients | jq -e "any(.[]; (.class | test(\"google-chrome\")) and .workspace.id == 2)" >/dev/null'
-check "Teams on workspace 3" 'hyprctl -j clients | jq -e "any(.[]; (.class | test(\"teams-for-linux\")) and .workspace.id == 3)" >/dev/null'
+# (Teams and Outlook are Chrome web apps of the laptop's profile; not in the VM)
 
 section "Audio"
 check "PipeWire is the sound server" 'timeout 5 pactl info | grep -q "on PipeWire"'

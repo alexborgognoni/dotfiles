@@ -47,6 +47,9 @@ let
       collection-fontsextra
     ]
   );
+  # Your LibrePods build (Rust rewrite + local changes), see ./librepods
+  librepods = pkgs.callPackage ./librepods { };
+
   # Readest follows the live theme: its custom theme "Theme" gets the current
   # pack's colors (and the light/dark mode) before every start, and from the
   # `theme` command while Readest is closed (it rewrites its settings while
@@ -185,7 +188,6 @@ in
     pkgs.openwhispr
   ]
   ++ (with u; [
-    teams-for-linux
     neovide
     obsidian
     vlc

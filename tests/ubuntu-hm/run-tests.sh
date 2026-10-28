@@ -106,7 +106,7 @@ missing=""
 for c in claude codex copilot opencode forge terraform kubectl kubecolor k9s aws az func azcopy cf ansible \
          node pnpm bun tsc rustup go uv poetry python3 psql semgrep zizmor sops age 7zz tokei ffmpeg magick \
          pdflatex latexmk kitty code neovide obsidian vlc obs audacity inkscape foliate readest openwhispr \
-         chromium wine teams-for-linux nh home-manager theme eza bat fzf rg fd zoxide yazi lazygit btop \
+         chromium wine nh home-manager theme eza bat fzf rg fd zoxide yazi lazygit btop \
          starship gh git-filter-repo claude-vertex claude-copilot; do
   inzsh "command -v $c" >/dev/null 2>&1 || missing="$missing $c"
 done

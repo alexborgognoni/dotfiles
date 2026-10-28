@@ -55,9 +55,10 @@
           class = "^google-chrome$";
         }
         {
-          command = "teams-for-linux";
+          # Teams web app (Chrome)
+          command = "google-chrome-stable --profile-directory=Default --app-id=cifhbcnohmdccbgoicgdjpfamggdegmo";
           workspace = 3;
-          class = "^teams-for-linux$";
+          class = "^chrome-cifhbcnohmdccbgoicgdjpfamggdegmo-Default$";
         }
         {
           # Outlook web app (Chrome); its window belongs to the running Chrome

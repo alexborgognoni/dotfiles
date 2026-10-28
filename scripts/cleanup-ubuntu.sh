@@ -132,7 +132,7 @@ for p in .local/bin .local/lib/python3.10 .nvm .local/share/mise .config/mise .p
          .local/share/applications/me.kavishdevar.librepods.desktop \
          .config/envman .config/herd-lite .config/composer .config/psysh .config/neofetch \
          .config/touchegg .config/VirtualBox .config/BraveSoftware .config/opera .config/vivaldi \
-         .config/chromium .config/chezmoi .local/share/chezmoi \
+         .config/chromium .config/chezmoi .local/share/chezmoi .config/teams-for-linux \
          .brewenv_cache .zinit .local/share/zinit .tmux/plugins; do
   [ -e "$HOME/$p" ] && home_remove+=("$p")
 done
