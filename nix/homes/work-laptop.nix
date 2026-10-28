@@ -47,8 +47,12 @@
           workspace = 1;
         }
         {
+          # Chrome's window is owned by a process further down the launch
+          # chain, so a class rule places it (all Chrome windows, as GNOME's
+          # auto-move-windows did; web apps have their own class)
           command = "google-chrome-stable";
           workspace = 2;
+          class = "^google-chrome$";
         }
         {
           command = "teams-for-linux";
