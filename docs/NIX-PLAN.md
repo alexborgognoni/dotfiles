@@ -49,7 +49,7 @@ Scope: this repository (`~/dotfiles`)
 | Profiles | Work laptop: `work`. VM and home PC: `personal` |
 | VM editing workflow | Edit on Ubuntu, `~/dotfiles` shared into the VM via virtiofs |
 | SSH/GPG private keys | Encrypted in the repo with sops-nix, per machine/profile |
-| System-level config on Ubuntu | Small Ansible playbook (system-manager may be evaluated later) |
+| System-level config on Ubuntu | system-manager (`/etc`, services); Ansible only for apt packages, groups, login shell |
 | Hyprland on Ubuntu | Later phase (5), with GNOME kept as a fallback session |
 
 ## 5. Target architecture
@@ -233,13 +233,20 @@ engine, libvirt/QEMU, keyd, database servers).
   (`secrets/personal.yaml`, `secrets/work.yaml`), VM on the personal profile,
   `my.themes.prebuilt` (R8). Verified: VM rebuild, all flake checks, live
   theme suite (195/195), signed commits and GitHub SSH in the VM.
-- Phase 2: `scripts/test-ubuntu-hm.sh` passes 50/50 (chezmoi state ->
-  migration -> verification -> second activation -> rollback).
-  `scripts/bootstrap-nix.sh`, `migrate-to-home-manager.sh` and
-  `rollback-to-chezmoi.sh` are ready for the laptop.
-- Not covered by the container (needs the real laptop): the multi-user Nix
-  daemon setup, the GPU setup with the real NVIDIA driver, GNOME app grid
-  after re-login.
+- Phase 2: `scripts/test-ubuntu-hm.sh` passes 56/56 (chezmoi state ->
+  migration -> verification -> second activation and migration -> rollback).
+- Phase 3 prepared: one-command `install` (Nix, slim `ansible/ubuntu.yml`,
+  system-manager `systemConfigs.work-laptop`, Home Manager migration).
+  Root level in system-manager: nix.conf + Zscaler CA, keyd, GPU drivers,
+  GDM Wayland + "Hyprland (Nix)" session, portal, lock-screen PAM service.
+  GNOME settings, extensions and theme in Home Manager (R14). PipeWire
+  default, PulseAudio fallback (`my.audio.server`). Verified end to end in a
+  fresh Ubuntu 22.04 GNOME VM (HWE kernel, NetworkManager, like the laptop):
+  install from GitHub, idempotent re-runs, real GDM login, and
+  `tests/ubuntu-vm/verify.sh` 30/30 (network, audio, Hyprland session,
+  portals, lock screen, GNOME, identity).
+- Needs the real laptop: NVIDIA offload with the real driver, corporate
+  agents (Zscaler client, Intune) alongside, your existing chezmoi state.
 
 ## 11. Sign-off
 
