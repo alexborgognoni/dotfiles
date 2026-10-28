@@ -34,7 +34,9 @@ if ! ls "$HOME"/Backups/system-snapshot-*.tar.zst.age >/dev/null 2>&1; then
 fi
 
 # --- 1. apt ------------------------------------------------------------------
-initial="$(zcat /var/log/installer/initial-status.gz 2>/dev/null | awk '/^Package:/{print $2}' | sort -u)"
+[ -s /var/log/installer/initial-status.gz ] \
+  || die "no /var/log/installer/initial-status.gz: cannot tell which packages came with Ubuntu"
+initial="$(zcat /var/log/installer/initial-status.gz | awk '/^Package:/{print $2}' | sort -u)"
 declared="$(python3 -c "
 import yaml,sys
 play=yaml.safe_load(open('$dotfiles/ansible/ubuntu.yml'))[0]['vars']

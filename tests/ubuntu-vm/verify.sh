@@ -65,8 +65,14 @@ check "Noctalia not bound to GNOME (graphical-session.target)" '! grep -q graphi
 check "portals: ScreenCast, Screenshot, FileChooser, Settings" 'i=$(gdbus introspect --session --dest org.freedesktop.portal.Desktop --object-path /org/freedesktop/portal/desktop); for x in ScreenCast Screenshot FileChooser Settings; do grep -q "interface org.freedesktop.portal.$x" <<<"$i" || { echo "missing $x"; exit 1; }; done'
 check "theme switch (nord and back)" 'before=$(theme current | cut -d" " -f1); theme apply nord >/dev/null 2>&1 && readlink ~/.local/state/theme/current | grep -q nord && theme apply "$before" >/dev/null 2>&1'
 
+section "Session apps (my.desktop.autostart)"
+check "kitty on workspace 1" 'hyprctl -j clients | jq -e "any(.[]; .class == \"kitty\" and .workspace.id == 1)" >/dev/null'
+check "Chrome on workspace 2" 'hyprctl -j clients | jq -e "any(.[]; (.class | test(\"google-chrome\")) and .workspace.id == 2)" >/dev/null'
+check "Teams on workspace 3" 'hyprctl -j clients | jq -e "any(.[]; (.class | test(\"teams-for-linux\")) and .workspace.id == 3)" >/dev/null'
+
 section "Audio"
 check "PipeWire is the sound server" 'timeout 5 pactl info | grep -q "on PipeWire"'
+check "PipeWire and WirePlumber from Nix" 'systemctl --user show pipewire wireplumber -p ExecStart | grep -c /nix/store/ | grep -qx 2'
 check "exactly one WirePlumber" '[ "$(pgrep -cx wireplumber)" = 1 ]'
 check "a real output device" 'timeout 5 pactl list short sinks | grep -qv auto_null'
 
@@ -78,6 +84,12 @@ section "GNOME (settings in Home Manager)"
 check "all configured extensions enabled" '[ "$(gsettings get org.gnome.shell enabled-extensions | tr , "\n" | wc -l)" -ge 15 ]'
 check "Catppuccin GTK and Shell theme" 'gsettings get org.gnome.desktop.interface gtk-theme | grep -q catppuccin && gsettings get org.gnome.shell.extensions.user-theme name | grep -q catppuccin'
 check "keybindings" '[ "$(gsettings get org.gnome.desktop.wm.keybindings close)" = "['"'"'<Shift><Super>q'"'"']" ]'
+
+section "Apps"
+check "Chrome from Nix, Edge from apt" 'command -v google-chrome-stable | grep -q nix-profile && command -v microsoft-edge | grep -q ^/usr/bin'
+check "Neovim (AstroNvim): no errors, live theme" 'out="$(cd /tmp && nvim --headless "+lua vim.defer_fn(function() io.stdout:write(vim.g.colors_name .. \"|\" .. vim.fn.execute(\"messages\")) vim.cmd(\"qa!\") end, 4000)" 2>&1)"; echo "$out" | grep -q "theme-" && ! echo "$out" | grep -qi error'
+check "Readest colors in the theme pack" 'jq -e .colors.dark.bg ~/.local/state/theme/current/readest.json >/dev/null'
+check "seeded app settings" 'test -f ~/.config/herdr/config.toml && test -f ~/.config/opencode/cli.json'
 
 section "User environment"
 check "git identity and signing" 'git -C ~/dotfiles config user.email | grep -q @ && git config --get commit.gpgsign | grep -q true'
