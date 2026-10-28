@@ -9,10 +9,17 @@
 #
 #   scripts/cleanup-ubuntu.sh            dry run: shows what would be removed
 #   scripts/cleanup-ubuntu.sh --apply    removes it (asks once, needs sudo)
+#   scripts/cleanup-ubuntu.sh --apply --yes   without asking
 set -euo pipefail
 
 apply=false
-[ "${1:-}" = "--apply" ] && apply=true
+assume_yes=false
+for arg in "$@"; do
+  case "$arg" in
+    --apply) apply=true ;;
+    --yes) assume_yes=true ;;
+  esac
+done
 dotfiles="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Never removed (regexes on package names): corporate agents and their
@@ -124,7 +131,7 @@ printf '%s\n' "$flatpaks" | sed '/^$/d; s/^/    /'
 
 # --- 4. home: old tools and leftovers -----------------------------------------
 home_remove=()
-for p in .local/bin .local/lib/python3.10 .nvm .local/share/mise .config/mise .pyenv .opencode .bun \
+for p in .local/bin .local/lib/python3.10 .local/lib/librepods .nvm .local/share/mise .config/mise .pyenv .opencode .bun \
          .local/share/fonts .icons .local/share/themes/catppuccin-macchiato-lavender-standard+default \
          .local/share/themes/catppuccin-macchiato-lavender-standard+default-hdpi \
          .local/share/themes/catppuccin-macchiato-lavender-standard+default-xhdpi \
@@ -160,9 +167,11 @@ grep -q '^WLR_NO_HARDWARE_CURSORS=' /etc/environment && { log "/etc/environment"
 
 $apply || { printf '\nDry run. Apply with: %s --apply\n' "$0"; exit 0; }
 
-printf '\nRemove all of the above? Type "yes": '
-read -r answer < /dev/tty
-[ "$answer" = "yes" ] || die "aborted"
+if ! $assume_yes; then
+  printf '\nRemove all of the above? Type "yes": '
+  read -r answer < /dev/tty
+  [ "$answer" = "yes" ] || die "aborted"
+fi
 
 log "Removing flatpaks and snaps"
 for a in $flatpaks; do flatpak uninstall -y --delete-data "$a" || true; done
