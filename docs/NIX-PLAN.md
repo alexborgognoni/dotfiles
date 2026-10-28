@@ -244,7 +244,7 @@ engine, libvirt/QEMU, keyd, database servers).
 ## 11. Sign-off
 
 - [x] Plan approved
-- [x] Phase 1 accepted (pending your review)
-- [x] Phase 2 accepted (pending your review)
+- [ ] Phase 1 accepted
+- [ ] Phase 2 accepted
 - [ ] Phase 3 accepted
 - [ ] Phase 4 accepted
