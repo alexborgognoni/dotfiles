@@ -207,7 +207,7 @@ sudo systemctl restart system-manager.target 2>/dev/null || true
 log "Cleaning up home"
 # Never touch Home Manager's own files (links into the Nix store): inside a
 # listed directory only the other entries go, the directory if then empty.
-from_nix() { [ -L "$1" ] && case "$(readlink -f "$1")" in /nix/store/*) true ;; *) false ;; esac; }
+from_nix() { case "$(readlink -f "$1")" in /nix/store/*) true ;; *) false ;; esac; }
 for p in "${home_remove[@]}"; do
   target="${HOME:?}/$p"
   from_nix "$target" && continue

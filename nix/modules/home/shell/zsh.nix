@@ -79,7 +79,8 @@ in
     // lib.optionalAttrs isWork {
       REQUESTS_CA_BUNDLE = caBundle;
       NODE_EXTRA_CA_CERTS = caBundle;
-      NODE_OPTIONS = "--use-openssl-ca --use-system-ca";
+      # (Node 24 refuses --use-system-ca together with --use-openssl-ca)
+      NODE_OPTIONS = "--use-openssl-ca";
     };
 
     initContent = lib.mkMerge [

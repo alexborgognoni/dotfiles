@@ -59,7 +59,8 @@ managed="$(printf '%s\n' "$managed" .config/gtk-4.0/assets .config/gtk-4.0/gtk-d
   done)"
 
 # Links into the Nix store are Home Manager's own (a re-run): never move them
-from_nix() { [ -L "$1" ] && case "$(readlink -f "$1")" in /nix/store/*) true ;; *) false ;; esac; }
+# (the path itself or any parent directory may be the link)
+from_nix() { case "$(readlink -f "$1")" in /nix/store/*) true ;; *) false ;; esac; }
 
 log "Moving chezmoi-managed files to $backup/home"
 moved=0

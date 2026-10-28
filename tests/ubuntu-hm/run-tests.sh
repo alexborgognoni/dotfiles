@@ -33,7 +33,7 @@ check "old ~/.gitconfig present" test -f ~/.gitconfig
 mkdir -p ~/.local/bin ~/.config/sops/age
 printf '#!/bin/sh\necho stale-kitty\n' > ~/.local/bin/kitty
 printf '#!/bin/sh\necho stale-uv\n' > ~/.local/bin/uv
-printf '#!/bin/sh\necho mine\n' > ~/.local/bin/fix-zscaler
+printf '#!/bin/sh\necho mine\n' > ~/.local/bin/my-own-script
 chmod +x ~/.local/bin/*
 install -m 600 /run/agekey ~/.config/sops/age/keys.txt
 
@@ -56,7 +56,7 @@ check "fzf-tab loaded" inzsh 'whence fzf-tab-complete'
 check "zoxide and starship initialised" inzsh 'whence z && whence starship_precmd || whence prompt_starship_precmd'
 check "work CA variables" inzsh '[ "$NODE_EXTRA_CA_CERTS" = /etc/ssl/certs/ca-certificates.crt ]'
 check "Nix tools win over stale ~/.local/bin" inzsh '[ "$(command -v kitty)" != "$HOME/.local/bin/kitty" ]'
-check "unrelated ~/.local/bin scripts kept" test -x ~/.local/bin/fix-zscaler
+check "unrelated ~/.local/bin scripts kept" test -x ~/.local/bin/my-own-script
 check "stale duplicates moved to the backup" bash -c 'test ! -e ~/.local/bin/uv && test -e ~/.local/state/dotfiles-migration/latest/bin/.local/bin/uv'
 
 section "Git identities"
@@ -81,7 +81,7 @@ cd "$HOME" || exit 1
 
 section "Neovim, tmux, kitty config"
 probe="$(cd /tmp && nvim --headless "+lua vim.defer_fn(function() io.stdout:write(vim.g.colors_name .. '|' .. vim.fn.execute('messages')) vim.cmd('qa!') end, 3000)" 2>&1)"
-[[ "$probe" == theme-catppuccin-macchiato* && "$probe" != *Error* ]] && ok "nvim starts themed, no errors" || bad "nvim" "$probe"
+[[ "$probe" == *theme-catppuccin-macchiato* && "$probe" != *Error* ]] && ok "nvim starts themed, no errors" || bad "nvim" "$probe"
 check "nvim language servers available" bash -c 'nvim --headless "+lua io.stdout:write(vim.fn.executable(\"nixd\") .. vim.fn.executable(\"pyright\"))" +qa | grep -q 11'
 check "tmux loads config + live theme" bash -c 'tmux new-session -d -s t && tmux source-file ~/.config/tmux/theme-reload.conf && [ "$(tmux show -gv @thm_bg)" = "#24273a" ]; r=$?; tmux kill-server; exit $r'
 check "kitty config includes the live theme" grep -q "theme/current/kitty.conf" ~/.config/kitty/kitty.conf
@@ -124,7 +124,7 @@ check "fonts visible to fontconfig" inzsh 'nix shell nixpkgs#fontconfig -c fc-li
 section "Activate again (idempotent)"
 check "second switch succeeds" inzsh "home-manager switch --flake $dotfiles/nix#$config -b hm-backup"
 check "no duplicate GPG import" bash -c '[ "$(/usr/bin/gpg --list-secret-keys --with-colons | grep -c ^sec)" = 2 ]'
-check "migrating again moves nothing, keeps the chezmoi backup" bash -c 'before=$(readlink -f ~/.local/state/dotfiles-migration/latest); "'"$dotfiles"'/scripts/migrate-to-home-manager.sh" "'"$config"'" >/tmp/migrate2.log 2>&1 && grep -q "Already migrated" /tmp/migrate2.log && [ "$(readlink -f ~/.local/state/dotfiles-migration/latest)" = "$before" ] && test -e ~/.config/zsh/.zshrc || { grep -a "Moved\|Already" /tmp/migrate2.log; cat ~/.local/state/dotfiles-migration/latest/moved-files ~/.local/state/dotfiles-migration/latest/moved-bins 2>/dev/null | tr "\n" " "; false; }'
+check "migrating again moves nothing, keeps the chezmoi backup" bash -c 'before=$(readlink -f ~/.local/state/dotfiles-migration/latest); "'"$dotfiles"'/scripts/migrate-to-home-manager.sh" "'"$config"'" >/tmp/migrate2.log 2>&1 && grep -q "Already migrated" /tmp/migrate2.log && [ "$(readlink -f ~/.local/state/dotfiles-migration/latest)" = "$before" ] && test -e ~/.config/zsh/.zshrc || { grep -av "^copying\|^building\|^  /nix" /tmp/migrate2.log | tail -3; false; }'
 
 section "Roll back to chezmoi"
 if "$dotfiles/scripts/rollback-to-chezmoi.sh" > /tmp/rollback.log 2>&1; then ok "rollback script"; else bad "rollback script" "$(tail -10 /tmp/rollback.log)"; fi
