@@ -3,7 +3,7 @@
 Runbook for phase 3 of [NIX-PLAN.md](NIX-PLAN.md). Rehearsed in a Ubuntu
 22.04 container that reproduces this laptop (`scripts/test-ubuntu-hm.sh`,
 including the rollback) and end to end in a fresh Ubuntu 22.04 GNOME VM
-(`tests/ubuntu-vm/create.sh`).
+(`tests/ubuntu-vm/create.sh`, checked by `tests/ubuntu-vm/verify.sh`).
 
 Who owns what afterwards:
 

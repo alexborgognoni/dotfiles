@@ -210,8 +210,10 @@ less RAM build the checks one by one:
 22.04 container: it reproduces the current chezmoi state, migrates, verifies
 shell, identities, keys, Neovim, tmux, themes, packages and GPU pieces, and
 rolls back (needs Docker and the admin key; nothing on the host changes).
-`../tests/ubuntu-vm/create.sh` creates a fresh Ubuntu 22.04 GNOME VM for
-testing `../install` end to end, including the Hyprland session.
+`../tests/ubuntu-vm/create.sh` creates a fresh Ubuntu 22.04 GNOME VM (HWE
+kernel, NetworkManager, like the laptop) for testing `../install` end to end;
+`../tests/ubuntu-vm/verify.sh` then asserts the result (system layer, GDM,
+network, audio, Hyprland session, portals, lock screen PAM, GNOME, identity).
 
 Fewer pre-built themes: `my.themes.prebuilt = [ "nord" ... ]` (Home Manager)
 limits the specialisations (faster rebuilds, less memory); `theme list` then
