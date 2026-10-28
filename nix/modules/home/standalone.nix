@@ -133,13 +133,18 @@ in
 
       # The login shell is the distribution's zsh (so logging in works even
       # without Nix); interactive shells hand over to Nix's zsh, whose
-      # plugins (fzf-tab's module) need Nix's newer glibc. Commands
-      # (zsh -c) and scripts keep running in the shell they were started in.
-      if [[ -o interactive && -z ''${ZSH_EXECUTION_STRING-} && -z ''${HM_NIX_ZSH-} ]]; then
+      # plugins (fzf-tab's module) need Nix's newer glibc. Non-interactive
+      # shells and scripts keep running in the shell they were started in.
+      if [[ -o interactive && -z ''${HM_NIX_ZSH-} ]]; then
         hm_nix_zsh="$HOME/.nix-profile/bin/zsh"
         if [[ -x $hm_nix_zsh && $(readlink -f /proc/$$/exe) != $(readlink -f $hm_nix_zsh) ]]; then
           export HM_NIX_ZSH=1
-          if [[ -o login ]]; then exec "$hm_nix_zsh" -l; else exec "$hm_nix_zsh"; fi
+          hm_zsh_opts=(-i)
+          [[ -o login ]] && hm_zsh_opts+=(-l)
+          if [[ -n ''${ZSH_EXECUTION_STRING-} ]]; then
+            exec "$hm_nix_zsh" "''${hm_zsh_opts[@]}" -c "$ZSH_EXECUTION_STRING"
+          fi
+          exec "$hm_nix_zsh" "''${hm_zsh_opts[@]}"
         fi
         unset hm_nix_zsh
       fi
