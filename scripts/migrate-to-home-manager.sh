@@ -76,7 +76,7 @@ while IFS= read -r rel; do
   fi
 done <<<"$managed"
 # Whole AstroNvim config: nixvim replaces it
-if [ -d "$HOME/.config/nvim" ] && [ ! -L "$HOME/.config/nvim" ]; then
+if [ -d "$HOME/.config/nvim" ] && [ ! -L "$HOME/.config/nvim" ] && ! from_nix "$HOME/.config/nvim/init.lua"; then
   mkdir -p "$backup/home/.config"
   mv "$HOME/.config/nvim" "$backup/home/.config/nvim"
   echo ".config/nvim" >> "$backup/moved-files"

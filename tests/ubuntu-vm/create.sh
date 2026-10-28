@@ -89,7 +89,8 @@ printf 'instance-id: %s-%s\nlocal-hostname: ubuntu-test\n' "$name" "$(date +%s)"
 cloud-localds -N "$work/network-config" "$seed" "$work/user-data" "$work/meta-data"
 
 virt-install --connect qemu:///system --name "$name" \
-  --memory 20480 --vcpus 8 --cpu host-passthrough --machine q35 \
+  --memory 16384 --vcpus 8 --cpu host-passthrough --machine q35 \
+  --memballoon virtio,freePageReporting=on \
   --boot loader=/usr/share/OVMF/OVMF_CODE_4M.fd,loader.readonly=yes,loader.type=pflash,nvram.template=/usr/share/OVMF/OVMF_VARS_4M.fd,loader_secure=no \
   --osinfo ubuntu22.04 \
   --disk "path=$disk,bus=virtio" --disk "path=$seed,device=cdrom" \
