@@ -20,6 +20,18 @@ in
 
   programs.zsh = {
     enable = true;
+    # Commands run by opencode get the environment it was started with, not
+    # the Nix libraries its launcher adds (packages/default.nix: opencode)
+    envExtra = lib.mkBefore ''
+      if [[ -n ''${OPENCODE_CALLER_LD_LIBRARY_PATH+x} ]]; then
+        if [[ -n $OPENCODE_CALLER_LD_LIBRARY_PATH ]]; then
+          export LD_LIBRARY_PATH=$OPENCODE_CALLER_LD_LIBRARY_PATH
+        else
+          unset LD_LIBRARY_PATH
+        fi
+        unset OPENCODE_CALLER_LD_LIBRARY_PATH
+      fi
+    '';
     dotDir = "${config.xdg.configHome}/zsh";
     enableCompletion = true;
     defaultKeymap = "emacs";

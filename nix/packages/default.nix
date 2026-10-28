@@ -47,6 +47,25 @@ let
       collection-fontsextra
     ]
   );
+  # opencode's launcher prepends Nix libraries to LD_LIBRARY_PATH, which every
+  # command it runs would inherit (distribution programs then crash on Nix's
+  # newer glibc). Remember the caller's value; zsh restores it for commands
+  # (modules/home/shell/zsh.nix).
+  opencode = pkgs.symlinkJoin {
+    name = "opencode-${u.opencode.version}";
+    paths = [ u.opencode ];
+    postBuild = ''
+      rm "$out/bin/opencode"
+      cat > "$out/bin/opencode" <<EOF
+      #!${pkgs.runtimeShell}
+      export OPENCODE_CALLER_LD_LIBRARY_PATH="\''${LD_LIBRARY_PATH-}"
+      exec ${u.opencode}/bin/opencode "\$@"
+      EOF
+      chmod +x "$out/bin/opencode"
+    '';
+    inherit (u.opencode) meta;
+  };
+
   # Your LibrePods build (Rust rewrite + local changes), see ./librepods
   librepods = pkgs.callPackage ./librepods { };
 
