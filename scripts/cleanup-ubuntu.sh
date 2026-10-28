@@ -45,7 +45,7 @@ apt_remove="$(apt-mark showmanual | sort -u \
   | comm -23 - <(printf '%s\n' "$initial") \
   | comm -23 - <(printf '%s\n' "$declared") \
   | grep -vE "$protect" || true)"
-apt_remove="$( { printf '%s\n' "$apt_remove"; dpkg-query -W -f '${Package}\n' | grep -E "$drop"; } | sed '/^$/d' | sort -u)"
+apt_remove="$( { printf '%s\n' "$apt_remove"; dpkg-query -W -f '${Package}\n' | grep -E "$drop" || true; } | sed '/^$/d' | sort -u)"
 
 log "apt: packages to remove: installed by hand or dropped tool families ($(printf '%s' "$apt_remove" | grep -c . || true))"
 printf '%s\n' "$apt_remove" | column -c 120 | sed 's/^/    /'
@@ -104,7 +104,7 @@ for f in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
     printf '%s\n' "$apt_purged" | grep -qx "$owner" && repos_remove+=("$f (with $owner)")
     continue
   fi
-  uris="$(grep -hoE 'https?://[^ ]+' "$f" | norm | sort -u)"
+  uris="$(grep -hoE 'https?://[^ ]+' "$f" | norm | sort -u || true)"
   [ -n "$uris" ] || continue
   why="$(awk 'NR==FNR { u[$1]; next } ($1 in u) { print $2; exit }' <(printf '%s\n' "$uris") <(printf '%s\n' "$used"))"
   if [ -z "$why" ]; then repos_remove+=("$f"); else repos_kept+=("$f (still used by $why)"); fi
@@ -190,7 +190,7 @@ fi
 for p in "${sys_remove[@]}"; do sudo rm -rf "$p"; done
 sudo systemctl daemon-reload
 if grep -q '^WLR_NO_HARDWARE_CURSORS=' /etc/environment; then
-  grep -v '^WLR_NO_HARDWARE_CURSORS=' /etc/environment | sudo tee /etc/environment.new >/dev/null
+  { grep -v '^WLR_NO_HARDWARE_CURSORS=' /etc/environment || true; } | sudo tee /etc/environment.new >/dev/null
   sudo mv /etc/environment.new /etc/environment
 fi
 # system-manager's keyd takes over the unit name again
