@@ -92,6 +92,11 @@ in
       "L+ /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.hyprland.service - - - - ${portal}/share/dbus-1/services/org.freedesktop.impl.portal.desktop.hyprland.service"
     ];
 
+    # The portal's D-Bus activation starts this user unit
+    environment.etc."systemd/user/xdg-desktop-portal-hyprland.service" = lib.mkIf desktop {
+      source = "${portal}/share/systemd/user/xdg-desktop-portal-hyprland.service";
+    };
+
     environment.etc."dotfiles/hyprland-nix.desktop" = lib.mkIf desktop {
       text = ''
         [Desktop Entry]
@@ -100,6 +105,17 @@ in
         Exec=${home}/.nix-profile/bin/hyprland-session
         Type=Application
         DesktopNames=Hyprland
+      '';
+    };
+
+    # Noctalia's lock screen (patched to use this service, see
+    # modules/home/desktop/noctalia.nix) runs Nix's PAM, which cannot parse
+    # Ubuntu's /etc/pam.d files (Debian's @include): a stack of its own, with
+    # absolute module paths as on NixOS.
+    environment.etc."pam.d/noctalia" = lib.mkIf desktop {
+      text = ''
+        auth     required ${pkgs.linux-pam}/lib/security/pam_unix.so
+        account  required ${pkgs.linux-pam}/lib/security/pam_unix.so
       '';
     };
 

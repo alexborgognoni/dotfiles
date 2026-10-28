@@ -13,6 +13,9 @@ let
   inline = lib.generators.mkLuaInline;
 
   standalone = config.my.standalone;
+  # On NixOS, UWSM starts each app in its own systemd unit; standalone
+  # sessions have no UWSM.
+  app = cmd: if standalone then cmd else "uwsm app -- ${cmd}";
   mod = "SUPER";
   noctalia = "noctalia msg";
 
@@ -374,9 +377,9 @@ in
 
         bind = [
           # Apps
-          (exec "${mod} + RETURN" "uwsm app -- kitty")
-          (exec "${mod} + B" "uwsm app -- firefox")
-          (exec "${mod} + E" "uwsm app -- nautilus --new-window")
+          (exec "${mod} + RETURN" (app "kitty"))
+          (exec "${mod} + B" (app "firefox"))
+          (exec "${mod} + E" (app "nautilus --new-window"))
 
           # Shell (Noctalia)
           (exec "${mod} + SPACE" "${noctalia} panel-toggle launcher")

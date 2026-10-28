@@ -64,10 +64,11 @@ in
         "icons/${cursor}".source = "${pkgs.volantes-cursors}/share/icons/${cursor}";
       };
 
-    # libadwaita (GTK 4) apps ignore gtk-theme; they read ~/.config/gtk-4.0
+    # libadwaita (GTK 4) apps ignore gtk-theme; in dark mode they load
+    # ~/.config/gtk-4.0/gtk-dark.css. gtk.css stays unmanaged: the Unite
+    # extension rewrites it (GTK 3 and 4) with its window button styles.
     xdg.configFile = {
       "gtk-4.0/assets".source = "${themeDir}/gtk-4.0/assets";
-      "gtk-4.0/gtk.css".source = "${themeDir}/gtk-4.0/gtk.css";
       "gtk-4.0/gtk-dark.css".source = "${themeDir}/gtk-4.0/gtk-dark.css";
     };
 

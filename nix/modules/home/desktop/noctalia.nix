@@ -20,6 +20,25 @@ let
   deco = theme.decoration;
   state = config.my.themeState;
   square = deco.shellRadius == 0.0;
+
+  # The lock screen authenticates against the "login" PAM service. On other
+  # distributions that file belongs to the distribution and Nix's PAM cannot
+  # parse it (Debian's @include), so standalone Noctalia uses its own
+  # "noctalia" service, provided by the system layer
+  # (modules/system-manager: /etc/pam.d/noctalia).
+  noctalia =
+    if config.my.standalone then
+      pkgs.noctalia.overrideAttrs (old: {
+        # Upstream's tests run on Hydra for the same sources; icon_resolver
+        # depends on the build host's environment.
+        doCheck = false;
+        postPatch = (old.postPatch or "") + ''
+          substituteInPlace src/shell/lockscreen/lock_screen.cpp \
+            --replace-fail 'const std::string pamService = "login";' 'const std::string pamService = "noctalia";'
+        '';
+      })
+    else
+      pkgs.noctalia;
 in
 {
   imports = [ inputs.noctalia.homeModules.default ];
@@ -47,13 +66,24 @@ in
     # Noctalia hot-reloads config.toml; restarting it on every theme switch
     # (each theme has its own config) would make the bar flicker. Restart only
     # when the package changes.
-    systemd.user.services.noctalia.Unit.X-Restart-Triggers = lib.mkForce [
-      "${pkgs.noctalia}"
+    systemd.user.services.noctalia = lib.mkMerge [
+      {
+        Unit.X-Restart-Triggers = lib.mkForce [
+          "${noctalia}"
+        ];
+      }
+      # Standalone, GNOME starts graphical-session.target too: tie Noctalia
+      # to the Hyprland session only.
+      (lib.mkIf config.my.standalone {
+        Unit.PartOf = lib.mkForce [ "hyprland-session.target" ];
+        Unit.After = lib.mkForce [ "hyprland-session.target" ];
+        Install.WantedBy = lib.mkForce [ "hyprland-session.target" ];
+      })
     ];
 
     programs.noctalia = {
       enable = true;
-      package = pkgs.noctalia;
+      package = noctalia;
       systemd.enable = true;
 
       settings = {
@@ -62,6 +92,8 @@ in
           corner_radius_scale = deco.shellRadius;
           polkit_agent = true;
           telemetry_enabled = false;
+          # Everything the first-run wizard asks is configured here
+          setup_wizard_enabled = false;
           settings_show_advanced = true;
           panel.transparency_mode = if deco.blur then "glass" else "solid";
           screenshot.directory = "${config.xdg.userDirs.pictures}/Screenshots";

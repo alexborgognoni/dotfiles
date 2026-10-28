@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Create a fresh Ubuntu 22.04 GNOME VM ("ubuntu") on this host to test the
 # Ubuntu install end to end: official cloud image + cloud-init, then
-# ubuntu-desktop-minimal (GNOME, GDM). It mirrors a freshly installed
+# ubuntu-desktop-minimal (GNOME, GDM) and the HWE kernel. It mirrors a freshly installed
 # laptop: user Alex (UID 1001), the corporate root CAs of this host, nothing
 # else. Networking as for the NixOS VM: user-mode NIC for internet (works
 # behind Zscaler), host-only NIC for SSH at 192.168.123.11.
@@ -57,10 +57,13 @@ EOF
   done
   cat <<'EOF'
 package_update: true
-packages: [ubuntu-desktop-minimal, openssh-server, qemu-guest-agent, spice-vdagent]
+packages: [ubuntu-desktop-minimal, linux-generic-hwe-22.04, openssh-server, qemu-guest-agent, spice-vdagent]
 runcmd:
   # GDM: start the graphical login after the desktop install
   - systemctl set-default graphical.target
+  # With the HWE kernel the boot framebuffer makes the virtio GPU card1, and
+  # GDM mistakes that for GPU passthrough and disables Wayland sessions
+  - ln -sf /dev/null /etc/udev/rules.d/61-gdm.rules
 power_state:
   mode: reboot
   condition: true
@@ -69,6 +72,9 @@ EOF
 
 cat > "$work/network-config" <<EOF
 version: 2
+# NetworkManager, as on a desktop install (the cloud image defaults to
+# systemd-networkd, which desktop shells like Noctalia cannot see)
+renderer: NetworkManager
 ethernets:
   lan:
     match: {macaddress: "$lan_mac"}

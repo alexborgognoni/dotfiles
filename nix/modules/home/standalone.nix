@@ -88,13 +88,23 @@ in
       {
         "systemd/user/sockets.target.wants/pipewire-pulse.socket".source = unit "pipewire-pulse.socket";
         "systemd/user/default.target.wants/pipewire-pulse.service".source = unit "pipewire-pulse.service";
+        # (no pipewire-session-manager alias: linked through the Nix store,
+        # systemd would load it as a second, competing WirePlumber)
         "systemd/user/pipewire.service.wants/wireplumber.service".source = unit "wireplumber.service";
-        "systemd/user/pipewire-session-manager.service".source = unit "wireplumber.service";
         "systemd/user/pulseaudio.service".source = masked;
         "systemd/user/pulseaudio.socket".source = masked;
         "systemd/user/pipewire-media-session.service".source = masked;
       }
     );
+
+    # The Nix installer hooks only interactive shells (/etc/zsh/zshrc); load
+    # Nix for every zsh (scripts, ssh commands, the display manager's login
+    # shell). The script guards against being sourced twice.
+    programs.zsh.envExtra = ''
+      if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+      fi
+    '';
 
     programs.home-manager.enable = true;
 
