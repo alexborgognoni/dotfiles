@@ -181,6 +181,14 @@ for f in "${repos_remove[@]}"; do
   f="${f%% (*}"
   [ -e "$f" ] && sudo rm -f "$f" "$f.save"
 done
+# Seen once in the test VM: after removing the Firefox snap, systemd-resolved
+# had lost the DNS servers NetworkManager gave it. Re-sync if lookups fail.
+if ! getent hosts archive.ubuntu.com >/dev/null; then
+  log "Name resolution failed; restarting NetworkManager to re-sync DNS"
+  sudo systemctl restart NetworkManager
+  for _ in $(seq 1 15); do getent hosts archive.ubuntu.com >/dev/null && break; sleep 2; done
+  getent hosts archive.ubuntu.com >/dev/null || echo "warning: DNS still failing; check the network" >&2
+fi
 sudo apt-get update -qq
 
 log "Removing hand installs"
