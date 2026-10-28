@@ -3,6 +3,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -11,6 +12,7 @@ let
   c = config.lib.stylix.colors;
   inline = lib.generators.mkLuaInline;
 
+  standalone = config.my.standalone;
   mod = "SUPER";
   noctalia = "noctalia msg";
 
@@ -65,13 +67,27 @@ in
   config = lib.mkIf config.my.features.desktop.enable {
     stylix.targets.hyprland.enable = false;
 
+    # Standalone (Ubuntu): the session the display manager starts. The system
+    # layer (ansible) installs a wayland-sessions entry pointing here.
+    home.packages = lib.mkIf standalone [
+      (pkgs.writeShellScriptBin "hyprland-session" ''
+        # Home Manager session variables (XDG_DATA_DIRS for Nix apps, ...)
+        if [ -r "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ]; then
+          . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+        fi
+        export XDG_CURRENT_DESKTOP=Hyprland XDG_SESSION_DESKTOP=Hyprland
+        exec ${pkgs.hyprland}/bin/start-hyprland
+      '')
+    ];
+
     wayland.windowManager.hyprland = {
       enable = true;
-      # Hyprland and its portal are installed by the NixOS module.
-      package = null;
-      portalPackage = null;
-      # UWSM manages the session and graphical-session.target.
-      systemd.enable = false;
+      # NixOS installs Hyprland and its portal system-wide (programs.hyprland)
+      # and UWSM manages the session; standalone, Home Manager installs both
+      # and its systemd integration starts graphical-session.target.
+      package = if standalone then pkgs.hyprland else null;
+      portalPackage = if standalone then pkgs.xdg-desktop-portal-hyprland else null;
+      systemd.enable = standalone;
       configType = "lua";
 
       # hl.curve() must run before hl.animation() references the curves.

@@ -87,7 +87,14 @@ check "apply nord" bash -c 'theme apply nord >/dev/null 2>&1; readlink ~/.local/
 check "bat follows the theme (Stylix)" bash -c 'grep -qi nord ~/.config/bat/config || ls ~/.config/bat/themes | grep -qi base16'
 check "accent per theme" bash -c 'theme accent green >/dev/null && readlink ~/.local/state/theme/current | grep -q nord-green'
 check "back to default, accent remembered for nord" bash -c 'theme apply catppuccin-macchiato >/dev/null && theme apply nord >/dev/null && readlink ~/.local/state/theme/current | grep -q nord-green && theme apply catppuccin-macchiato >/dev/null'
-check "GTK left alone (no desktop feature)" test ! -e ~/.config/gtk-3.0/gtk.css
+check "GTK left alone (no toolkit theming on Ubuntu)" test ! -e ~/.config/gtk-3.0/gtk.css
+
+section "Hyprland desktop (extra session)"
+check "session wrapper installed" inzsh 'command -v hyprland-session'
+check "Hyprland and Noctalia installed" inzsh 'command -v Hyprland && command -v noctalia'
+check "Hyprland config generated" test -s ~/.config/hypr/hyprland.lua
+check "graphical session units (Home Manager systemd integration)" test -e ~/.config/systemd/user/hyprland-session.target
+check "PipeWire selected, PulseAudio masked" bash -c '[ "$(readlink -f ~/.config/systemd/user/pulseaudio.service)" = /dev/null ] && [ -L ~/.config/systemd/user/sockets.target.wants/pipewire-pulse.socket ]'
 
 section "Packages"
 missing=""

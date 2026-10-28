@@ -12,6 +12,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # NixOS-style system configuration for non-NixOS machines (Ubuntu)
+    system-manager = {
+      url = "github:numtide/system-manager/release-26.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -111,6 +117,21 @@
         "alex@work-laptop" = mkHome { machine = "work-laptop"; };
       };
 
+      # Root-level configuration of non-NixOS machines (system-manager); the
+      # matching Home Manager configuration is passed in (GPU drivers, user).
+      systemConfigs = {
+        work-laptop = inputs.system-manager.lib.makeSystemConfig {
+          modules = [
+            ./modules/system-manager
+            ./systems/work-laptop.nix
+          ];
+          overlays = [ overlay ];
+          specialArgs = {
+            homeConfig = self.homeConfigurations."alex@work-laptop".config;
+          };
+        };
+      };
+
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
 
       # Packages defined in this repository (pkgs/).
@@ -125,8 +146,10 @@
         in
         {
           inherit (pkgs) forgecode openwhispr;
-          # The pinned home-manager CLI, for bootstrapping standalone installs
+          # Pinned CLIs for bootstrapping non-NixOS machines
           home-manager = inputs.home-manager.packages.${system}.home-manager;
+          system-manager = inputs.system-manager.packages.${system}.default;
+          ansible = pkgs.ansible;
         }
       );
 

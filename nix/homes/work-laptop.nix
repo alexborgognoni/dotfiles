@@ -1,7 +1,7 @@
 # Ubuntu 22.04 work laptop (Intel + NVIDIA RTX A2000, PRIME on-demand),
 # standalone Home Manager. Ubuntu keeps the OS, GNOME, drivers, corporate
-# software and system services (see ../../ansible); Nix provides everything
-# user-level.
+# software and system services (see ../../ansible/ubuntu.yml); Nix provides
+# everything user-level, including the Hyprland session.
 #
 #   nh home switch            (or: home-manager switch --flake ~/dotfiles/nix#alex@work-laptop)
 {
@@ -17,8 +17,9 @@
 
     features = {
       gui.enable = true;
-      # Hyprland on Ubuntu is a later phase; GNOME stays the session.
-      desktop.enable = false;
+      # Hyprland + Noctalia as an extra GDM session ("Hyprland (Nix)"); GNOME
+      # stays available and keeps its look (my.desktop.themeToolkits = false).
+      desktop.enable = true;
     };
 
     # Chrome and Edge stay on apt (Intune/Entra sign-in integration).

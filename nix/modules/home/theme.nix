@@ -33,6 +33,9 @@ let
   # specialisations don't re-evaluate it.
   catalogue = themeCatalogue;
   features = config.my.features;
+  # Stylix themes everything (GTK, Qt, ...) only with the desktop feature and
+  # toolkit theming; otherwise just the terminal-side programs.
+  themeEverything = features.desktop.enable && config.my.desktop.themeToolkits;
   inherit (catalogue) themes packs;
   cfg = config.my.theme;
 
@@ -357,7 +360,7 @@ in
           catalogue.toStylix cfg
           // {
             enable = true;
-            autoEnable = features.desktop.enable;
+            autoEnable = themeEverything;
           }
         )
         {
@@ -366,7 +369,7 @@ in
           # or nothing); with useGlobalPkgs Home Manager must not add any.
           overlays.enable = false;
         }
-        (lib.mkIf (!features.desktop.enable) {
+        (lib.mkIf (!themeEverything) {
           targets = {
             bat.enable = true;
             btop.enable = true;

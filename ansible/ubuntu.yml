@@ -1,0 +1,67 @@
+# Ubuntu: the part Nix cannot own. Everything else is Nix:
+#   user level -> Home Manager (nix/homes/<machine>.nix)
+#   root level -> system-manager (nix/systems/<machine>.nix)
+#
+# Run as root by ./install:  sudo ansible-playbook ansible/ubuntu.yml -e user=<name>
+# Corporate and OS packages are never touched.
+- name: Ubuntu packages and settings outside Nix
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    user: "{{ lookup('env', 'SUDO_USER') }}"
+    apt_packages:
+      # Login shell (its configuration comes from Home Manager)
+      - zsh
+      # Container engine (root daemon)
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+      # PipeWire as sound server (my.audio.server); PulseAudio stays installed
+      # as the fallback
+      - pipewire
+      - pipewire-pulse
+      - wireplumber
+      - pipewire-audio-client-libraries
+      - libspa-0.2-bluetooth
+      # Portal backend for file pickers in non-GNOME sessions
+      - xdg-desktop-portal-gtk
+    # Vendor packages that maintain their own apt repository after installing
+    vendor_debs:
+      google-chrome-stable: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+      microsoft-edge-stable: https://go.microsoft.com/fwlink?linkid=2149051&brand=M102
+
+  tasks:
+    - name: Docker apt repository key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Docker apt repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        filename: docker
+
+    - name: apt packages
+      ansible.builtin.apt:
+        name: "{{ apt_packages }}"
+        update_cache: true
+
+    - name: Installed packages
+      ansible.builtin.package_facts:
+
+    - name: Vendor packages (Chrome, Edge)
+      ansible.builtin.apt:
+        deb: "{{ item.value }}"
+      loop: "{{ vendor_debs | dict2items }}"
+      when: item.key not in ansible_facts.packages
+
+    - name: "{{ user }}: docker group, zsh as login shell"
+      ansible.builtin.user:
+        name: "{{ user }}"
+        groups: [docker]
+        append: true
+        shell: /usr/bin/zsh

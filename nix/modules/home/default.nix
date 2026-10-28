@@ -7,7 +7,7 @@
 #   core     always: shell, git/ssh/gh, tmux, nixvim, CLI tools, theme engine
 #   gui      kitty, Firefox, fonts (my.features.gui.enable)
 #   desktop  Hyprland, Noctalia, desktop apps (my.features.desktop.enable)
-{ lib, ... }:
+{ config, lib, ... }:
 {
   imports = [
     ./theme.nix
@@ -50,6 +50,17 @@
     keyboard.layout = lib.mkOption {
       type = lib.types.str;
       default = "us";
+    };
+
+    desktop.themeToolkits = lib.mkOption {
+      type = lib.types.bool;
+      default = !config.my.standalone;
+      defaultText = lib.literalExpression "!config.my.standalone";
+      description = ''
+        Theme GTK, Qt and other desktop-wide targets with Stylix. Off by
+        default on standalone machines, so the distribution's own desktop
+        (GNOME on Ubuntu) and its apps keep their look.
+      '';
     };
 
     desktop.monitors = lib.mkOption {

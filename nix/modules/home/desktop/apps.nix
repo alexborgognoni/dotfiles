@@ -8,18 +8,23 @@
   config = lib.mkIf config.my.features.desktop.enable {
     services.playerctld.enable = true;
 
-    home.packages = with pkgs; [
-      nautilus
-      file-roller
-      loupe
-      papers
-      pavucontrol
-      playerctl
-      brightnessctl
-      libnotify
-    ];
+    home.packages =
+      with pkgs;
+      [
+        pavucontrol
+        playerctl
+        brightnessctl
+        libnotify
+      ]
+      # Standalone distributions already ship a file manager and viewers.
+      ++ lib.optionals (!config.my.standalone) [
+        nautilus
+        file-roller
+        loupe
+        papers
+      ];
 
-    xdg.mimeApps = {
+    xdg.mimeApps = lib.mkIf (!config.my.standalone) {
       enable = true;
       defaultApplications = {
         "inode/directory" = "org.gnome.Nautilus.desktop";

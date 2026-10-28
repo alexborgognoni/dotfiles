@@ -3,6 +3,7 @@
 #   toplevel-<host>   every NixOS host builds (evaluates all modules, every
 #                     theme specialisation, validates the Noctalia config)
 #   home-<user-host>  every standalone Home Manager configuration builds
+#   system-<host>     every system-manager configuration (Ubuntu) builds
 #   hyprland-config   the generated hyprland.lua and every theme pack's
 #                     hyprland.lua pass `Hyprland --verify-config`
 #   theme-packs       every theme x accent pack is complete and well-formed
@@ -43,6 +44,7 @@ lib.mapAttrs' (
   name: home:
   lib.nameValuePair "home-${lib.replaceStrings [ "@" ] [ "-" ] name}" home.activationPackage
 ) self.homeConfigurations
+// lib.mapAttrs' (name: system: lib.nameValuePair "system-${name}" system) self.systemConfigs
 // {
   hyprland-config = pkgs.runCommand "check-hyprland-config" { } ''
     export HOME=$TMPDIR XDG_RUNTIME_DIR=$TMPDIR

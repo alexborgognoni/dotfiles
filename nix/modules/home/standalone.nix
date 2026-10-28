@@ -16,6 +16,20 @@ in
 {
   imports = [ inputs.sops-nix.homeManagerModules.sops ];
 
+  options.my.audio.server = lib.mkOption {
+    type = lib.types.enum [
+      "pipewire"
+      "pulseaudio"
+    ];
+    default = "pipewire";
+    description = ''
+      Sound server on a standalone (Ubuntu) machine. Both are installed from
+      apt (ansible/ubuntu.yml); this selects which one your user session runs.
+      "pulseaudio" restores Ubuntu 22.04's default. Takes effect at the next
+      login.
+    '';
+  };
+
   options.my.gpu.nvidia = {
     version = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
@@ -62,6 +76,24 @@ in
           fi
         fi
       ''
+    );
+
+    # PipeWire instead of PulseAudio: enable the PipeWire user units from
+    # Ubuntu's packages, mask PulseAudio and the old media session.
+    xdg.configFile = lib.mkIf (cfg.audio.server == "pipewire") (
+      let
+        unit = name: config.lib.file.mkOutOfStoreSymlink "/usr/lib/systemd/user/${name}";
+        masked = config.lib.file.mkOutOfStoreSymlink "/dev/null";
+      in
+      {
+        "systemd/user/sockets.target.wants/pipewire-pulse.socket".source = unit "pipewire-pulse.socket";
+        "systemd/user/default.target.wants/pipewire-pulse.service".source = unit "pipewire-pulse.service";
+        "systemd/user/pipewire.service.wants/wireplumber.service".source = unit "wireplumber.service";
+        "systemd/user/pipewire-session-manager.service".source = unit "wireplumber.service";
+        "systemd/user/pulseaudio.service".source = masked;
+        "systemd/user/pulseaudio.socket".source = masked;
+        "systemd/user/pipewire-media-session.service".source = masked;
+      }
     );
 
     programs.home-manager.enable = true;

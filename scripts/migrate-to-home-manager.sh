@@ -102,7 +102,7 @@ cat <<EOF
 Done. Backup: $backup
 Next steps:
   - open a new terminal (or log out and back in for GNOME app grid entries)
-  - one-time GPU driver setup:  sudo \$(which non-nixos-gpu-setup)
+  - GPU drivers, keyd, the Hyprland session: system-manager (./install does it)
   - everyday:                   nh home switch
   - undo everything:            scripts/rollback-to-chezmoi.sh
 EOF
