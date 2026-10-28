@@ -140,11 +140,20 @@ for p in .local/bin .local/lib/python3.10 .local/lib/librepods .nvm .local/share
          .config/envman .config/herd-lite .config/composer .config/psysh .config/neofetch \
          .config/touchegg .config/VirtualBox .config/BraveSoftware .config/opera .config/vivaldi \
          .config/chromium .config/chezmoi .local/share/chezmoi .config/teams-for-linux \
-         .brewenv_cache .zinit .local/share/zinit .tmux/plugins; do
+         .brewenv_cache .zinit .local/share/zinit .tmux/plugins \
+         .local/opt/google-cloud-sdk .local/kitty.app .local/share/nvim/mason .local/share/nvim/lazy \
+         .local/share/claude .local/share/go/bin; do
   [ -e "$HOME/$p" ] && home_remove+=("$p")
 done
 for b in loc neovide resvg squawk yazi ya yazi-build; do
   [ -e "$HOME/.cargo/bin/$b" ] && home_remove+=(".cargo/bin/$b")
+done
+for d in "$HOME"/.local/opt/k9s-*; do [ -e "$d" ] && home_remove+=("${d#"$HOME"/}"); done
+# VS Code: old copies of extensions that Home Manager now provides
+for d in "$HOME"/.vscode/extensions/*-[0-9]*; do
+  [ -d "$d" ] && [ ! -L "$d" ] || continue
+  id="$(basename "$d" | sed -E 's/-[0-9][0-9.]*(-[a-z0-9_-]+)?$//')"
+  [ -L "$HOME/.vscode/extensions/$id" ] && home_remove+=("${d#"$HOME"/}")
 done
 log "home: old tools and leftovers (${#home_remove[@]}; Home Manager's links inside are kept)"
 for p in "${home_remove[@]}"; do item "~/$p"; done
@@ -161,7 +170,9 @@ for p in /usr/local/bin/aws /usr/local/bin/aws_completer /usr/local/aws-cli /usr
          /opt/nvim-linux-x86_64; do
   [ -e "$p" ] && sys_remove+=("$p")
 done
-log "system: hand installs (${#sys_remove[@]})"
+# dead links left by removed packages
+while IFS= read -r l; do sys_remove+=("$l"); done < <(find /usr/bin /usr/local/bin -maxdepth 1 -xtype l 2>/dev/null)
+log "system: hand installs and dead links (${#sys_remove[@]})"
 for p in "${sys_remove[@]}"; do item "$p"; done
 grep -q '^WLR_NO_HARDWARE_CURSORS=' /etc/environment && { log "/etc/environment"; item "remove WLR_NO_HARDWARE_CURSORS (ignored by Hyprland)"; }
 
