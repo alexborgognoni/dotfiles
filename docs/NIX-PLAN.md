@@ -1,6 +1,7 @@
 # Nix migration plan (spec for sign-off)
 
-Status: **draft, awaiting sign-off**
+Status: **approved; phases 0-2 done, phase 3 ready to apply**
+([UBUNTU-MIGRATION.md](UBUNTU-MIGRATION.md))
 Scope: this repository (`~/dotfiles`)
 
 ## 1. Context
@@ -224,10 +225,26 @@ engine, libvirt/QEMU, keyd, database servers).
 - Back up `~/.config/sops/age/keys.txt` in Bitwarden.
 - Company approval for installing Nix on the work laptop (before phase 3).
 
-## 10. Sign-off
+## 10. Progress
 
-- [ ] Plan approved
-- [ ] Phase 1 accepted
-- [ ] Phase 2 accepted
+- Phase 0: branch `nixos` pushed.
+- Phase 1: `nix/` with shared Home Manager modules, feature and package
+  groups, standalone module, `alex@work-laptop`, identity keys in sops
+  (`secrets/personal.yaml`, `secrets/work.yaml`), VM on the personal profile,
+  `my.themes.prebuilt` (R8). Verified: VM rebuild, all flake checks, live
+  theme suite (195/195), signed commits and GitHub SSH in the VM.
+- Phase 2: `scripts/test-ubuntu-hm.sh` passes 50/50 (chezmoi state ->
+  migration -> verification -> second activation -> rollback).
+  `scripts/bootstrap-nix.sh`, `migrate-to-home-manager.sh` and
+  `rollback-to-chezmoi.sh` are ready for the laptop.
+- Not covered by the container (needs the real laptop): the multi-user Nix
+  daemon setup, the GPU setup with the real NVIDIA driver, GNOME app grid
+  after re-login.
+
+## 11. Sign-off
+
+- [x] Plan approved
+- [x] Phase 1 accepted (pending your review)
+- [x] Phase 2 accepted (pending your review)
 - [ ] Phase 3 accepted
 - [ ] Phase 4 accepted

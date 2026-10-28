@@ -125,6 +125,8 @@
         in
         {
           inherit (pkgs) forgecode openwhispr;
+          # The pinned home-manager CLI, for bootstrapping standalone installs
+          home-manager = inputs.home-manager.packages.${system}.home-manager;
         }
       );
 

@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# Switch an Ubuntu machine from chezmoi to Home Manager.
+#
+#   1. moves every chezmoi-managed file into a timestamped backup
+#   2. activates the Home Manager configuration (nix/homes/<machine>.nix)
+#   3. moves binaries in ~/.local/bin and ~/.cargo/bin that Home Manager now
+#      provides into the backup (Ubuntu puts ~/.local/bin first on PATH, so
+#      they would shadow the Nix versions)
+#
+# Undo with scripts/rollback-to-chezmoi.sh. Requires Nix (see
+# scripts/bootstrap-nix.sh) and the sops admin key in
+# ~/.config/sops/age/keys.txt.
+#
+# Usage: scripts/migrate-to-home-manager.sh [config]   (default: alex@work-laptop)
+set -euo pipefail
+
+config="${1:-alex@work-laptop}"
+dotfiles="$(cd "$(dirname "$0")/.." && pwd)"
+flake="$dotfiles/nix"
+state="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles-migration"
+backup="$state/$(date +%Y%m%d-%H%M%S)"
+
+log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+die() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+
+# Single-user Nix installs need their profile script; multi-user ones load
+# /etc/profile.d/nix.sh at login.
+for f in /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh "$HOME/.nix-profile/etc/profile.d/nix.sh"; do
+  # shellcheck disable=SC1090
+  [ -r "$f" ] && . "$f" && break
+done
+command -v nix >/dev/null || die "nix is not installed (run scripts/bootstrap-nix.sh)"
+[ -r "$HOME/.config/sops/age/keys.txt" ] || die "missing sops admin key ~/.config/sops/age/keys.txt"
+
+nixcmd() { nix --extra-experimental-features "nix-command flakes" "$@"; }
+
+log "Building $config (this can take a while the first time)"
+nixcmd build --no-link "$flake#homeConfigurations.\"$config\".activationPackage"
+
+mkdir -p "$backup/home" "$backup/bin"
+echo "$config" > "$backup/config"
+
+# 1. chezmoi-managed files
+if command -v chezmoi >/dev/null && [ -d "$dotfiles/chezmoi" ]; then
+  managed="$(chezmoi --source "$dotfiles/chezmoi" managed --include files,symlinks 2>/dev/null || true)"
+else
+  managed=""
+fi
+# Also the known chezmoi targets, in case chezmoi itself is gone.
+managed="$(printf '%s\n' "$managed" .zshrc .zsh/aliases.zsh .zsh/functions.zsh .gitconfig .gitconfig-personal \
+  .ssh/config .config/kitty/kitty.conf .config/kitty/startup.conf .config/tmux/tmux.conf \
+  .config/starship.toml .config/bat/config .config/gh/config.yml | sort -u)"
+
+log "Moving chezmoi-managed files to $backup/home"
+moved=0
+while IFS= read -r rel; do
+  [ -n "$rel" ] || continue
+  src="$HOME/$rel"
+  if [ -e "$src" ] || [ -L "$src" ]; then
+    mkdir -p "$backup/home/$(dirname "$rel")"
+    mv "$src" "$backup/home/$rel"
+    echo "$rel" >> "$backup/moved-files"
+    moved=$((moved + 1))
+  fi
+done <<<"$managed"
+# Whole AstroNvim config: nixvim replaces it
+if [ -d "$HOME/.config/nvim" ] && [ ! -L "$HOME/.config/nvim" ]; then
+  mkdir -p "$backup/home/.config"
+  mv "$HOME/.config/nvim" "$backup/home/.config/nvim"
+  echo ".config/nvim" >> "$backup/moved-files"
+  moved=$((moved + 1))
+fi
+log "Moved $moved paths"
+
+# 2. activate
+log "Activating Home Manager ($config)"
+if ! nixcmd run "$flake#home-manager" -- switch --flake "$flake#$config" -b hm-backup; then
+  die "activation failed; restore with scripts/rollback-to-chezmoi.sh $backup"
+fi
+
+# 3. shadowing binaries
+profile_bin="$HOME/.nix-profile/bin"
+[ -d "$profile_bin" ] || profile_bin="${XDG_STATE_HOME:-$HOME/.local/state}/nix/profiles/home-manager/home-path/bin"
+log "Moving binaries now provided by Home Manager out of ~/.local/bin and ~/.cargo/bin"
+for dir in "$HOME/.local/bin" "$HOME/.cargo/bin"; do
+  [ -d "$dir" ] || continue
+  for bin in "$dir"/*; do
+    [ -f "$bin" ] || [ -L "$bin" ] || continue
+    name="$(basename "$bin")"
+    if [ -e "$profile_bin/$name" ]; then
+      mkdir -p "$backup/bin/${dir#"$HOME"/}"
+      mv "$bin" "$backup/bin/${dir#"$HOME"/}/$name"
+      echo "${dir#"$HOME"/}/$name" >> "$backup/moved-bins"
+    fi
+  done
+done
+[ -f "$backup/moved-bins" ] && log "Moved $(wc -l < "$backup/moved-bins") binaries: $(tr '\n' ' ' < "$backup/moved-bins")"
+
+ln -sfn "$backup" "$state/latest"
+cat <<EOF
+
+Done. Backup: $backup
+Next steps:
+  - open a new terminal (or log out and back in for GNOME app grid entries)
+  - one-time GPU driver setup:  sudo \$(which non-nixos-gpu-setup)
+  - everyday:                   nh home switch
+  - undo everything:            scripts/rollback-to-chezmoi.sh
+EOF

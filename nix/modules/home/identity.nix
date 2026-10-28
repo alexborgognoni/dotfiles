@@ -201,7 +201,8 @@ in
 
     # Import the GPG secret keys (idempotent) and trust them ultimately.
     home.activation.importGpgKeys = lib.mkIf (gpgFiles != [ ]) (
-      lib.hm.dag.entryAfter [ "writeBoundary" "linkGeneration" ] (
+      # After sops-nix has (re)decrypted the secrets on this activation
+      lib.hm.dag.entryAfter [ "writeBoundary" "linkGeneration" "sops-nix" "sopsWithoutSystemd" ] (
         lib.optionalString (!config.my.standalone) ''
           run ${config.programs.gpg.package}/bin/gpgconf --kill keyboxd || true
         ''

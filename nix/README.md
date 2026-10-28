@@ -1,9 +1,15 @@
-# NixOS configuration
+# Nix configuration
 
-Fully declarative NixOS + Home Manager flake: Hyprland desktop with the
-Noctalia shell, live theme switching (themes, accents, wallpapers), and the
-programs from `../chezmoi` (zsh, starship, kitty, tmux, git, Neovim) ported to
-Nix.
+One flake for every machine:
+
+- **NixOS** (`nixosConfigurations`): the VM, later the home PC. Hyprland
+  desktop with the Noctalia shell and live theme switching.
+- **Standalone Home Manager** (`homeConfigurations`): the Ubuntu work laptop,
+  which keeps Ubuntu for the OS, GNOME, drivers and corporate software (see
+  [../docs/UBUNTU-MIGRATION.md](../docs/UBUNTU-MIGRATION.md)).
+
+Both use the same Home Manager modules: zsh, starship, kitty, tmux, git/ssh/gpg,
+Neovim (nixvim), CLI tools and the theme engine.
 
 Everything is pinned in `flake.lock`; nothing installs itself at runtime
 (no lazy.nvim, Mason, tpm or zinit).
@@ -11,44 +17,64 @@ Everything is pinned in `flake.lock`; nothing installs itself at runtime
 ## Layout
 
 ```
-flake.nix                 inputs, hosts (mkHost), checks
-hosts/
-  vm/                     QEMU/KVM test VM (hardware config, Zscaler CA, SSH)
+flake.nix                 inputs, nixosConfigurations, homeConfigurations,
+                          packages, checks
+hosts/<host>/             NixOS machines (vm)
+homes/<machine>.nix       standalone Home Manager machines (work-laptop)
 modules/
-  nixos/                  system: nix settings, corporate CA, locale, users,
-                          networking, desktop (Hyprland/UWSM, greetd+ReGreet,
-                          PipeWire, Bluetooth, power, fonts), theme catalogue
-                          + Stylix, Home Manager glue
-  home/                   user: theme engine, identity (git/ssh/gh), shell,
-                          terminal (kitty, tmux), editor (nixvim), desktop
-                          (Hyprland, Noctalia, apps), Firefox
-home/default.nix          the user's Home Manager entry point
+  nixos/                  NixOS only: nix settings, corporate CA, secrets,
+                          locale, users, networking, desktop (Hyprland/UWSM,
+                          greetd+ReGreet, PipeWire, Bluetooth, power, fonts,
+                          keyd, Docker, libvirt), theme catalogue + Stylix,
+                          Home Manager glue
+  home/                   Home Manager, usable with and without NixOS (never
+                          reads osConfig): theme engine, identity, shell,
+                          terminal, editor, desktop, Firefox, fonts, packages,
+                          standalone (generic Linux, GPU, nh, user secrets)
+packages/default.nix      package groups: cli, gui, browsers
 themes/default.nix        theme catalogue (colors, accents, wallpapers, look)
 assets/wallpapers/        shared wallpapers (+ themes/<theme>/ for extras)
 pkgs/                     packages not in nixpkgs (forgecode, openwhispr) and
                           the `pkgs.unstable` overlay
-secrets/<host>.yaml       sops-encrypted secrets (see .sops.yaml)
+secrets/                  sops-encrypted: vm.yaml (host), personal.yaml and
+                          work.yaml (SSH/GPG keys)
 checks/default.nix        `nix flake check`
 ```
+
+### Feature groups (Home Manager)
+
+| Option | Contents | NixOS | Ubuntu laptop |
+| --- | --- | --- | --- |
+| always | shell, git/ssh/gpg, tmux, nixvim, CLI tools, theme engine | yes | yes |
+| `my.features.gui.enable` | kitty, Firefox, fonts | yes | yes |
+| `my.features.desktop.enable` | Hyprland, Noctalia, desktop apps, GTK/Qt theming | yes | not yet |
+
+`my.standalone = true` enables the non-NixOS integration: generic Linux paths
+(GNOME app grid), GPU drivers for Nix GUI apps (`my.gpu.nvidia.version` must
+match the host driver; `nh home switch` warns when it doesn't), `nh`, and
+user-level sops decryption with the admin key.
 
 ## Everyday commands
 
 ```sh
-nh os switch              # rebuild and switch (flake path is preconfigured)
-nh os switch --update     # update flake.lock first
+nh os switch              # NixOS: rebuild and switch
+nh home switch            # Ubuntu laptop: apply the Home Manager config
+nh os|home switch --update   # update flake.lock first
 nh clean all              # garbage-collect old generations
-nix flake check           # run all checks, including the VM test
+nix flake check           # all checks (needs ~16 GB RAM; see Checks)
 ```
 
-Without `nh`: `sudo nixos-rebuild switch --flake ~/dotfiles/nixos#<host>`.
+Without `nh`: `sudo nixos-rebuild switch --flake ~/dotfiles/nix#<host>` or
+`home-manager switch --flake ~/dotfiles/nix#alex@work-laptop`.
 
 ## Packages
 
 Applications and tools come from **nixos-unstable** (`pkgs.unstable`, latest
 versions); the base OS (kernel, systemd, Hyprland, greeter, drivers) stays on
-the stable release. `nh os switch --update` updates both. The list lives in
-`modules/nixos/packages.nix`, grouped by purpose (installed for the user
-at the NixOS level, so it is evaluated once rather than once per theme).
+the stable release. `--update` updates both. The groups live in
+`packages/default.nix` (`cli`, `gui`, `browsers`): NixOS installs all of them
+at the system level, a standalone machine picks groups with
+`my.packages.groups` (the laptop leaves `browsers` to apt).
 
 - If something is broken in unstable, take it from stable temporarily
   (`pkgs.<name>` instead of `u.<name>`) with a comment, as done for
@@ -74,6 +100,11 @@ mkpasswd -m yescrypt      # hash for <user>-password
 
 - **Back up `~/.config/sops/age/keys.txt` (e.g. in Bitwarden).** Without it
   and without the machines' host keys, the secrets are gone.
+- Identity keys: `personal.yaml` (every machine) and `work.yaml` (only the
+  work laptop, i.e. the admin key) hold the SSH and GPG private keys. NixOS
+  decrypts them at boot, standalone Home Manager at activation; they end up as
+  `~/.ssh/id_ed25519*` (owner-only) and in the GPG keyring, and commits are
+  signed with the profile's key.
 - With `my.secrets.enable`, users are declarative (`mutableUsers = false`):
   the login password is the `<user>-password` secret; `passwd` has no effect.
 - New machine: `ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub`, add the key
@@ -155,10 +186,24 @@ theme's library; rotation defaults are set with `my.wallpaper.rotation`.
 - `hyprland-config`: the generated `hyprland.lua` and every theme pack pass
   `Hyprland --verify-config`
 - `theme-packs`: every theme x accent pack is complete and consistent
+- `home-alex-work-laptop`: the standalone Home Manager configuration builds
 - `vm`: boots the desktop configuration in a VM and tests theme switching,
   accents (validation and per-theme memory), persistence across re-activation,
   preview, zsh, Neovim, tmux, that every application/tool is installed and
   runs, and that Docker and keyd are up
+
+`nix flake check` evaluates everything in one process (~20 GB peak); with
+less RAM build the checks one by one:
+`nix build .#checks.x86_64-linux.<name>`.
+
+`../scripts/test-ubuntu-hm.sh` proves the Ubuntu laptop setup in a Ubuntu
+22.04 container: it reproduces the current chezmoi state, migrates, verifies
+shell, identities, keys, Neovim, tmux, themes, packages and GPU pieces, and
+rolls back (needs Docker and the admin key; nothing on the host changes).
+
+Fewer pre-built themes: `my.themes.prebuilt = [ "nord" ... ]` (Home Manager)
+limits the specialisations (faster rebuilds, less memory); `theme list` then
+only offers those.
 
 ## Adding a host
 
@@ -169,6 +214,15 @@ theme's library; rotation defaults are set with `my.wallpaper.rotation`.
    TLS inspection, and `system.stateVersion`.
 3. Add it to `nixosConfigurations` in `flake.nix` and switch with
    `sudo nixos-rebuild switch --flake ~/dotfiles/nixos#<name>`.
+
+## Adding a standalone (non-NixOS) machine
+
+1. Install Nix (`../scripts/bootstrap-nix.sh` on Ubuntu) and copy the admin
+   key to `~/.config/sops/age/keys.txt`.
+2. Create `homes/<machine>.nix` (see `homes/work-laptop.nix`): username,
+   `my.standalone = true`, profile, features, package groups, GPU.
+3. Add it to `homeConfigurations` in `flake.nix` and run
+   `../scripts/migrate-to-home-manager.sh <user>@<machine>`.
 
 ## Notes
 
