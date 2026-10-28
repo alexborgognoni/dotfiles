@@ -22,7 +22,7 @@ protect='^(falcon-sensor|icaclient|intune-portal|microsoft-.*|packages-microsoft
 # installed as dependencies (servers now run per project, CUDA per project)
 drop='^(postgresql|postgresql-[0-9].*|postgresql-common|postgresql-client.*|mysql-.*|virtualbox.*|cuda-.*)$'
 # Snaps of the Ubuntu installation that stay (store, printing, desktop glue)
-snap_keep='^(bare|core[0-9]*|snapd|snap-store|snapd-desktop-integration|cups|gnome-[0-9-]+|gtk-common-themes|mesa-[0-9]+)$'
+snap_keep='^(bare|core[0-9]*|snapd|snap-store|snapd-desktop-integration|cups|lxd|gnome-[0-9-]+|gtk-common-themes|mesa-[0-9]+)$'
 
 log() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 item() { printf '    %s\n' "$*"; }
