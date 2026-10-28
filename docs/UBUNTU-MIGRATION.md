@@ -60,7 +60,7 @@ Then log out and back in.
 
 - GNOME session: looks as before (Catppuccin theme, extensions, keybindings).
 - Login screen gear menu: "Hyprland (Nix)" starts Hyprland with Noctalia;
-  `theme` / the Noctalia theme picker switch themes live; Super+Escape locks,
+  `theme` / the Noctalia theme picker switch themes live; Super+Escape → Lock locks,
   your password unlocks.
 - Sound works in both sessions (PipeWire; `pactl info` shows
   "PulseAudio (on PipeWire …)").

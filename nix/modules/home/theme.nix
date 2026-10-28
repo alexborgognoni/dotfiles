@@ -369,6 +369,8 @@ in
         )
         {
           targets.hyprpaper.enable = false;
+          # Stylix enables Qt by itself only under NixOS
+          targets.qt.enable = themeEverything;
           # Package overlays belong to the package set's owner (NixOS Stylix
           # or nothing); with useGlobalPkgs Home Manager must not add any.
           overlays.enable = false;

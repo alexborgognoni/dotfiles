@@ -20,8 +20,7 @@
 
     features = {
       gui.enable = true;
-      # Hyprland + Noctalia as an extra GDM session ("Hyprland (Nix)"); GNOME
-      # stays available and keeps its look (my.desktop.themeToolkits = false).
+      # Hyprland + Noctalia (session "Hyprland (Nix)"); GNOME stays as backup
       desktop.enable = true;
     };
 
@@ -33,9 +32,17 @@
       "gui"
     ];
 
-    keyboard.layout = "gb";
+    # GB and US, Alt+Shift switches (shown in Noctalia's bar)
+    keyboard = {
+      layout = "gb,us";
+      options = "grp:alt_shift_toggle";
+    };
 
     desktop = {
+      # Stylix themes GTK, Qt, the cursor (and GNOME, now only the backup
+      # session) per theme, as on NixOS
+      themeToolkits = true;
+
       # Chrome for now; Firefox later (one line)
       browser = "google-chrome.desktop";
 

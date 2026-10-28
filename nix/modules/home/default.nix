@@ -53,6 +53,15 @@
     keyboard.layout = lib.mkOption {
       type = lib.types.str;
       default = "us";
+      example = "gb,us";
+      description = "XKB layout(s); several, comma-separated, to switch between them.";
+    };
+
+    keyboard.options = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      example = "grp:alt_shift_toggle";
+      description = "XKB options, e.g. the key combination that switches layouts.";
     };
 
     desktop.themeToolkits = lib.mkOption {

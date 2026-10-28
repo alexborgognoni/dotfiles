@@ -40,6 +40,9 @@ let
   themeDir = "${gtkTheme}/share/themes/${themeName}";
   cursor = "volantes_light_cursors";
   wallpaper = "file://${../../../assets/wallpapers/catppuccin-spiderman.png}";
+  # With my.desktop.themeToolkits Stylix themes GTK, the cursor and fonts
+  # (and GNOME with them); otherwise GNOME keeps this fixed Catppuccin look.
+  ownLook = !config.my.desktop.themeToolkits;
 in
 {
   options.my.gnome.enable = lib.mkOption {
@@ -54,7 +57,7 @@ in
       lib.listToAttrs (
         map (e: lib.nameValuePair "gnome-shell/extensions/${e.uuid}" { source = extension e; }) pinned.extensions
       )
-      // {
+      // lib.optionalAttrs ownLook {
         "themes/${themeName}".source = themeDir;
         "icons/${cursor}".source = "${pkgs.volantes-cursors}/share/icons/${cursor}";
       };
@@ -86,7 +89,7 @@ in
     # libadwaita (GTK 4) apps ignore gtk-theme; in dark mode they load
     # ~/.config/gtk-4.0/gtk-dark.css. gtk.css stays unmanaged: the Unite
     # extension rewrites it (GTK 3 and 4) with its window button styles.
-    xdg.configFile = {
+    xdg.configFile = lib.mkIf ownLook {
       "gtk-4.0/assets".source = "${themeDir}/gtk-4.0/assets";
       "gtk-4.0/gtk-dark.css".source = "${themeDir}/gtk-4.0/gtk-dark.css";
     };
@@ -97,13 +100,15 @@ in
         clock-show-date = true;
         clock-show-seconds = false;
         clock-show-weekday = false;
-        color-scheme = "prefer-dark";
-        cursor-size = 32;
-        cursor-theme = cursor;
         enable-animations = false;
         font-hinting = "slight";
         show-battery-percentage = true;
         text-scaling-factor = mkDouble 1.0;
+      }
+      // lib.optionalAttrs ownLook {
+        color-scheme = "prefer-dark";
+        cursor-size = 32;
+        cursor-theme = cursor;
         font-name = "JetBrainsMono Nerd Font 11";
         document-font-name = "JetBrainsMono Nerd Font 11";
         monospace-font-name = "JetBrainsMono Nerd Font Mono 13";
@@ -143,7 +148,7 @@ in
         remember-recent-files = true;
         recent-files-max-age = 30;
       };
-      "org/gnome/desktop/background" = {
+      "org/gnome/desktop/background" = lib.mkIf ownLook {
         picture-uri = wallpaper;
         picture-uri-dark = wallpaper;
         picture-options = "zoom";
@@ -227,7 +232,7 @@ in
           "apps-menu@gnome-shell-extensions.gcampax.github.com"
         ];
       };
-      "org/gnome/shell/extensions/user-theme".name = themeName;
+      "org/gnome/shell/extensions/user-theme" = lib.mkIf ownLook { name = themeName; };
       "org/gnome/shell/extensions/auto-move-windows".application-list = [
         "kitty.desktop:1"
         "google-chrome.desktop:2"
@@ -343,7 +348,9 @@ in
         hide-activities-button = "never";
         hide-app-menu-icon = false;
         hide-dropdown-arrows = true;
-        hide-window-titlebars = "maximized";
+        # Unite does this by rewriting gtk.css, which Stylix manages with
+        # themeToolkits
+        hide-window-titlebars = if ownLook then "maximized" else "never";
         notifications-position = "right";
         reduce-panel-spacing = true;
         restrict-to-primary-screen = false;

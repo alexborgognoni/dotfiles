@@ -134,8 +134,8 @@ theme preview nord        # live-preview only
 theme accent              # accent picker with live preview (Super+Shift+T)
 theme accent peach        # set the accent of the current theme
 theme accent list
-theme wallpaper next      # next wallpaper of the current theme (Super+Shift+W)
-theme wallpaper rotate on|off|toggle   # automatic rotation (Super+Ctrl+W)
+theme wallpaper next      # next wallpaper of the current theme
+theme wallpaper rotate on|off|toggle   # automatic rotation
 theme list | current
 ```
 
@@ -162,7 +162,7 @@ and `accent2` (second stop of the border gradient).
 **Wallpapers:** each theme has its own library: the shared images in
 `assets/wallpapers/` (recolored to the palette unless `recolor = false`) plus
 anything in `assets/wallpapers/themes/<theme>/`. The first one (or
-`defaultWallpaper`) is the default. Super+W opens the picker for the current
+`defaultWallpaper`) is the default. The wallpaper panel opens the picker for the current
 theme's library; rotation defaults are set with `my.wallpaper.rotation`.
 
 ## Keybindings (Hyprland)
@@ -170,23 +170,20 @@ theme's library; rotation defaults are set with `my.wallpaper.rotation`.
 | Keys | Action |
 | --- | --- |
 | Super + Return | kitty (attaches to the `main` tmux session) |
-| Super + Space | launcher |
-| Super + S | control center (Wi-Fi, Bluetooth, audio, brightness, power) |
-| Super + , | Noctalia settings |
-| Super + V | clipboard history |
-| Super + T / Shift+T | theme picker / accent picker |
-| Super + W / Shift+W / Ctrl+W | wallpaper picker / next / toggle rotation |
-| Super + Escape | session menu |
-| Super + Ctrl + L | lock screen |
-| Super + B / E | Firefox / file manager |
-| Super + Q | close window |
-| Super + F / Shift+F | fullscreen / toggle floating |
-| Super + O / P | toggle split / pseudotile |
-| Super + h j k l (or arrows) | focus; + Shift move; + Ctrl swap |
+| Super + D | launcher |
+| Super + Shift + Return | default browser |
+| Super + E | file manager |
+| Super + Shift + Q | close window |
+| Super + M | exit Hyprland |
+| Super + V / F / P | toggle floating / fullscreen / pseudotile |
+| Super + O | toggle split |
+| Super + h j k l (or arrows) | focus; + Shift move window |
 | Super + 1..0 | workspace; + Shift move window there |
-| Super + \` / Shift+\` | scratchpad / move window to scratchpad |
+| Super + S / Shift+S | special workspace / move window there |
+| Super + Shift + V | clipboard history |
+| Super + T / Shift+T | theme picker / accent picker |
+| Super + Escape | session menu (lock, log out, power) |
 | Print / Shift+Print / Super+Print | screenshot region / screen / window (to ~/Pictures/Screenshots and the clipboard) |
-| Alt + Tab | window switcher |
 
 ## Checks
 

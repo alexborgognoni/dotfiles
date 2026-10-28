@@ -62,7 +62,6 @@ let
     lib.mapAttrsToList (key: dir: [
       (bind "${mod} + ${key}" "hl.dsp.focus({ direction = \"${dir}\" })")
       (bind "${mod} + SHIFT + ${key}" "hl.dsp.window.move({ direction = \"${dir}\" })")
-      (bind "${mod} + CTRL + ${key}" "hl.dsp.window.swap({ direction = \"${dir}\" })")
     ]) directions
   );
 in
@@ -163,6 +162,7 @@ in
 
           input = {
             kb_layout = config.my.keyboard.layout;
+            kb_options = config.my.keyboard.options;
             follow_mouse = 1;
             sensitivity = 0;
             touchpad.natural_scroll = true;
@@ -381,49 +381,44 @@ in
           blur_popups = deco.blur;
         };
 
+        # Hyprland's default bindings (share/hypr/hyprland.lua) with Noctalia
+        # in place of hyprlauncher and the plain volume commands, plus the
+        # i3-style keys: Super+Return terminal, Super+Shift+Return browser,
+        # Super+Shift+Q close, Super+D launcher, vim keys (Super+O toggle split).
         bind = [
-          # Apps
-          (exec "${mod} + RETURN" (app "kitty"))
-          (exec "${mod} + B" (app "firefox"))
+          # Hyprland defaults
+          (bind "${mod} + M" "hl.dsp.exit()")
           (exec "${mod} + E" (app "nautilus --new-window"))
-
-          # Shell (Noctalia)
-          (exec "${mod} + SPACE" "${noctalia} panel-toggle launcher")
-          (exec "${mod} + S" "${noctalia} panel-toggle control-center")
-          (exec "${mod} + comma" "${noctalia} settings-toggle")
-          (exec "${mod} + V" "${noctalia} panel-toggle clipboard")
-          (exec "${mod} + W" "${noctalia} panel-toggle wallpaper")
-          (exec "${mod} + SHIFT + W" "theme wallpaper next")
-          (exec "${mod} + CTRL + W" "theme wallpaper rotate toggle")
-          (exec "${mod} + ESCAPE" "${noctalia} panel-toggle session")
-          (exec "${mod} + CTRL + L" "${noctalia} session lock")
-          (exec "ALT + TAB" "${noctalia} window-switcher hold")
-          (exec "${mod} + T" "kitty --class theme-picker --title Themes -e theme pick")
-          (exec "${mod} + SHIFT + T" "kitty --class theme-picker --title Accent -e theme accent")
-
-          # Screenshots
-          (exec "PRINT" "${noctalia} screenshot-region")
-          (exec "SHIFT + PRINT" "${noctalia} screenshot-fullscreen")
-          (exec "${mod} + PRINT" "${noctalia} screenshot-window")
-
-          # Windows
-          (bind "${mod} + Q" "hl.dsp.window.close()")
-          (bind "${mod} + F" "hl.dsp.window.fullscreen({ action = \"toggle\" })")
-          (bind "${mod} + SHIFT + F" "hl.dsp.window.float({ action = \"toggle\" })")
+          (bind "${mod} + V" "hl.dsp.window.float({ action = \"toggle\" })")
           (bind "${mod} + P" "hl.dsp.window.pseudo()")
-          (bind "${mod} + O" "hl.dsp.layout(\"togglesplit\")")
-
-          # Scratchpad
-          (bind "${mod} + grave" "hl.dsp.workspace.toggle_special(\"scratch\")")
-          (bind "${mod} + SHIFT + grave" "hl.dsp.window.move({ workspace = \"special:scratch\" })")
-
-          # Workspace scrolling and mouse move/resize
+          (bind "${mod} + S" "hl.dsp.workspace.toggle_special(\"magic\")")
+          (bind "${mod} + SHIFT + S" "hl.dsp.window.move({ workspace = \"special:magic\" })")
           (bind "${mod} + mouse_down" "hl.dsp.focus({ workspace = \"e+1\" })")
           (bind "${mod} + mouse_up" "hl.dsp.focus({ workspace = \"e-1\" })")
           (bind' "${mod} + mouse:272" "hl.dsp.window.drag()" { mouse = true; })
           (bind' "${mod} + mouse:273" "hl.dsp.window.resize()" { mouse = true; })
 
-          # Media keys (Noctalia shows the OSD)
+          # i3 style (defaults: Super+Q terminal, Super+C close)
+          (exec "${mod} + RETURN" (app "kitty"))
+          (exec "${mod} + SHIFT + RETURN" (app "${pkgs.gtk3}/bin/gtk-launch ${config.my.desktop.browser}"))
+          (bind "${mod} + SHIFT + Q" "hl.dsp.window.close()")
+
+          # Launcher (default: Super+R with hyprlauncher) and toggle split
+          # (default: Super+J, which focuses down here)
+          (exec "${mod} + D" "${noctalia} panel-toggle launcher")
+          (bind "${mod} + O" "hl.dsp.layout(\"togglesplit\")")
+
+          # Additions
+          (bind "${mod} + F" "hl.dsp.window.fullscreen({ action = \"toggle\" })")
+          (exec "${mod} + SHIFT + V" "${noctalia} panel-toggle clipboard")
+          (exec "${mod} + ESCAPE" "${noctalia} panel-toggle session")
+          (exec "${mod} + T" "kitty --class theme-picker --title Themes -e theme pick")
+          (exec "${mod} + SHIFT + T" "kitty --class theme-picker --title Accent -e theme accent")
+          (exec "PRINT" "${noctalia} screenshot-region")
+          (exec "SHIFT + PRINT" "${noctalia} screenshot-fullscreen")
+          (exec "${mod} + PRINT" "${noctalia} screenshot-window")
+
+          # Media keys (as the defaults; Noctalia shows the OSD)
           (execRepeat "XF86AudioRaiseVolume" "${noctalia} volume-up")
           (execRepeat "XF86AudioLowerVolume" "${noctalia} volume-down")
           (execRepeat "XF86AudioMute" "${noctalia} volume-mute")

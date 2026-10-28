@@ -110,7 +110,7 @@ in
           };
         };
 
-        # The picker (Super+W) and rotation only offer the current theme's
+        # The picker and rotation only offer the current theme's
         # wallpapers; `theme wallpaper rotate on|off|toggle` changes rotation live.
         wallpaper = {
           enabled = true;
