@@ -21,6 +21,7 @@
     ./packages.nix
     ./scripts.nix
     ./standalone.nix
+    ./gnome
   ];
 
   options.my = {
@@ -59,7 +60,7 @@
       description = ''
         Theme GTK, Qt and other desktop-wide targets with Stylix. Off by
         default on standalone machines, so the distribution's own desktop
-        (GNOME on Ubuntu) and its apps keep their look.
+        and its apps keep their look (GNOME on Ubuntu: ./gnome).
       '';
     };
 

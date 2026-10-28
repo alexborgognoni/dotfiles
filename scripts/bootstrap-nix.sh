@@ -22,7 +22,7 @@ if [ ! -x /nix/var/nix/profiles/default/bin/nix ]; then
   installer="$(mktemp)"
   curl -fsSL -o "$installer" "https://github.com/NixOS/nix-installer/releases/download/$version/nix-installer-x86_64-linux"
   chmod +x "$installer"
-  sudo "$installer" install linux --no-confirm \
+  sudo "$installer" install linux --no-confirm --enable-flakes \
     --ssl-cert-file "$ca" \
     --extra-conf "extra-sandbox-paths = $ca" \
     --extra-conf "trusted-users = root $user"
@@ -46,5 +46,5 @@ fi
 # shellcheck disable=SC1091
 . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 log "Checking that downloads work"
-nix run nixpkgs#hello >/dev/null || die "nix cannot download from the binary cache"
+nix --extra-experimental-features "nix-command flakes" run nixpkgs#hello >/dev/null || die "nix cannot download from the binary cache"
 log "Nix is ready"

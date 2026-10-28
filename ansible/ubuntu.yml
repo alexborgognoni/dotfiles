@@ -28,6 +28,10 @@
       - libspa-0.2-bluetooth
       # Portal backend for file pickers in non-GNOME sessions
       - xdg-desktop-portal-gtk
+      # GNOME: built-in Shell extensions (user-theme, auto-move-windows) and
+      # the Yaru icon theme; settings and the other extensions: Home Manager
+      - gnome-shell-extensions
+      - yaru-theme-icon
     # Vendor packages that maintain their own apt repository after installing
     vendor_debs:
       google-chrome-stable: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
