@@ -34,6 +34,11 @@ command -v nix >/dev/null || die "nix is not installed (run scripts/bootstrap-ni
 
 nixcmd() { nix --extra-experimental-features "nix-command flakes" "$@"; }
 
+# Settings exported by the old shell configuration must not leak into the
+# activation (Node 24 based tools like VS Code refuse the chezmoi-era
+# NODE_OPTIONS="--use-openssl-ca --use-system-ca").
+unset NODE_OPTIONS
+
 log "Building $config (this can take a while the first time)"
 nixcmd build --no-link "$flake#homeConfigurations.\"$config\".activationPackage"
 
@@ -83,6 +88,11 @@ if [ -d "$HOME/.config/nvim" ] && [ ! -L "$HOME/.config/nvim" ] && ! from_nix "$
   moved=$((moved + 1))
 fi
 log "Moved $moved paths"
+
+# Record the backup now, so a failed activation can still be rolled back
+if [ -s "$backup/moved-files" ]; then
+  ln -sfn "$backup" "$state/latest"
+fi
 
 # zsh history: Home Manager's zsh reads it from the XDG state directory
 history_new="${XDG_STATE_HOME:-$HOME/.local/state}/zsh/history"
