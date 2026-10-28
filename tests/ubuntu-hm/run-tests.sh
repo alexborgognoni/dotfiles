@@ -119,6 +119,7 @@ check "fonts visible to fontconfig" inzsh 'nix shell nixpkgs#fontconfig -c fc-li
 section "Activate again (idempotent)"
 check "second switch succeeds" inzsh "home-manager switch --flake $dotfiles/nix#$config -b hm-backup"
 check "no duplicate GPG import" bash -c '[ "$(/usr/bin/gpg --list-secret-keys --with-colons | grep -c ^sec)" = 2 ]'
+check "migrating again moves nothing, keeps the chezmoi backup" bash -c 'before=$(readlink -f ~/.local/state/dotfiles-migration/latest); "'"$dotfiles"'/scripts/migrate-to-home-manager.sh" "'"$config"'" >/tmp/migrate2.log 2>&1 && grep -q "Already migrated" /tmp/migrate2.log && [ "$(readlink -f ~/.local/state/dotfiles-migration/latest)" = "$before" ] && test -e ~/.zshrc'
 
 section "Roll back to chezmoi"
 if "$dotfiles/scripts/rollback-to-chezmoi.sh" > /tmp/rollback.log 2>&1; then ok "rollback script"; else bad "rollback script" "$(tail -10 /tmp/rollback.log)"; fi

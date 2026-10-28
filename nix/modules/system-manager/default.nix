@@ -92,6 +92,27 @@ in
       "L+ /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.hyprland.service - - - - ${portal}/share/dbus-1/services/org.freedesktop.impl.portal.desktop.hyprland.service"
     ];
 
+    # Hyprland is Wayland-only; GDM must offer Wayland sessions. GNOME keeps
+    # running on whichever session is chosen (GDM remembers the last one, e.g.
+    # "Ubuntu on Xorg"). Ubuntu's GDM has no drop-in directory, so this owns
+    # the file (the original is kept and restored on deactivation).
+    environment.etc."gdm3/custom.conf" = lib.mkIf desktop {
+      text = ''
+        # Managed by system-manager (~/dotfiles/nix/modules/system-manager)
+        [daemon]
+        WaylandEnable=true
+
+        [security]
+
+        [xdmcp]
+
+        [chooser]
+
+        [debug]
+      '';
+      replaceExisting = true;
+    };
+
     # The portal's D-Bus activation starts this user unit
     environment.etc."systemd/user/xdg-desktop-portal-hyprland.service" = lib.mkIf desktop {
       source = "${portal}/share/systemd/user/xdg-desktop-portal-hyprland.service";

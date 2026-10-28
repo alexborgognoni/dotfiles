@@ -59,11 +59,15 @@ managed="$(printf '%s\n' "$managed" .config/gtk-4.0/assets .config/gtk-4.0/gtk-d
     echo ".local/share/gnome-shell/extensions/$uuid"
   done)"
 
+# Links into the Nix store are Home Manager's own (a re-run): never move them
+from_nix() { [ -L "$1" ] && case "$(readlink -f "$1")" in /nix/store/*) true ;; *) false ;; esac; }
+
 log "Moving chezmoi-managed files to $backup/home"
 moved=0
 while IFS= read -r rel; do
   [ -n "$rel" ] || continue
   src="$HOME/$rel"
+  from_nix "$src" && continue
   if [ -e "$src" ] || [ -L "$src" ]; then
     mkdir -p "$backup/home/$(dirname "$rel")"
     mv "$src" "$backup/home/$rel"
@@ -94,6 +98,7 @@ for dir in "$HOME/.local/bin" "$HOME/.cargo/bin"; do
   [ -d "$dir" ] || continue
   for bin in "$dir"/*; do
     [ -f "$bin" ] || [ -L "$bin" ] || continue
+    from_nix "$bin" && continue
     name="$(basename "$bin")"
     if [ -e "$profile_bin/$name" ]; then
       mkdir -p "$backup/bin/${dir#"$HOME"/}"
@@ -103,6 +108,14 @@ for dir in "$HOME/.local/bin" "$HOME/.cargo/bin"; do
   done
 done
 [ -f "$backup/moved-bins" ] && log "Moved $(wc -l < "$backup/moved-bins") binaries: $(tr '\n' ' ' < "$backup/moved-bins")"
+
+# Nothing moved (already migrated): keep the previous backup as "latest", so
+# rollback-to-chezmoi.sh still restores the real chezmoi files
+if [ ! -s "$backup/moved-files" ] && [ ! -s "$backup/moved-bins" ]; then
+  rm -rf "$backup"
+  log "Already migrated; nothing moved (backup: $(readlink -f "$state/latest" 2>/dev/null || echo none))"
+  exit 0
+fi
 
 ln -sfn "$backup" "$state/latest"
 cat <<EOF
