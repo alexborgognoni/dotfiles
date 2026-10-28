@@ -35,9 +35,11 @@
       inputs.nur.follows = "nur";
     };
 
-    nixvim = {
-      url = "github:nix-community/nixvim/nixos-26.05";
-      inputs.nixpkgs.follows = "nixpkgs";
+    # The AstroNvim distribution (a Lua plugin), pinned to a release; every
+    # plugin it loads is built by Nix (modules/home/editor/astronvim).
+    astronvim = {
+      url = "github:AstroNvim/AstroNvim/v6.1.1";
+      flake = false;
     };
 
     # Only the Home Manager module is used; the package comes from nixpkgs.

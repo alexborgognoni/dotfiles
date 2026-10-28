@@ -1,3 +1,3 @@
 {
-  imports = [ ./nixvim ];
+  imports = [ ./astronvim ];
 }

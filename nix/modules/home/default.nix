@@ -4,7 +4,7 @@
 # homes/<machine>.nix.
 #
 # Feature groups:
-#   core     always: shell, git/ssh/gh, tmux, nixvim, CLI tools, theme engine
+#   core     always: shell, git/ssh/gh, tmux, Neovim (AstroNvim), CLI tools, theme engine
 #   gui      kitty, Firefox, fonts (my.features.gui.enable)
 #   desktop  Hyprland, Noctalia, desktop apps (my.features.desktop.enable)
 { config, lib, ... }:

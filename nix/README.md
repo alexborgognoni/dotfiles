@@ -13,7 +13,7 @@ One flake for every machine:
   [../docs/UBUNTU-MIGRATION.md](../docs/UBUNTU-MIGRATION.md)).
 
 Both use the same Home Manager modules: zsh, starship, kitty, tmux, git/ssh/gpg,
-Neovim (nixvim), CLI tools and the theme engine.
+Neovim (AstroNvim, plugins built by Nix), CLI tools and the theme engine.
 
 Everything is pinned in `flake.lock`; nothing installs itself at runtime
 (no lazy.nvim, Mason, tpm or zinit).
@@ -54,7 +54,7 @@ checks/default.nix        `nix flake check`
 
 | Option | Contents | NixOS | Ubuntu laptop |
 | --- | --- | --- | --- |
-| always | shell, git/ssh/gpg, tmux, nixvim, CLI tools, theme engine | yes | yes |
+| always | shell, git/ssh/gpg, tmux, Neovim (AstroNvim), CLI tools, theme engine | yes | yes |
 | `my.features.gui.enable` | kitty, Firefox, fonts | yes | yes |
 | `my.features.desktop.enable` | Hyprland, Noctalia, desktop apps, GTK/Qt theming | yes | not yet |
 
