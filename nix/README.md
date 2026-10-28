@@ -4,8 +4,12 @@ One flake for every machine:
 
 - **NixOS** (`nixosConfigurations`): the VM, later the home PC. Hyprland
   desktop with the Noctalia shell and live theme switching.
-- **Standalone Home Manager** (`homeConfigurations`): the Ubuntu work laptop,
-  which keeps Ubuntu for the OS, GNOME, drivers and corporate software (see
+- **Ubuntu** (`homeConfigurations` + `systemConfigs`): the work laptop keeps
+  Ubuntu for the OS, drivers and corporate software. Standalone Home Manager
+  owns the user level (including GNOME settings and an extra "Hyprland (Nix)"
+  session), [system-manager](https://github.com/numtide/system-manager) the
+  root level, and a slim `../ansible/ubuntu.yml` the apt packages. One
+  command sets it all up: `../install` (see
   [../docs/UBUNTU-MIGRATION.md](../docs/UBUNTU-MIGRATION.md)).
 
 Both use the same Home Manager modules: zsh, starship, kitty, tmux, git/ssh/gpg,
@@ -18,9 +22,10 @@ Everything is pinned in `flake.lock`; nothing installs itself at runtime
 
 ```
 flake.nix                 inputs, nixosConfigurations, homeConfigurations,
-                          packages, checks
+                          systemConfigs, packages, checks
 hosts/<host>/             NixOS machines (vm)
 homes/<machine>.nix       standalone Home Manager machines (work-laptop)
+systems/<machine>.nix     system-manager (root level) of those machines
 modules/
   nixos/                  NixOS only: nix settings, corporate CA, secrets,
                           locale, users, networking, desktop (Hyprland/UWSM,
@@ -30,7 +35,11 @@ modules/
   home/                   Home Manager, usable with and without NixOS (never
                           reads osConfig): theme engine, identity, shell,
                           terminal, editor, desktop, Firefox, fonts, packages,
-                          standalone (generic Linux, GPU, nh, user secrets)
+                          standalone (generic Linux, GPU, nh, user secrets,
+                          sound server), gnome (Ubuntu's GNOME)
+  system-manager/         Ubuntu root level: nix.conf, keyd, GPU drivers,
+                          Hyprland session + portal, lock-screen helper
+  shared/                 plain data used by several module sets (keyd)
 packages/default.nix      package groups: cli, gui, browsers
 themes/default.nix        theme catalogue (colors, accents, wallpapers, look)
 assets/wallpapers/        shared wallpapers (+ themes/<theme>/ for extras)
@@ -187,6 +196,7 @@ theme's library; rotation defaults are set with `my.wallpaper.rotation`.
   `Hyprland --verify-config`
 - `theme-packs`: every theme x accent pack is complete and consistent
 - `home-alex-work-laptop`: the standalone Home Manager configuration builds
+- `system-work-laptop`: the system-manager configuration builds
 - `vm`: boots the desktop configuration in a VM and tests theme switching,
   accents (validation and per-theme memory), persistence across re-activation,
   preview, zsh, Neovim, tmux, that every application/tool is installed and
@@ -200,6 +210,8 @@ less RAM build the checks one by one:
 22.04 container: it reproduces the current chezmoi state, migrates, verifies
 shell, identities, keys, Neovim, tmux, themes, packages and GPU pieces, and
 rolls back (needs Docker and the admin key; nothing on the host changes).
+`../tests/ubuntu-vm/create.sh` creates a fresh Ubuntu 22.04 GNOME VM for
+testing `../install` end to end, including the Hyprland session.
 
 Fewer pre-built themes: `my.themes.prebuilt = [ "nord" ... ]` (Home Manager)
 limits the specialisations (faster rebuilds, less memory); `theme list` then
@@ -213,16 +225,15 @@ only offers those.
    loader, `networking.hostName`, monitors, `my.corporateCA` if it sits behind
    TLS inspection, and `system.stateVersion`.
 3. Add it to `nixosConfigurations` in `flake.nix` and switch with
-   `sudo nixos-rebuild switch --flake ~/dotfiles/nixos#<name>`.
+   `sudo nixos-rebuild switch --flake ~/dotfiles/nix#<name>`.
 
 ## Adding a standalone (non-NixOS) machine
 
-1. Install Nix (`../scripts/bootstrap-nix.sh` on Ubuntu) and copy the admin
-   key to `~/.config/sops/age/keys.txt`.
-2. Create `homes/<machine>.nix` (see `homes/work-laptop.nix`): username,
+1. Create `homes/<machine>.nix` (see `homes/work-laptop.nix`): username,
    `my.standalone = true`, profile, features, package groups, GPU.
-3. Add it to `homeConfigurations` in `flake.nix` and run
-   `../scripts/migrate-to-home-manager.sh <user>@<machine>`.
+2. Create `systems/<machine>.nix` (see `systems/work-laptop.nix`).
+3. Add both to `homeConfigurations` and `systemConfigs` in `flake.nix`.
+4. On the machine: `../install <machine>` (Ubuntu).
 
 ## Notes
 

@@ -1,63 +1,64 @@
-# Ubuntu work laptop: switch from chezmoi to Home Manager
+# Ubuntu work laptop: switch from chezmoi to Nix
 
-Runbook for phase 3 of [NIX-PLAN.md](NIX-PLAN.md). Everything below was
-rehearsed in a Ubuntu 22.04 container that reproduces this laptop
-(`scripts/test-ubuntu-hm.sh`: 50 checks, including the rollback).
+Runbook for phase 3 of [NIX-PLAN.md](NIX-PLAN.md). Rehearsed in a Ubuntu
+22.04 container that reproduces this laptop (`scripts/test-ubuntu-hm.sh`,
+including the rollback) and end to end in a fresh Ubuntu 22.04 GNOME VM
+(`tests/ubuntu-vm/create.sh`).
 
-What changes: Nix is installed (`/nix` + the `nix-daemon` service) and Home
-Manager takes over your user-level configuration and tools. What does not
-change: Ubuntu, GNOME, drivers, corporate software, apt packages, system
-services. Nothing is removed from apt in this phase.
+Who owns what afterwards:
+
+| Layer | Tool | Where |
+|---|---|---|
+| apt repositories and packages, groups, login shell | Ansible (slim) | `ansible/ubuntu.yml` |
+| `/etc` and system services: Nix daemon, keyd, GPU drivers for Nix apps, the Hyprland login session, lock-screen helper | system-manager | `nix/systems/work-laptop.nix`, `nix/modules/system-manager` |
+| everything in your home: shell, tools, apps, identities, GNOME settings and extensions, Hyprland + Noctalia, themes | Home Manager | `nix/homes/work-laptop.nix`, `nix/modules/home` |
+
+Untouched: Ubuntu itself, drivers, corporate software and its packages,
+users. Nothing is removed from apt.
 
 ## Before you start
 
 - [ ] Installing Nix on this machine is acceptable to you / your company.
 - [ ] The sops admin key `~/.config/sops/age/keys.txt` is backed up
-      (Bitwarden). The migration needs it to decrypt your SSH/GPG keys.
-- [ ] The branch is checked out: `git -C ~/dotfiles switch nixos`.
+      (Bitwarden item `sops-age-key`). It decrypts your SSH/GPG keys.
 - [ ] ~40 GB free disk space (the first build downloads about 27 GB).
 
-## 1. Install Nix (once, asks for sudo)
+## Install (one command, asks for sudo once)
 
 ```sh
-~/dotfiles/scripts/bootstrap-nix.sh
+DOTFILES_BRANCH=nixos ~/dotfiles/install
+# fresh machine: curl -fsSL https://raw.githubusercontent.com/alexborgognoni/dotfiles/nixos/install | DOTFILES_BRANCH=nixos bash
 ```
 
-Installs the multi-user Nix daemon with the official installer and configures
-it for Zscaler (system CA bundle for the daemon and the build sandbox), flakes,
-and you as trusted user. Then open a new terminal.
+1. updates `~/dotfiles`
+2. sops admin key (existing file, `$SOPS_AGE_KEY`, Bitwarden, or pasted)
+3. Nix with the official installer, set up for Zscaler (`scripts/bootstrap-nix.sh`)
+4. `ansible/ubuntu.yml`: Docker, PipeWire, zsh, Chrome, Edge, GNOME
+   extension and icon packages; docker group; zsh as login shell
+5. system-manager: takes over `/etc/nix/nix.conf` (the installer's file is
+   kept as a backup), keyd, `/run/opengl-driver`, the "Hyprland (Nix)" login
+   session, portal and lock-screen helper
+6. Home Manager (`scripts/migrate-to-home-manager.sh`): moves every
+   chezmoi-managed file, `~/.config/nvim`, the old GNOME extension folders
+   and binaries Nix now provides into
+   `~/.local/state/dotfiles-migration/<timestamp>/`, then activates
 
-## 2. Migrate
+Then log out and back in.
 
-```sh
-~/dotfiles/scripts/migrate-to-home-manager.sh
-```
+## Check
 
-1. builds `alex@work-laptop` (nix/homes/work-laptop.nix)
-2. moves every chezmoi-managed file (and `~/.config/nvim`) to
-   `~/.local/state/dotfiles-migration/<timestamp>/`
-3. activates Home Manager (any other conflicting file is kept as
-   `<file>.hm-backup`)
-4. moves binaries in `~/.local/bin` and `~/.cargo/bin` that Nix now provides
-   (kitty, claude, uv, opencode, ...) into the same backup, so they don't
-   shadow the Nix versions; your own scripts stay
-
-## 3. GPU drivers for Nix GUI apps (once, sudo)
-
-```sh
-sudo $(which non-nixos-gpu-setup)
-```
-
-Then log out and back in (GNOME picks up the Nix apps in its app grid and the
-new environment).
-
-## 4. Check
-
-- New terminal: zsh starts without errors, prompt, aliases, `theme` works.
+- GNOME session: looks as before (Catppuccin theme, extensions, keybindings).
+- Login screen gear menu: "Hyprland (Nix)" starts Hyprland with Noctalia;
+  `theme` / the Noctalia theme picker switch themes live; Super+Escape locks,
+  your password unlocks.
+- Sound works in both sessions (PipeWire; `pactl info` shows
+  "PulseAudio (on PipeWire …)").
+- New terminal: zsh, prompt, aliases, `theme` work.
 - `git config user.email` is the work address; in `~/dotfiles` and
   `~/personal/*` it is the personal one; commits are signed.
 - `ssh -T git@github.com` (personal key) and GitHub Enterprise (work key).
-- `kitty`, `code`, `obsidian`, `neovide` start (Intel GPU); for NVIDIA:
+- Caps Lock is Escape, Alt+hjkl are arrows (keyd).
+- `kitty`, `code`, `obsidian` start; NVIDIA:
   `__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia glxinfo -B`
   via `nix shell nixpkgs#mesa-demos`.
 - Corporate tools (Zscaler, Intune, Edge, Teams) behave as before.
@@ -65,27 +66,39 @@ new environment).
 ## Everyday use afterwards
 
 ```sh
-nh home switch            # apply changes to nix/
-nh home switch --update   # update all packages (flake.lock)
-theme                     # theme picker (kitty, tmux, Neovim, CLI tools)
+nh home switch                                              # user level
+sudo system-manager switch --flake ~/dotfiles/nix#work-laptop   # system level
+nh home switch --update                                     # update everything (flake.lock)
+~/dotfiles/install                                          # all layers, idempotent
 ```
 
 When apt upgrades the NVIDIA driver, `nh home switch` warns; update
 `my.gpu.nvidia.version` and `sha256` in `nix/homes/work-laptop.nix` (the
-warning says how).
+warning says how), then run both switches.
+
+GNOME extensions are pinned per GNOME Shell version: to update them (or add
+one), edit and run `scripts/update-gnome-extensions.sh`.
+
+## Sound: back to PulseAudio
+
+PipeWire is the default; PulseAudio stays installed. To switch back, set
+`my.audio.server = "pulseaudio";` in `nix/homes/work-laptop.nix`,
+`nh home switch`, log out and in.
 
 ## Rollback
 
 ```sh
-~/dotfiles/scripts/rollback-to-chezmoi.sh
+~/dotfiles/scripts/rollback-to-chezmoi.sh                       # user level
+sudo system-manager deactivate                                  # system level (restores nix.conf etc.)
 ```
 
-Removes the Home Manager generation and restores the backed-up chezmoi files
-and binaries. Nix stays installed (uninstall: see the Nix manual).
+The first removes the Home Manager generation and restores the backed-up
+files and binaries. Nix stays installed (uninstall: `sudo /nix/nix-installer
+uninstall`). apt packages added by Ansible stay; the login shell goes back
+with `chsh -s /bin/bash`.
 
 ## Later (after you sign off)
 
 - remove duplicate apt/snap/flatpak installs and their apt repositories
-  (Ansible cleanup task; corporate and OS packages are never touched)
-- slim down Ansible to the Ubuntu system layer, retire chezmoi and the
-  Bitwarden secrets role, update the top-level README and `install`
+  (corporate and OS packages are never touched)
+- retire chezmoi, the old Ansible roles and `scripts/install-legacy.sh`

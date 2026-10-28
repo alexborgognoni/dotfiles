@@ -71,7 +71,9 @@ nixcmd() { nix --extra-experimental-features "nix-command flakes" "$@"; }
 log "4/6 apt packages (Ansible)"
 mkdir -p "$state"
 nixcmd build -o "$state/ansible" "$dir/nix#ansible"
-sudo "$state/ansible/bin/ansible-playbook" "$dir/ansible/ubuntu.yml"
+# Nix programs use neither Ubuntu's locales (C.UTF-8 is built in) nor its
+# CA bundle (corporate root CA)
+sudo LC_ALL=C.UTF-8 LANG=C.UTF-8 SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt "$state/ansible/bin/ansible-playbook" "$dir/ansible/ubuntu.yml"
 
 log "5/6 System configuration (system-manager)"
 nixcmd run "$dir/nix#system-manager" -- switch --flake "$dir/nix#$machine" --sudo
