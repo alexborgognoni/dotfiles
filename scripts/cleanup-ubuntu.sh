@@ -139,7 +139,7 @@ done
 for b in loc neovide resvg squawk yazi ya yazi-build; do
   [ -e "$HOME/.cargo/bin/$b" ] && home_remove+=(".cargo/bin/$b")
 done
-log "home: old tools and leftovers (${#home_remove[@]})"
+log "home: old tools and leftovers (${#home_remove[@]}; Home Manager's links inside are kept)"
 for p in "${home_remove[@]}"; do item "~/$p"; done
 pwa="$(grep -l '/opt/google/chrome/google-chrome' "$HOME"/.local/share/applications/chrome-*.desktop 2>/dev/null || true)"
 log "Chrome web app launchers to point at Nix's Chrome"
@@ -197,7 +197,21 @@ fi
 sudo systemctl restart system-manager.target 2>/dev/null || true
 
 log "Cleaning up home"
-for p in "${home_remove[@]}"; do rm -rf "${HOME:?}/$p"; done
+# Never touch Home Manager's own files (links into the Nix store): inside a
+# listed directory only the other entries go, the directory if then empty.
+from_nix() { [ -L "$1" ] && case "$(readlink -f "$1")" in /nix/store/*) true ;; *) false ;; esac; }
+for p in "${home_remove[@]}"; do
+  target="${HOME:?}/$p"
+  from_nix "$target" && continue
+  if [ -d "$target" ] && [ ! -L "$target" ]; then
+    find "$target" -mindepth 1 -maxdepth 1 | while read -r entry; do
+      from_nix "$entry" || rm -rf "$entry"
+    done
+    rmdir "$target" 2>/dev/null || true
+  else
+    rm -rf "$target"
+  fi
+done
 for f in $pwa; do sed -i 's|/opt/google/chrome/google-chrome|google-chrome-stable|' "$f"; done
 
 log "Done: fresh Ubuntu + Nix. Log out and back in."
