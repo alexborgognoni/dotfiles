@@ -1,8 +1,7 @@
 # GNOME on a standalone (Ubuntu) machine: settings, Shell extensions, GTK and
 # Shell theme, cursors, wallpaper. Port of the Ansible gnome role; GNOME
-# itself and the built-in extensions (user-theme, auto-move-windows) come
-# from apt. The extensions are pinned to builds for the distribution's GNOME
-# Shell in extensions.json (scripts/update-gnome-extensions.sh).
+# itself is the distribution's. All extensions are pinned to builds for its
+# GNOME Shell in extensions.json (scripts/update-gnome-extensions.sh).
 {
   config,
   lib,
@@ -32,10 +31,6 @@ let
         unzip -q $src -d $out
         if [ -d $out/schemas ]; then glib-compile-schemas $out/schemas; fi
       '';
-  builtin = [
-    "user-theme@gnome-shell-extensions.gcampax.github.com"
-    "auto-move-windows@gnome-shell-extensions.gcampax.github.com"
-  ];
 
   themeName = "catppuccin-macchiato-lavender-standard";
   gtkTheme = pkgs.catppuccin-gtk.override {
@@ -63,6 +58,30 @@ in
         "themes/${themeName}".source = themeDir;
         "icons/${cursor}".source = "${pkgs.volantes-cursors}/share/icons/${cursor}";
       };
+
+    # Login apps of the GNOME session (auto-move-windows puts them on
+    # workspaces 1 and 2); Hyprland starts its own (my.desktop.autostart)
+    xdg.autostart = {
+      enable = true;
+      entries = [
+        "${
+          pkgs.makeDesktopItem {
+            name = "kitty-autostart";
+            desktopName = "kitty";
+            exec = "kitty";
+            onlyShowIn = [ "GNOME" ];
+          }
+        }/share/applications/kitty-autostart.desktop"
+        "${
+          pkgs.makeDesktopItem {
+            name = "google-chrome-autostart";
+            desktopName = "Google Chrome";
+            exec = "google-chrome-stable";
+            onlyShowIn = [ "GNOME" ];
+          }
+        }/share/applications/google-chrome-autostart.desktop"
+      ];
+    };
 
     # libadwaita (GTK 4) apps ignore gtk-theme; in dark mode they load
     # ~/.config/gtk-4.0/gtk-dark.css. gtk.css stays unmanaged: the Unite
@@ -194,7 +213,7 @@ in
           "google-chrome.desktop"
           "kitty.desktop"
         ];
-        enabled-extensions = map (e: e.uuid) pinned.extensions ++ builtin;
+        enabled-extensions = map (e: e.uuid) pinned.extensions;
         disabled-extensions = [
           "ubuntu-appindicators@ubuntu.com"
           "ubuntu-dock@ubuntu.com"

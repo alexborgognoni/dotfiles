@@ -1,8 +1,9 @@
-# Ubuntu: the part Nix cannot own. Everything else is Nix:
+# Ubuntu: only what Nix cannot provide on a non-NixOS system (root daemons
+# tied to the distribution, the login shell binary). Everything else is Nix:
 #   user level -> Home Manager (nix/homes/<machine>.nix)
 #   root level -> system-manager (nix/systems/<machine>.nix)
 #
-# Run as root by ./install:  sudo ansible-playbook ansible/ubuntu.yml -e user=<name>
+# Run as root by ./install:  sudo ansible-playbook ansible/ubuntu.yml
 # Corporate and OS packages are never touched.
 - name: Ubuntu packages and settings outside Nix
   hosts: localhost
@@ -10,6 +11,16 @@
   gather_facts: true
   vars:
     user: "{{ lookup('env', 'SUDO_USER') }}"
+    release: "{{ ansible_facts.distribution_release }}"
+    # Third-party apt repositories. File names and keyrings match the
+    # existing laptop setup: apt rejects a repository listed twice with
+    # different keyrings. (Tools, databases and CUDA come from Nix: globally
+    # or per project in dev shells.)
+    apt_repos:
+      - name: docker
+        key: https://download.docker.com/linux/ubuntu/gpg
+        keyring: /etc/apt/keyrings/docker.asc
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ release }} stable"
     apt_packages:
       # Login shell (its configuration comes from Home Manager)
       - zsh
@@ -19,35 +30,41 @@
       - containerd.io
       - docker-buildx-plugin
       - docker-compose-plugin
-      # PipeWire as sound server (my.audio.server); PulseAudio stays installed
-      # as the fallback
-      - pipewire
-      - pipewire-pulse
-      - wireplumber
-      - pipewire-audio-client-libraries
-      - libspa-0.2-bluetooth
-      # Portal backend for file pickers in non-GNOME sessions
-      - xdg-desktop-portal-gtk
-      # GNOME: built-in Shell extensions (user-theme, auto-move-windows) and
-      # the Yaru icon theme; settings and the other extensions: Home Manager
-      - gnome-shell-extensions
-      - yaru-theme-icon
-    # Vendor packages that maintain their own apt repository after installing
+      # VM host: libvirt daemon with Ubuntu's QEMU/OVMF (AppArmor profiles
+      # expect these); virt-manager, virt-install etc. come from Nix
+      - libvirt-daemon-system
+      - qemu-system-x86
+      - ovmf
+    # Corporate browser (Intune/Entra sign-in); maintains its own apt
+    # repository after installing
     vendor_debs:
-      google-chrome-stable: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
       microsoft-edge-stable: https://go.microsoft.com/fwlink?linkid=2149051&brand=M102
 
   tasks:
-    - name: Docker apt repository key
+    - name: Repository keys (downloaded)
       ansible.builtin.get_url:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        dest: /etc/apt/keyrings/docker.asc
+        url: "{{ item.key }}"
+        dest: "/etc/apt/keyrings/{{ item.name }}.key.asc"
         mode: "0644"
+      loop: "{{ apt_repos }}"
 
-    - name: Docker apt repository
+    - name: Repository keyrings (binary keyrings dearmored, .asc used as is)
+      ansible.builtin.shell: |
+        case "{{ item.keyring }}" in
+          *.asc) cp "/etc/apt/keyrings/{{ item.name }}.key.asc" "{{ item.keyring }}" ;;
+          *) gpg --dearmor --yes -o "{{ item.keyring }}" "/etc/apt/keyrings/{{ item.name }}.key.asc" ;;
+        esac
+        chmod 644 "{{ item.keyring }}"
+      args:
+        creates: "{{ item.keyring }}"
+      loop: "{{ apt_repos }}"
+
+    - name: Repositories
       ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_facts.distribution_release }} stable"
-        filename: docker
+        repo: "{{ item.repo }}"
+        filename: "{{ item.name }}"
+        update_cache: false
+      loop: "{{ apt_repos }}"
 
     - name: apt packages
       ansible.builtin.apt:
@@ -57,15 +74,15 @@
     - name: Installed packages
       ansible.builtin.package_facts:
 
-    - name: Vendor packages (Chrome, Edge)
+    - name: Vendor packages (Edge)
       ansible.builtin.apt:
         deb: "{{ item.value }}"
       loop: "{{ vendor_debs | dict2items }}"
       when: item.key not in ansible_facts.packages
 
-    - name: "{{ user }}: docker group, zsh as login shell"
+    - name: "{{ user }}: docker and libvirt groups, zsh as login shell"
       ansible.builtin.user:
         name: "{{ user }}"
-        groups: [docker]
+        groups: [docker, libvirt]
         append: true
         shell: /usr/bin/zsh

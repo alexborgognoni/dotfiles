@@ -185,6 +185,10 @@ let
           tmux source-file "$HOME/.config/tmux/theme-reload.conf" >/dev/null 2>&1 &
         fi
         pkill -USR1 -x 'nvim|\.nvim-wrapped' || true
+        # Readest rewrites its settings while running; it syncs on start then
+        if command -v readest-theme-sync >/dev/null && ! pgrep -x readest >/dev/null; then
+          readest-theme-sync >/dev/null 2>&1 &
+        fi
         wait
       }
 

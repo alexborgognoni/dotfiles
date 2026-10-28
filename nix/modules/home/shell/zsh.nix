@@ -1,5 +1,5 @@
 # Port of chezmoi/dot_zshrc.tmpl with plugins from nixpkgs instead of zinit.
-# Dropped: nvm, pyenv, brew, bun, gcloud PATH hacks (use dev shells instead).
+# Dropped: nvm, pyenv, brew, bun and herd PATH hacks (the tools come from Nix).
 {
   config,
   lib,
@@ -11,6 +11,13 @@ let
   caBundle = "/etc/ssl/certs/ca-certificates.crt";
 in
 {
+  # Your own scripts and tools installed with cargo / go install
+  home.sessionPath = [
+    "$HOME/.local/bin"
+    "$HOME/.cargo/bin"
+    "${config.xdg.dataHome}/go/bin"
+  ];
+
   programs.zsh = {
     enable = true;
     dotDir = "${config.xdg.configHome}/zsh";
@@ -72,7 +79,7 @@ in
     // lib.optionalAttrs isWork {
       REQUESTS_CA_BUNDLE = caBundle;
       NODE_EXTRA_CA_CERTS = caBundle;
-      NODE_OPTIONS = "--use-openssl-ca";
+      NODE_OPTIONS = "--use-openssl-ca --use-system-ca";
     };
 
     initContent = lib.mkMerge [
@@ -139,6 +146,7 @@ in
   };
 
   home.packages = with pkgs; [
+    zsh-completions # extra completion definitions (zinit: zsh-users/zsh-completions)
     file
     poppler-utils
   ];

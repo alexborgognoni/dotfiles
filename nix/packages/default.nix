@@ -47,6 +47,44 @@ let
       collection-fontsextra
     ]
   );
+  # Readest follows the live theme: its custom theme "Theme" gets the current
+  # pack's colors (and the light/dark mode) before every start, and from the
+  # `theme` command while Readest is closed (it rewrites its settings while
+  # running). Select "Theme" once in Readest's settings.
+  readestThemeSync = pkgs.writeShellApplication {
+    name = "readest-theme-sync";
+    runtimeInputs = [ pkgs.jq ];
+    text = ''
+      pack="''${XDG_STATE_HOME:-$HOME/.local/state}/theme/current"
+      settings="''${XDG_CONFIG_HOME:-$HOME/.config}/com.bilingify.readest/settings.json"
+      [ -f "$pack/readest.json" ] && [ -f "$settings" ] || exit 0
+      tmp="$(mktemp "$settings.XXXXXX")"
+      jq --slurpfile t "$pack/readest.json" --arg mode "$(cat "$pack/polarity")" \
+        '.globalReadSettings.customThemes = ([(.globalReadSettings.customThemes // [])[] | select(.name != "theme")] + $t)
+         | .globalViewSettings.theme = $mode' "$settings" > "$tmp"
+      mv "$tmp" "$settings"
+    '';
+  };
+  readest = pkgs.symlinkJoin {
+    name = "readest-themed";
+    paths = [ u.readest ];
+    postBuild = ''
+      rm "$out/bin/readest"
+      cat > "$out/bin/readest" <<EOF
+      #!${pkgs.runtimeShell}
+      ${readestThemeSync}/bin/readest-theme-sync || true
+      exec ${u.readest}/bin/readest "\$@"
+      EOF
+      chmod +x "$out/bin/readest"
+      ln -s ${readestThemeSync}/bin/readest-theme-sync "$out/bin/"
+      # app grid entries start the wrapper too
+      for f in "$out"/share/applications/*.desktop; do
+        [ -e "$f" ] || continue
+        cp --remove-destination "$(readlink -f "$f")" "$f"
+        sed -i "s|^Exec=[^ ]*|Exec=$out/bin/readest|" "$f"
+      done
+    '';
+  };
 in
 {
   cli = [
@@ -96,8 +134,19 @@ in
     k9s
     ansible
     mkcert
+    google-cloud-sdk # gcloud, gsutil, bq
+    k6
+    # VM tools for the libvirt daemon (tests/ubuntu-vm, the NixOS VM)
+    virt-manager # also virt-install
+    cloud-utils # cloud-localds
+    qemu-utils # qemu-img
 
-    # Databases (clients; servers run per project in containers)
+    # PHP (formerly Laravel Herd Lite); Laravel itself comes per project
+    # through composer (composer create-project laravel/laravel <app>)
+    php
+    php.packages.composer
+
+    # Databases (clients; servers run per project: dev shells or containers)
     postgresql
     squawk
 
@@ -137,7 +186,6 @@ in
   ]
   ++ (with u; [
     teams-for-linux
-    vscode
     neovide
     obsidian
     vlc

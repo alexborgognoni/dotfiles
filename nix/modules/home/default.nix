@@ -19,8 +19,10 @@
     ./browser.nix
     ./fonts.nix
     ./packages.nix
-    ./scripts.nix
+    ./scripts
     ./standalone.nix
+    ./work.nix
+    ./apps
     ./gnome
   ];
 
@@ -62,6 +64,44 @@
         default on standalone machines, so the distribution's own desktop
         and its apps keep their look (GNOME on Ubuntu: ./gnome).
       '';
+    };
+
+    desktop.browser = lib.mkOption {
+      type = lib.types.str;
+      default = "firefox.desktop";
+      example = "google-chrome.desktop";
+      description = "Default web browser (desktop file name), for links and HTML files.";
+    };
+
+    desktop.autostart = lib.mkOption {
+      type = lib.types.listOf (
+        lib.types.submodule {
+          options = {
+            command = lib.mkOption {
+              type = lib.types.str;
+              description = "Command started when the desktop session starts.";
+            };
+            workspace = lib.mkOption {
+              type = lib.types.nullOr lib.types.int;
+              default = null;
+              description = "Workspace its window opens on (silently, without switching there).";
+            };
+            class = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = ''
+                Window class (regex) to place on `workspace` with a window rule,
+                for apps whose window does not belong to the started process
+                (e.g. a Chrome web app handed to a running Chrome). Applies to
+                every window of that class. Without it, only the windows of
+                this launch are placed.
+              '';
+            };
+          };
+        }
+      );
+      default = [ ];
+      description = "Apps started with the desktop session (Hyprland).";
     };
 
     desktop.monitors = lib.mkOption {

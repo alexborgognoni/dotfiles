@@ -515,6 +515,22 @@ let
           };
         };
       };
+      # Readest custom theme "Theme" (readest-theme-sync writes it into its
+      # settings); same colors for both modes, the theme decides.
+      readestVariant = {
+        fg = c.base05;
+        bg = c.base00;
+        primary = accent;
+      };
+      readest = builtins.toJSON {
+        name = "theme";
+        label = "Theme";
+        colors = {
+          light = readestVariant;
+          dark = readestVariant;
+        };
+      };
+
       # Same colors for both modes: the theme decides light or dark.
       noctalia = builtins.toJSON {
         dark = noctaliaVariant;
@@ -541,6 +557,10 @@ let
       {
         name = "noctalia.json";
         path = pkgs.writeText "noctalia.json" noctalia;
+      }
+      {
+        name = "readest.json";
+        path = pkgs.writeText "readest.json" readest;
       }
       {
         name = "wallpaper";

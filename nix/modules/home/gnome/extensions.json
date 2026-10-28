@@ -20,6 +20,12 @@
       "hash": "sha256-WyFcYp9LDKHQLmCpZIw79jdtKMd6yalhXaEiweDonV4="
     },
     {
+      "uuid": "auto-move-windows@gnome-shell-extensions.gcampax.github.com",
+      "version": 49,
+      "url": "https://extensions.gnome.org/download-extension/auto-move-windows@gnome-shell-extensions.gcampax.github.com.shell-extension.zip?version_tag=29907",
+      "hash": "sha256-HPn5W1bCpllBGDGcDMda6kCcM5aXm4GwW4NbywhKaxA="
+    },
+    {
       "uuid": "blur-my-shell@aunetx",
       "version": 47,
       "url": "https://extensions.gnome.org/download-extension/blur-my-shell@aunetx.shell-extension.zip?version_tag=42627",
@@ -72,6 +78,12 @@
       "version": 72,
       "url": "https://extensions.gnome.org/download-extension/unite@hardpixel.eu.shell-extension.zip?version_tag=43542",
       "hash": "sha256-QmfsW1sXgreBWlMG+Y/HEfWJyl5DSF69+FRqqwzN2iU="
+    },
+    {
+      "uuid": "user-theme@gnome-shell-extensions.gcampax.github.com",
+      "version": 49,
+      "url": "https://extensions.gnome.org/download-extension/user-theme@gnome-shell-extensions.gcampax.github.com.shell-extension.zip?version_tag=29921",
+      "hash": "sha256-iOfYBeWc1qMGt3pHg7zOIlQM83CXuA3cLdsvN0Scc14="
     },
     {
       "uuid": "Vitals@CoreCoding.com",

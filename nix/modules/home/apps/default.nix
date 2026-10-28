@@ -1,0 +1,71 @@
+# Settings of individual apps (formerly unmanaged files in ~/.config).
+#   managed: linked from the repo, edit them here
+#   seeded:  copied once when missing, then owned by the app, for apps that
+#            rewrite their own settings files (a read-only link would break them)
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  # target (relative to ~/.config) -> file in the repo
+  seeds = {
+    "opencode/cli.json" = ./opencode/cli.json;
+    "opencode/opencode-mem.jsonc" = ./opencode/opencode-mem.jsonc;
+    "herdr/config.toml" = pkgs.writeText "herdr-config.toml" "onboarding = false\n";
+  }
+  // lib.optionalAttrs config.my.features.gui.enable {
+    "librepods/app_settings.json" = pkgs.writeText "librepods-settings.json" (
+      builtins.toJSON {
+        theme = "Dracula";
+        tray_text_mode = false;
+        stem_control = false;
+      }
+    );
+  };
+in
+{
+  # opencode: your global instructions and config (herdr's integration files
+  # next to them are managed by herdr itself: `herdr integration install`)
+  xdg.configFile = {
+    "opencode/AGENTS.md".source = ./opencode/AGENTS.md;
+    "opencode/opencode.jsonc".source = ./opencode/opencode.jsonc;
+  };
+
+  home.activation.seedAppSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+    lib.concatStrings (
+      lib.mapAttrsToList (target: source: ''
+        if [ ! -e "${config.xdg.configHome}/${target}" ]; then
+          run mkdir -p "$(dirname "${config.xdg.configHome}/${target}")"
+          run install -m 600 ${source} "${config.xdg.configHome}/${target}"
+        fi
+      '') seeds
+    )
+  );
+
+  # VS Code (gui package group): settings, keybinding and extensions
+  programs.vscode = lib.mkIf config.my.features.gui.enable {
+    enable = true;
+    package = pkgs.unstable.vscode;
+    profiles.default = {
+      userSettings = {
+        "github.copilot.nextEditSuggestions.enabled" = true;
+      };
+      keybindings = [
+        {
+          # newline without submitting in terminal apps (Claude Code)
+          key = "shift+enter";
+          command = "workbench.action.terminal.sendSequence";
+          args.text = builtins.fromJSON ''"\u001b\r"''; # ESC + CR (Nix has no \u escapes)
+          when = "terminalFocus";
+        }
+      ];
+      extensions = with pkgs.unstable.vscode-extensions; [
+        anthropic.claude-code
+        github.copilot
+        github.copilot-chat
+      ];
+    };
+  };
+}

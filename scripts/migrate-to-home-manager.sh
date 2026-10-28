@@ -50,12 +50,11 @@ fi
 managed="$(printf '%s\n' "$managed" .zshrc .zsh/aliases.zsh .zsh/functions.zsh .gitconfig .gitconfig-personal \
   .ssh/config .config/kitty/kitty.conf .config/kitty/startup.conf .config/tmux/tmux.conf \
   .config/starship.toml .config/bat/config .config/gh/config.yml | sort -u)"
-# GNOME (Ansible gnome role): extensions Home Manager now installs (plus local
-# copies of the built-in ones, which would shadow apt's) and the GTK 4 theme
+# GNOME (Ansible gnome role): extensions Home Manager now installs and the GTK 4 theme
 # links (gtk.css stays: the Unite extension owns it)
 extensions="$(grep -o '"uuid": "[^"]*"' "$flake/modules/home/gnome/extensions.json" | cut -d'"' -f4)"
 managed="$(printf '%s\n' "$managed" .config/gtk-4.0/assets .config/gtk-4.0/gtk-dark.css
-  for uuid in $extensions user-theme@gnome-shell-extensions.gcampax.github.com auto-move-windows@gnome-shell-extensions.gcampax.github.com; do
+  for uuid in $extensions; do
     echo ".local/share/gnome-shell/extensions/$uuid"
   done)"
 
@@ -83,6 +82,14 @@ if [ -d "$HOME/.config/nvim" ] && [ ! -L "$HOME/.config/nvim" ] && ! from_nix "$
   moved=$((moved + 1))
 fi
 log "Moved $moved paths"
+
+# zsh history: Home Manager's zsh reads it from the XDG state directory
+history_new="${XDG_STATE_HOME:-$HOME/.local/state}/zsh/history"
+if [ -s "$HOME/.zsh_history" ] && [ ! -e "$history_new" ]; then
+  mkdir -p "$(dirname "$history_new")"
+  cp -p "$HOME/.zsh_history" "$history_new"
+  log "Copied zsh history ($(wc -l < "$HOME/.zsh_history") lines) to $history_new"
+fi
 
 # 2. activate
 log "Activating Home Manager ($config)"

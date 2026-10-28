@@ -24,17 +24,36 @@
         papers
       ];
 
-    xdg.mimeApps = lib.mkIf (!config.my.standalone) {
-      enable = true;
-      defaultApplications = {
-        "inode/directory" = "org.gnome.Nautilus.desktop";
-        "application/pdf" = "org.gnome.Papers.desktop";
-        "image/png" = "org.gnome.Loupe.desktop";
-        "image/jpeg" = "org.gnome.Loupe.desktop";
-        "text/html" = "firefox.desktop";
-        "x-scheme-handler/http" = "firefox.desktop";
-        "x-scheme-handler/https" = "firefox.desktop";
+    xdg.mimeApps =
+      let
+        browser = config.my.desktop.browser;
+      in
+      {
+        enable = true;
+        defaultApplications = {
+          "text/html" = browser;
+          "application/xhtml+xml" = browser;
+          "x-scheme-handler/http" = browser;
+          "x-scheme-handler/https" = browser;
+          "x-scheme-handler/about" = browser;
+          "x-scheme-handler/unknown" = browser;
+        }
+        // lib.optionalAttrs (!config.my.standalone) {
+          "inode/directory" = "org.gnome.Nautilus.desktop";
+          "application/pdf" = "org.gnome.Papers.desktop";
+          "image/png" = "org.gnome.Loupe.desktop";
+          "image/jpeg" = "org.gnome.Loupe.desktop";
+        }
+        # As on the Ubuntu laptop before (chezmoi mimeapps.list)
+        // lib.optionalAttrs config.my.standalone {
+          "x-scheme-handler/mailto" = browser;
+          "x-scheme-handler/postman" = "Postman.desktop";
+        };
+        associations.added = lib.mkIf config.my.standalone {
+          "video/mp4" = "mpv.desktop";
+          "video/x-matroska" = "mpv.desktop";
+          "application/x-x509-ca-cert" = "org.gnome.gedit.desktop";
+        };
       };
-    };
   };
 }

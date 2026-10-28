@@ -1,0 +1,83 @@
+#!/bin/bash
+# NUCLEAR OPTION when the network is dead.
+# Tries the least-invasive things first, then progressively more aggressive.
+# Prompts before each destructive step so you can bail out.
+
+set +e
+
+ask() {
+    read -r -p "  >> $1 [y/N] " answer
+    [[ "$answer" =~ ^[Yy]$ ]]
+}
+
+check_ping() {
+    if ping -c 1 -W 2 1.1.1.1 &>/dev/null; then
+        echo ">>> INTERNET IS BACK <<<"
+        exit 0
+    fi
+    echo "    still no internet."
+}
+
+echo "=== Step 0: baseline ==="
+if ping -c 1 -W 2 1.1.1.1 &>/dev/null; then
+    echo "Internet already works. Nothing to do."
+    exit 0
+fi
+echo "Confirmed: ping 1.1.1.1 fails."
+
+echo
+echo "=== Step 1: stop Zscaler + remove its interface & routes ==="
+if ask "Stop Zscaler and delete zcctun0?"; then
+    sudo systemctl stop zstunnel.service zsaservice.service
+    sleep 2
+    sudo ip route flush dev zcctun0 2>/dev/null
+    sudo ip link delete zcctun0 2>/dev/null
+    sleep 2
+    check_ping
+fi
+
+echo
+echo "=== Step 2: stop Cisco Secure Client (csc_vpnagent) ==="
+echo "  This is the other VPN agent on your machine."
+if ask "Stop Cisco Secure Client?"; then
+    sudo pkill -f csc_vpnagent 2>/dev/null
+    sudo systemctl stop vpnagentd.service 2>/dev/null
+    sleep 3
+    check_ping
+fi
+
+echo
+echo "=== Step 3: stop Docker (removes its firewall rules on shutdown) ==="
+if ask "Stop docker (WARNING: containers will stop)?"; then
+    sudo systemctl stop docker.service docker.socket
+    sleep 3
+    check_ping
+fi
+
+echo
+echo "=== Step 4: flush nftables + iptables (VERY DESTRUCTIVE) ==="
+echo "  Wipes every packet-filter rule. Docker/VPNs will need restart after."
+if ask "Flush all firewall rules?"; then
+    sudo nft flush ruleset 2>/dev/null
+    sudo iptables -F 2>/dev/null
+    sudo iptables -t nat -F 2>/dev/null
+    sudo iptables -t mangle -F 2>/dev/null
+    sudo iptables -X 2>/dev/null
+    sudo iptables -P INPUT ACCEPT 2>/dev/null
+    sudo iptables -P FORWARD ACCEPT 2>/dev/null
+    sudo iptables -P OUTPUT ACCEPT 2>/dev/null
+    sleep 2
+    check_ping
+fi
+
+echo
+echo "=== Step 5: bounce NetworkManager ==="
+if ask "Restart NetworkManager?"; then
+    sudo systemctl restart NetworkManager
+    sleep 5
+    check_ping
+fi
+
+echo
+echo "Nothing worked. Run 'net-diag' to capture full state and paste the output."
+exit 1

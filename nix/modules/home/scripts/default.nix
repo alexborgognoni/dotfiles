@@ -1,5 +1,10 @@
 # Personal scripts (previously in ~/.local/bin on Ubuntu).
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   # Switch Claude Code's env to a provider profile, then start it.
   # Profiles: ~/.claude/settings.<name>.json (only their `env` is copied).
@@ -57,5 +62,14 @@ in
         fi
       '';
     })
-  ];
+  ]
+  # Corporate network rescue (Zscaler, Ubuntu's NetworkManager and systemd);
+  # run as is, with the system's tools
+  ++ lib.optionals (config.my.profile == "work") (
+    map (name: pkgs.writeScriptBin name (builtins.readFile ./${name})) [
+      "fix-zscaler"
+      "net-diag"
+      "net-rescue"
+    ]
+  );
 }

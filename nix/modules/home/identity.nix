@@ -68,6 +68,8 @@ in
 
   config = {
     programs.git = {
+      # Global gitignore (was ~/.config/git/ignore)
+      ignores = [ "**/.claude/settings.local.json" ];
       enable = true;
 
       settings = {

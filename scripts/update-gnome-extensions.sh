@@ -14,6 +14,7 @@ uuids=(
   AlphabeticalAppGrid@stuarthayhurst
   appindicatorsupport@rgcjonas.gmail.com
   appmenu-color-icon@arahiko-ayami.github.com
+  auto-move-windows@gnome-shell-extensions.gcampax.github.com
   blur-my-shell@aunetx
   clipboard-history@alexsaveau.dev
   emoji-copy@felipeftn
@@ -23,6 +24,7 @@ uuids=(
   top-bar-organizer@julian.gse.jsts.xyz
   transparent-top-bar@ftpix.com
   unite@hardpixel.eu
+  user-theme@gnome-shell-extensions.gcampax.github.com
   Vitals@CoreCoding.com
 )
 

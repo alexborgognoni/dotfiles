@@ -13,6 +13,15 @@ let
   roundRight = glyph "e0b4";
   vimIcon = glyph "e615";
   zoomIcon = builtins.fromJSON ''"\udb80\udc4c"''; # U+F004C 󰁌 (surrogate pair)
+
+  # Copy-mode `y`: Wayland sessions (Hyprland) or X11 (GNOME on Xorg)
+  clipboardCopy = pkgs.writeShellScript "tmux-clipboard-copy" ''
+    if [ -n "''${WAYLAND_DISPLAY:-}" ]; then
+      exec ${pkgs.wl-clipboard}/bin/wl-copy
+    else
+      exec ${pkgs.xclip}/bin/xclip -selection clipboard -i
+    fi
+  '';
 in
 {
   stylix.targets.tmux.enable = false;
@@ -103,7 +112,7 @@ in
       bind Enter copy-mode
       bind-key -T copy-mode-vi v send-keys -X begin-selection
       bind -T copy-mode-vi Escape send -X cancel
-      bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel 'wl-copy'
+      bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel '${clipboardCopy}'
 
       # Seamless pane/split navigation with Neovim (vim-tmux-navigator)
       is_vim="ps -o state= -o comm= -t '#{pane_tty}' \

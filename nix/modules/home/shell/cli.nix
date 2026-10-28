@@ -46,6 +46,23 @@
       enable = true;
       package = pkgs.unstable.yazi;
       shellWrapperName = "y";
+      # E-books open in Readest (gui package group)
+      settings = {
+        opener.readest = [
+          {
+            run = ''readest "$@"'';
+            desc = "Readest";
+            orphan = true;
+            for = "linux";
+          }
+        ];
+        open.prepend_rules = [
+          {
+            mime = "application/epub+zip";
+            use = "readest";
+          }
+        ];
+      };
     };
 
     direnv = {

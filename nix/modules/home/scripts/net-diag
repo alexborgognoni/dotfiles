@@ -1,0 +1,115 @@
+#!/bin/bash
+# RUN THIS THE MOMENT the network breaks. Prompts for sudo once.
+# Captures ALL relevant state including firewall rules to /tmp/net-diag-<ts>.txt
+# Read-only. Does NOT change anything.
+
+umask 077
+sudo -v || exit 1
+OUT=$(mktemp "/tmp/net-diag-$(date +%Y%m%d-%H%M%S)-XXXXXX.txt") || exit 1
+exec > >(tee "$OUT") 2>&1
+
+date --iso-8601=seconds
+uname -a
+echo "==================== BASIC CONNECTIVITY ===================="
+echo "--- ping local gateway (192.168.178.1) ---"
+ping -c 3 -W 2 192.168.178.1
+echo
+echo "--- ping via ETH directly (1.1.1.1) ---"
+ping -c 3 -W 2 -I enx9c69d37efb9a 1.1.1.1
+echo
+echo "--- ping via WIFI directly (1.1.1.1) ---"
+ping -c 3 -W 2 -I wlp0s20f3 1.1.1.1
+echo
+echo "--- normal ping (uses routing table) ---"
+ping -c 3 -W 2 1.1.1.1
+
+echo "--- HTTPS with DNS ---"
+curl -4 -sS -I --connect-timeout 5 --max-time 10 https://example.com
+echo "--- HTTPS without DNS ---"
+curl -4 -sS -I --connect-timeout 5 --max-time 10 https://1.1.1.1
+echo "--- HTTPS with default address-family selection ---"
+curl -sS -I --connect-timeout 5 --max-time 10 https://example.com
+echo "--- DNS lookup ---"
+timeout 10 resolvectl query example.com
+
+echo
+echo "==================== ROUTING ===================="
+ip -4 route show table all
+ip -6 route show table all
+echo "--- policy routing rules ---"
+ip -4 rule show
+ip -6 rule show
+echo "--- default routes ---"
+ip route show default
+echo "--- route to 1.1.1.1 ---"
+ip route get 1.1.1.1
+echo "--- route to 192.168.178.1 ---"
+ip route get 192.168.178.1
+
+echo
+echo "==================== INTERFACES ===================="
+ip -br a
+echo "--- link states ---"
+ip -br link
+
+echo
+echo "==================== FIREWALL (asks for sudo password once) ===================="
+echo "--- nftables tables ---"
+sudo nft list tables 2>&1
+echo
+echo "--- FULL nftables ruleset ---"
+sudo nft -a list ruleset 2>&1
+echo
+echo "--- iptables FILTER ---"
+sudo iptables -L -n -v --line-numbers 2>&1
+echo
+echo "--- iptables NAT ---"
+sudo iptables -t nat -L -n -v --line-numbers 2>&1
+echo
+echo "--- iptables MANGLE ---"
+sudo iptables -t mangle -L -n -v --line-numbers 2>&1
+echo
+echo "--- iptables RAW ---"
+sudo iptables -t raw -L -n -v --line-numbers 2>&1
+echo
+echo "--- ip6tables FILTER ---"
+sudo ip6tables -L -n -v --line-numbers 2>&1
+echo "--- complete firewall saves (all tables, including legacy backend) ---"
+for backend in iptables ip6tables iptables-legacy ip6tables-legacy; do
+    if command -v "${backend}-save" >/dev/null; then
+        echo "--- ${backend}-save ---"
+        sudo "${backend}-save" -c 2>&1
+    fi
+done
+echo "--- reverse-path filtering ---"
+sysctl net.ipv4.conf.all.rp_filter net.ipv4.conf.default.rp_filter
+
+echo
+echo "==================== PROCESSES OF INTEREST ===================="
+pgrep -af 'zsaservice|zstunnel|zsupdater|ZSTray|csc_|anyconnect|openconnect|dockerd|containerd|ufw|firewall'
+
+echo
+echo "==================== DNS ===================="
+resolvectl status 2>&1
+
+echo
+echo "==================== SERVICE JOURNAL (last 15 min) ===================="
+sudo journalctl -b --since "15 min ago" --no-pager -n 1500 \
+    -u zsaservice -u zstunnel -u docker -u NetworkManager -u systemd-resolved 2>&1
+echo "--- kernel journal (last 15 min) ---"
+sudo journalctl -b -k --since "15 min ago" --no-pager -n 1000 2>&1
+echo "--- service state ---"
+systemctl --no-pager --full status zsaservice zstunnel docker ufw 2>&1
+
+echo
+echo "==================== NETWORKMANAGER STATE ===================="
+nmcli general status
+nmcli device status
+
+echo
+echo "==================== NEIGHBORS (ARP) ===================="
+ip neigh show
+
+echo
+echo "==================== END. File: $OUT ===================="
+echo "Send the file contents when it captures a failure."

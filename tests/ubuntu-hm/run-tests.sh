@@ -111,7 +111,7 @@ for c in claude codex copilot opencode forge terraform kubectl kubecolor k9s aws
   inzsh "command -v $c" >/dev/null 2>&1 || missing="$missing $c"
 done
 [ -z "$missing" ] && ok "all expected commands present" || bad "missing commands:$missing"
-check "Chrome/Edge not installed by Nix (apt on this machine)" bash -c '! command -v google-chrome-stable && ! command -v microsoft-edge'
+check "Chrome from Nix, Edge not (corporate, apt)" inzsh 'command -v google-chrome-stable | grep -q nix-profile && ! command -v microsoft-edge'
 check "Python libraries" python3 -c 'import pandas, boto3, openpyxl, docx, pptx, pypdf, pikepdf'
 check "CLIs run" inzsh 'forge --version && terraform version && kubectl version --client && node --version && kitty --version'
 

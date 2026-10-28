@@ -1,0 +1,45 @@
+#!/bin/bash
+# Reset Zscaler tunnel + routes when the network dies.
+# Faster than rebooting: full stop -> ensure zcctun0 is gone -> cold start.
+set -e
+
+echo "==> Stopping Zscaler services"
+sudo systemctl stop zstunnel.service zsaservice.service
+
+echo "==> Waiting for zcctun0 to disappear (up to 10s)"
+for i in {1..10}; do
+    if ! ip link show zcctun0 &>/dev/null; then
+        echo "    zcctun0 gone."
+        break
+    fi
+    sleep 1
+done
+
+# If the interface is still hanging around, force-remove it and its routes.
+if ip link show zcctun0 &>/dev/null; then
+    echo "==> Force-removing stale zcctun0 and its routes"
+    sudo ip route flush dev zcctun0 || true
+    sudo ip link delete zcctun0 || true
+fi
+
+echo "==> Verifying baseline internet (via ethernet/wifi, no tunnel)"
+if ping -c 1 -W 2 8.8.8.8 &>/dev/null; then
+    echo "    Baseline OK."
+else
+    echo "    WARNING: baseline ping failed. Something else is wrong."
+fi
+
+echo "==> Starting Zscaler services"
+sudo systemctl start zsaservice.service
+# zsaservice will bring up zstunnel via its monitor.
+
+echo "==> Waiting for tunnel to come back (up to 20s)"
+for i in {1..20}; do
+    if ip link show zcctun0 &>/dev/null; then
+        echo "    zcctun0 up."
+        break
+    fi
+    sleep 1
+done
+
+echo "==> Done. Check with: ip -br a show zcctun0 && ping -c 2 8.8.8.8"

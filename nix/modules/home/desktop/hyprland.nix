@@ -322,7 +322,13 @@ in
           action = "workspace";
         };
 
-        window_rule = [
+        window_rule =
+          lib.imap1 (i: a: {
+            name = "autostart-${toString i}";
+            match.initial_class = a.class;
+            workspace = "${toString a.workspace} silent";
+          }) (lib.filter (a: a.class != null && a.workspace != null) config.my.desktop.autostart)
+          ++ [
           {
             name = "suppress-maximize-events";
             match.class = ".*";
@@ -364,7 +370,7 @@ in
             match.class = "^(org.pulseaudio.pavucontrol|nm-connection-editor|blueman-manager|xdg-desktop-portal-gtk)$";
             float = true;
           }
-        ];
+          ];
 
         layer_rule = {
           name = "noctalia";
@@ -434,7 +440,22 @@ in
       };
 
       # Colors and decoration of the live theme pack; `hyprctl reload` re-reads it.
-      extraConfig = ''
+      extraConfig =
+        # Session apps (my.desktop.autostart): started once per session, the
+        # windows of each launch placed on their workspace.
+        lib.optionalString (config.my.desktop.autostart != [ ]) ''
+          hl.on("hyprland.start", function()
+          ${lib.concatMapStrings (
+            a:
+            let
+              rules = lib.optionalString (
+                a.workspace != null && a.class == null
+              ) ", { workspace = \"${toString a.workspace} silent\" }";
+            in
+            "  hl.exec_cmd(${builtins.toJSON (app a.command)}${rules})\n"
+          ) config.my.desktop.autostart}end)
+        ''
+        + ''
         local theme_pack = "${config.my.themeState}/current/hyprland.lua"
         local ok, err = pcall(dofile, theme_pack)
         if not ok then

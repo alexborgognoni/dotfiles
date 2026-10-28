@@ -5,6 +5,7 @@
   config,
   inputs,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -23,9 +24,8 @@ in
     ];
     default = "pipewire";
     description = ''
-      Sound server on a standalone (Ubuntu) machine. Both are installed from
-      apt (ansible/ubuntu.yml); this selects which one your user session runs.
-      "pulseaudio" restores Ubuntu 22.04's default. Takes effect at the next
+      Sound server on a standalone (Ubuntu) machine: PipeWire from Nix, or
+      "pulseaudio", Ubuntu 22.04's own default (left installed and untouched). Takes effect at the next
       login.
     '';
   };
@@ -55,8 +55,8 @@ in
     targets.genericLinux.enable = true;
 
     # Drivers for Nix-built OpenGL/Vulkan apps: Mesa (Intel) always, NVIDIA
-    # libraries pinned to the host driver. One-time root setup after the
-    # first switch: `sudo $(which non-nixos-gpu-setup)`.
+    # libraries pinned to the host driver. system-manager links them to
+    # /run/opengl-driver (modules/system-manager).
     targets.genericLinux.gpu = {
       enable = true;
       nvidia = lib.mkIf (nvidia.version != null) {
@@ -78,19 +78,31 @@ in
       ''
     );
 
-    # PipeWire instead of PulseAudio: enable the PipeWire user units from
-    # Ubuntu's packages, mask PulseAudio and the old media session.
+    # PipeWire instead of PulseAudio, from Nix: its user units, under the
+    # same names as Ubuntu's (units in ~/.config take precedence), PulseAudio
+    # and the old media session masked. Apps reach it through the PulseAudio
+    # socket (pipewire-pulse) and Ubuntu's ALSA-to-PulseAudio plugin.
+    home.packages = lib.mkIf (cfg.audio.server == "pipewire") [
+      pkgs.pipewire # pw-cli, pw-top, ...
+      pkgs.wireplumber # wpctl
+    ];
     xdg.configFile = lib.mkIf (cfg.audio.server == "pipewire") (
       let
-        unit = name: config.lib.file.mkOutOfStoreSymlink "/usr/lib/systemd/user/${name}";
+        pipewire = "${pkgs.pipewire}/lib/systemd/user";
+        wireplumber = "${pkgs.wireplumber}/lib/systemd/user";
         masked = config.lib.file.mkOutOfStoreSymlink "/dev/null";
       in
       {
-        "systemd/user/sockets.target.wants/pipewire-pulse.socket".source = unit "pipewire-pulse.socket";
-        "systemd/user/default.target.wants/pipewire-pulse.service".source = unit "pipewire-pulse.service";
+        "systemd/user/pipewire.service".source = "${pipewire}/pipewire.service";
+        "systemd/user/pipewire.socket".source = "${pipewire}/pipewire.socket";
+        "systemd/user/pipewire-pulse.service".source = "${pipewire}/pipewire-pulse.service";
+        "systemd/user/pipewire-pulse.socket".source = "${pipewire}/pipewire-pulse.socket";
+        "systemd/user/wireplumber.service".source = "${wireplumber}/wireplumber.service";
+        "systemd/user/sockets.target.wants/pipewire.socket".source = "${pipewire}/pipewire.socket";
+        "systemd/user/sockets.target.wants/pipewire-pulse.socket".source = "${pipewire}/pipewire-pulse.socket";
         # (no pipewire-session-manager alias: linked through the Nix store,
         # systemd would load it as a second, competing WirePlumber)
-        "systemd/user/pipewire.service.wants/wireplumber.service".source = unit "wireplumber.service";
+        "systemd/user/pipewire.service.wants/wireplumber.service".source = "${wireplumber}/wireplumber.service";
         "systemd/user/pulseaudio.service".source = masked;
         "systemd/user/pulseaudio.socket".source = masked;
         "systemd/user/pipewire-media-session.service".source = masked;
