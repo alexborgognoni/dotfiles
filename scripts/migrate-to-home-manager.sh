@@ -127,6 +127,16 @@ for dir in "$HOME/.local/bin" "$HOME/.cargo/bin"; do
 done
 [ -f "$backup/moved-bins" ] && log "Moved $(wc -l < "$backup/moved-bins") binaries: $(tr '\n' ' ' < "$backup/moved-bins")"
 
+# Only binaries moved on a re-run (e.g. after a failed activation): add them
+# to the existing backup, so one backup holds everything for the rollback
+if [ ! -s "$backup/moved-files" ] && [ -s "$backup/moved-bins" ] && [ -d "$state/latest" ]; then
+  cp -a "$backup/bin/." "$state/latest/bin/" 2>/dev/null || { mkdir -p "$state/latest/bin" && cp -a "$backup/bin/." "$state/latest/bin/"; }
+  cat "$backup/moved-bins" >> "$state/latest/moved-bins"
+  rm -rf "$backup"
+  log "Added the moved binaries to $(readlink -f "$state/latest")"
+  exit 0
+fi
+
 # Nothing moved (already migrated): keep the previous backup as "latest", so
 # rollback-to-chezmoi.sh still restores the real chezmoi files
 if [ ! -s "$backup/moved-files" ] && [ ! -s "$backup/moved-bins" ]; then
