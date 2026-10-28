@@ -9,9 +9,9 @@ Who owns what afterwards:
 
 | Layer | Tool | Where |
 |---|---|---|
-| apt repositories and packages, groups, login shell | Ansible (slim) | `ansible/ubuntu.yml` |
-| `/etc` and system services: Nix daemon, keyd, GPU drivers for Nix apps, the Hyprland login session, lock-screen helper | system-manager | `nix/systems/work-laptop.nix`, `nix/modules/system-manager` |
-| everything in your home: shell, tools, apps, identities, GNOME settings and extensions, Hyprland + Noctalia, themes | Home Manager | `nix/homes/work-laptop.nix`, `nix/modules/home` |
+| only what Nix can't provide here: Docker, libvirt/QEMU, the zsh binary, Edge (corporate); groups, login shell | Ansible (slim) | `ansible/ubuntu.yml` |
+| `/etc` and system services: Nix daemon, keyd, GPU drivers for Nix apps, GDM Wayland + "Hyprland (Nix)" session, portal, lock screen, Bluetooth/IPv4/inotify/uinput tweaks | system-manager | `nix/systems/work-laptop.nix`, `nix/modules/system-manager` |
+| everything else: shell, tools, apps (Chrome, VS Code, ...), Neovim (AstroNvim), PipeWire, identities, GNOME settings and extensions, Hyprland + Noctalia, session apps, monitor layouts, themes | Home Manager | `nix/homes/work-laptop.nix`, `nix/modules/home` |
 
 Untouched: Ubuntu itself, drivers, corporate software and its packages,
 users. Nothing is removed from apt.
@@ -22,6 +22,17 @@ users. Nothing is removed from apt.
 - [ ] The sops admin key `~/.config/sops/age/keys.txt` is backed up
       (Bitwarden item `sops-age-key`). It decrypts your SSH/GPG keys.
 - [ ] ~40 GB free disk space (the first build downloads about 27 GB).
+
+## Snapshot (automatic, once)
+
+The installer takes it right after installing Nix, before anything else
+changes (`scripts/snapshot-system.sh`, also usable on its own): one archive
+in `~/Backups`, encrypted to your sops admin key, with `~/.config` (without
+browser caches), `~/.local/bin`, snap/flatpak data, shell dotfiles and
+history, all of `/etc`, and the lists of everything installed (apt, snap,
+flatpak, pip, npm, cargo, /opt, /usr/local). Copy it off the machine
+(OneDrive). Restore a file:
+`age -d -i ~/.config/sops/age/keys.txt <archive> | zstd -d | tar -x <path>`.
 
 ## Install (one command, asks for sudo once)
 
@@ -63,6 +74,23 @@ Then log out and back in.
   via `nix shell nixpkgs#mesa-demos`.
 - Corporate tools (Zscaler, Intune, Edge, Teams) behave as before.
 
+## Cleanup to "fresh Ubuntu + Nix" (after Hyprland works for you)
+
+```sh
+~/dotfiles/scripts/cleanup-ubuntu.sh           # dry run: lists everything
+~/dotfiles/scripts/cleanup-ubuntu.sh --apply   # removes it (asks once)
+```
+
+Removes what is installed outside Nix and not part of the original Ubuntu
+installation, `ansible/ubuntu.yml` or the protect list (corporate agents,
+drivers, kernels, system parts): ~170 apt packages (CLI tools, apps, build
+libraries, TeX, Wine, CUDA, the PostgreSQL/MySQL servers, VirtualBox) and
+their now unused dependencies and repositories, the chromium/firefox/teams
+snaps, OBS (Flatpak), pip/npm/cargo/mise/nvm installs in your home, hand
+installs in `/usr/local` and `/opt`. Chrome web app launchers are pointed at
+Nix's Chrome. Requires the snapshot. Databases and CUDA now come per project
+(dev shells or containers).
+
 ## Everyday use afterwards
 
 ```sh
@@ -84,6 +112,15 @@ one), edit and run `scripts/update-gnome-extensions.sh`.
 PipeWire is the default; PulseAudio stays installed. To switch back, set
 `my.audio.server = "pulseaudio";` in `nix/homes/work-laptop.nix`,
 `nh home switch`, log out and in.
+
+## Things to check once on the laptop
+
+- Monitor layouts (kanshi): laptop alone, home (Lenovo above), desk (MSI
+  rotated left, ROG, laptop); the MSI rotation direction may need flipping.
+- Zscaler tray icon in Noctalia's tray under Hyprland.
+- Readest: select the custom theme "Theme" once; it follows `theme` from
+  then on (applied when Readest starts).
+- herdr: `herdr integration install` for opencode, if its files are missing.
 
 ## Rollback
 

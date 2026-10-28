@@ -91,8 +91,22 @@ in
         pipewire = "${pkgs.pipewire}/lib/systemd/user";
         wireplumber = "${pkgs.wireplumber}/lib/systemd/user";
         masked = config.lib.file.mkOutOfStoreSymlink "/dev/null";
+        # Nix's ALSA library would read Ubuntu's ALSA config (/etc/alsa/conf.d,
+        # /etc/asound.conf), whose hooks load plugins only Ubuntu's library
+        # has; that aborts the config and the sound card can't be opened.
+        alsaConf = pkgs.runCommand "alsa-without-etc.conf" { } ''
+          grep -vE '^\s*"(/var/lib/alsa/conf.d|/usr/etc/alsa/conf.d|/etc/alsa/conf.d|/etc/asound.conf\|\|\|/usr/etc/asound.conf)"\s*$' \
+            ${pkgs.alsa-lib}/share/alsa/alsa.conf > $out
+          ! grep -q '/etc/' $out || { echo "unexpected /etc reference left in alsa.conf" >&2; exit 1; }
+        '';
+        alsaDropin = {
+          text = "[Service]\nEnvironment=ALSA_CONFIG_PATH=${alsaConf}\n";
+        };
       in
       {
+        "systemd/user/pipewire.service.d/alsa.conf" = alsaDropin;
+        "systemd/user/pipewire-pulse.service.d/alsa.conf" = alsaDropin;
+        "systemd/user/wireplumber.service.d/alsa.conf" = alsaDropin;
         "systemd/user/pipewire.service".source = "${pipewire}/pipewire.service";
         "systemd/user/pipewire.socket".source = "${pipewire}/pipewire.socket";
         "systemd/user/pipewire-pulse.service".source = "${pipewire}/pipewire-pulse.service";

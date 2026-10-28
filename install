@@ -10,6 +10,7 @@
 #   1. git and the repository                        (~/dotfiles)
 #   2. the sops admin key                            (~/.config/sops/age/keys.txt)
 #   3. Nix                                           (scripts/bootstrap-nix.sh)
+#      + snapshot of the current system, once         (scripts/snapshot-system.sh)
 #   4. apt packages, groups, login shell             (ansible/ubuntu.yml)
 #   5. root-level config: Nix, keyd, GPU, session    (system-manager: nix/systems/<machine>.nix)
 #   6. user-level config and tools                   (Home Manager: nix/homes/<machine>.nix,
@@ -67,6 +68,12 @@ log "3/6 Nix"
 # shellcheck disable=SC1091
 . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 nixcmd() { nix --extra-experimental-features "nix-command flakes" "$@"; }
+
+# Snapshot of the current state before anything else changes (once)
+if ! ls "$HOME"/Backups/system-snapshot-*.tar.zst.age >/dev/null 2>&1; then
+  log "Snapshot of the current system (once)"
+  "$dir/scripts/snapshot-system.sh"
+fi
 
 log "4/6 apt packages (Ansible)"
 mkdir -p "$state"
