@@ -95,7 +95,8 @@ in
           # Everything the first-run wizard asks is configured here
           setup_wizard_enabled = false;
           settings_show_advanced = true;
-          panel.transparency_mode = if deco.blur then "glass" else "solid";
+          # Opened panels stay opaque; only the bar itself is see-through
+          panel.transparency_mode = "solid";
           screenshot.directory = "${config.xdg.userDirs.pictures}/Screenshots";
         };
 
