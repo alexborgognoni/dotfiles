@@ -80,10 +80,9 @@ section "Lock screen authentication (Nix PAM, service \"noctalia\")"
 check "wrong password rejected" 'p=$(nix build --no-link --print-out-paths nixpkgs#pamtester 2>/dev/null); ! echo wrong | $p/bin/pamtester noctalia $(id -un) authenticate'
 check "right password accepted" 'p=$(nix build --no-link --print-out-paths nixpkgs#pamtester 2>/dev/null); echo "${VM_PASSWORD:-password}" | $p/bin/pamtester noctalia $(id -un) authenticate'
 
-section "GNOME (settings in Home Manager)"
-check "all configured extensions enabled" '[ "$(gsettings get org.gnome.shell enabled-extensions | tr , "\n" | wc -l)" -ge 15 ]'
-check "Catppuccin GTK and Shell theme" 'gsettings get org.gnome.desktop.interface gtk-theme | grep -q catppuccin && dconf read /org/gnome/shell/extensions/user-theme/name | grep -q catppuccin'
-check "keybindings" '[ "$(gsettings get org.gnome.desktop.wm.keybindings close)" = "['"'"'<Shift><Super>q'"'"']" ]'
+section "GNOME (basic settings in Home Manager, otherwise vanilla)"
+check "preferences" '[ "$(gsettings get org.gnome.desktop.interface clock-format)" = "'"'"'24h'"'"'" ]'
+check "no custom Shell extensions" '[ -z "$(ls ~/.local/share/gnome-shell/extensions 2>/dev/null)" ]'
 
 section "Apps"
 check "Chrome from Nix, Edge from apt" 'command -v google-chrome-stable | grep -q nix-profile && command -v microsoft-edge | grep -q ^/usr/bin'

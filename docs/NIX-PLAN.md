@@ -239,7 +239,7 @@ engine, libvirt/QEMU, keyd, database servers).
   system-manager `systemConfigs.work-laptop`, Home Manager migration).
   Root level in system-manager: nix.conf + Zscaler CA, keyd, GPU drivers,
   GDM Wayland + "Hyprland (Nix)" session, portal, lock-screen PAM service.
-  GNOME settings, extensions and theme in Home Manager (R14). PipeWire
+  GNOME basic settings in Home Manager (R14); later made vanilla (no extensions, keybindings or theme). PipeWire
   default, PulseAudio fallback (`my.audio.server`). Verified end to end in a
   fresh Ubuntu 22.04 GNOME VM (HWE kernel, NetworkManager, like the laptop):
   install from GitHub, idempotent re-runs, real GDM login, and

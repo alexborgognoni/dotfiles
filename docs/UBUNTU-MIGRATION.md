@@ -11,7 +11,7 @@ Who owns what afterwards:
 |---|---|---|
 | only what Nix can't provide here: Docker, libvirt/QEMU, the zsh binary, Edge (corporate); groups, login shell | Ansible (slim) | `ansible/ubuntu.yml` |
 | `/etc` and system services: Nix daemon, keyd, GPU drivers for Nix apps, GDM Wayland + "Hyprland (Nix)" session, portal, lock screen, Bluetooth/IPv4/inotify/uinput tweaks | system-manager | `nix/systems/work-laptop.nix`, `nix/modules/system-manager` |
-| everything else: shell, tools, apps (Chrome, VS Code, ...), Neovim (AstroNvim), PipeWire, identities, GNOME settings and extensions, Hyprland + Noctalia, session apps, monitor layouts, themes | Home Manager | `nix/homes/work-laptop.nix`, `nix/modules/home` |
+| everything else: shell, tools, apps (Chrome, VS Code, ...), Neovim (AstroNvim), PipeWire, identities, GNOME basics (clock, input sources, touchpad), Hyprland + Noctalia, session apps, monitor layouts, themes | Home Manager | `nix/homes/work-laptop.nix`, `nix/modules/home` |
 
 Untouched: Ubuntu itself, drivers, corporate software and its packages,
 users. Nothing is removed from apt.
@@ -58,7 +58,7 @@ Then log out and back in.
 
 ## Check
 
-- GNOME session: looks as before (Catppuccin theme, extensions, keybindings).
+- GNOME session: plain Ubuntu GNOME (the backup session): no Shell extensions or custom keybindings; only the basic preferences from `nix/modules/home/gnome`.
 - Login screen gear menu: "Hyprland (Nix)" starts Hyprland with Noctalia;
   `theme` / the Noctalia theme picker switch themes live; Super+Escape locks,
   your password unlocks (the lock screen starts in the first keyboard layout,
@@ -104,9 +104,6 @@ nh home switch --update                                     # update everything 
 When apt upgrades the NVIDIA driver, `nh home switch` warns; update
 `my.gpu.nvidia.version` and `sha256` in `nix/homes/work-laptop.nix` (the
 warning says how), then run both switches.
-
-GNOME extensions are pinned per GNOME Shell version: to update them (or add
-one), edit and run `scripts/update-gnome-extensions.sh`.
 
 ## Hyprland session notes
 

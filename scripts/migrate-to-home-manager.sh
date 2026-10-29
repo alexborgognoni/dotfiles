@@ -55,14 +55,6 @@ fi
 managed="$(printf '%s\n' "$managed" .zshrc .zsh/aliases.zsh .zsh/functions.zsh .gitconfig .gitconfig-personal \
   .ssh/config .config/kitty/kitty.conf .config/kitty/startup.conf .config/tmux/tmux.conf \
   .config/starship.toml .config/bat/config .config/gh/config.yml | sort -u)"
-# GNOME (Ansible gnome role): extensions Home Manager now installs and the GTK 4 theme
-# links (gtk.css stays: the Unite extension owns it)
-extensions="$(grep -o '"uuid": "[^"]*"' "$flake/modules/home/gnome/extensions.json" | cut -d'"' -f4)"
-managed="$(printf '%s\n' "$managed" .config/gtk-4.0/assets .config/gtk-4.0/gtk-dark.css
-  for uuid in $extensions; do
-    echo ".local/share/gnome-shell/extensions/$uuid"
-  done)"
-
 # Links into the Nix store are Home Manager's own (a re-run): never move them
 # (the path itself or any parent directory may be the link)
 from_nix() { case "$(readlink -f "$1")" in /nix/store/*) true ;; *) false ;; esac; }
