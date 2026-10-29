@@ -121,10 +121,9 @@ PipeWire is the default; PulseAudio stays installed. To switch back, set
   WebEngine app linked against the system Qt (`ansible/ubuntu.yml`: the
   `libqt6*` packages), because it is not an apt package and autoremove once
   took those libraries away (`ZSTray: error while loading shared libraries`,
-  then `Could not find QtWebEngineProcess`). Its launcher (`ZSTray.desktop`)
-  also misdetects itself as an already running instance, so start the tray
-  from the session (it is a user unit on `graphical-session.target`), not from
-  the entry.
+  then `Could not find QtWebEngineProcess`). Zscaler's own menu entry took
+  itself for an already running tray and aborted; it is replaced by
+  "Zscaler Client Connector" from `nix/modules/home/work.nix`.
 - Readest: select the custom theme "Theme" once; it follows `theme` from
   then on (applied when Readest starts).
 - herdr: `herdr integration install` for opencode, if its files are missing.
