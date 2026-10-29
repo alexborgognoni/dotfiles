@@ -50,8 +50,30 @@ let
   monitorRoles =
     (pkgs.writeShellApplication {
     name = "monitor-roles";
-    runtimeInputs = [ pkgs.jq ];
+    runtimeInputs = [
+      pkgs.jq
+      pkgs.util-linux
+    ];
     text = ''
+      # Find the running Hyprland when started outside the session (a switch
+      # from a plain shell, ssh)
+      if [ -z "''${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+        # shellcheck disable=SC2012
+        HYPRLAND_INSTANCE_SIGNATURE="$(ls -t "''${XDG_RUNTIME_DIR:-/run/user/$UID}/hypr" | head -1)"
+        export HYPRLAND_INSTANCE_SIGNATURE
+      fi
+
+      # One run at a time: every plugged monitor and every new workspace
+      # starts one
+      state="''${XDG_RUNTIME_DIR:-/tmp}"
+      exec 9>"$state/monitor-roles.lock"
+      flock 9
+
+      # --force: set the bars even when the layout did not change (Noctalia
+      # just (re)started or reloaded its config and shows both bars again)
+      force=false
+      [ "''${1:-}" = "--force" ] && force=true
+
       prefs=(${lib.escapeShellArgs config.my.desktop.mainMonitors})
       monitors="$(hyprctl monitors -j)"
 
@@ -64,6 +86,8 @@ let
         main="$(jq -r '([.[] | select(.name | startswith("eDP"))][0] // .[0]).name' <<<"$monitors")"
       fi
 
+      # Workspaces 1-10 belong on the main display, also those the autostart
+      # apps create a moment after login
       workspaces="$(hyprctl workspaces -j)"
       for id in $(seq 1 10); do
         current="$(jq -r --argjson id "$id" '.[] | select(.id == $id) | .monitor' <<<"$workspaces")"
@@ -72,13 +96,67 @@ let
         fi
       done
 
-      for name in $(jq -r '.[].name' <<<"$monitors"); do
-        if [ "$name" = "$main" ]; then show=main hide=basic; else show=basic hide=main; fi
+      layout="$(jq -r --arg main "$main" '.[] | "\(.name) \(if .name == $main then "main" else "basic" end)"' <<<"$monitors" | sort)"
+      if ! $force && [ -r "$state/monitor-roles" ] && [ "$(cat "$state/monitor-roles")" = "$layout" ]; then
+        exit 0
+      fi
+      printf '%s\n' "$layout" > "$state/monitor-roles"
+      rm -f "$state/bars-hidden"
+      while read -r name role; do
+        if [ "$role" = main ]; then show=main hide=basic; else show=basic hide=main; fi
         noctalia msg bar-show "$show" "$name" >/dev/null 2>&1 || true
         noctalia msg bar-hide "$hide" "$name" >/dev/null 2>&1 || true
-      done
+      done <<<"$layout"
     '';
   });
+
+  # toggle-bar all: hide every bar, or show them again. toggle-bar focused:
+  # the bar of the focused display. Role-aware (monitor-roles keeps which bar
+  # each display shows): Noctalia's own toggle would also flip the bars that
+  # are hidden on purpose.
+  toggleBar = pkgs.writeShellApplication {
+    name = "toggle-bar";
+    runtimeInputs = [ pkgs.jq ];
+    text = ''
+      # Find the running Hyprland when started outside the session
+      if [ -z "''${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+        # shellcheck disable=SC2012
+        HYPRLAND_INSTANCE_SIGNATURE="$(ls -t "''${XDG_RUNTIME_DIR:-/run/user/$UID}/hypr" | head -1)"
+        export HYPRLAND_INSTANCE_SIGNATURE
+      fi
+
+      state="''${XDG_RUNTIME_DIR:-/tmp}"
+      roles="$state/monitor-roles"
+      hidden="$state/bars-hidden"
+      case "''${1:-}" in
+        all)
+          if [ ! -s "$roles" ]; then
+            noctalia msg bar-toggle
+          else
+            if [ -e "$hidden" ]; then
+              action="bar-show"
+              rm -f "$hidden"
+            else
+              action="bar-hide"
+              : > "$hidden"
+            fi
+            while read -r monitor bar; do
+              noctalia msg "$action" "$bar" "$monitor"
+            done < "$roles"
+          fi
+          ;;
+        focused)
+          monitor="$(hyprctl monitors -j | jq -r '.[] | select(.focused) | .name')"
+          bar="$(awk -v m="$monitor" '$1 == m { print $2; exit }' "$roles" 2>/dev/null || true)"
+          noctalia msg bar-toggle "''${bar:-main}" "$monitor"
+          ;;
+        *)
+          echo "usage: toggle-bar all|focused" >&2
+          exit 1
+          ;;
+      esac
+    '';
+  };
 
   directions = {
     h = "left";
@@ -121,7 +199,7 @@ in
     # A switch makes Noctalia reload its config, which brings back both bars
     home.activation.monitorRoles = lib.mkIf (config.my.desktop.mainMonitors != [ ]) (
       lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-        ( sleep 4; ${monitorRoles}/bin/monitor-roles ) >/dev/null 2>&1 &
+        ( sleep 4; ${monitorRoles}/bin/monitor-roles --force ) >/dev/null 2>&1 &
       ''
     );
 
@@ -138,6 +216,7 @@ in
           exec ${pkgs.hyprland}/bin/start-hyprland
         '')
       ]
+      ++ [ toggleBar ]
       ++ lib.optional (config.my.desktop.mainMonitors != [ ]) monitorRoles;
 
     wayland.windowManager.hyprland = {
@@ -475,6 +554,8 @@ in
           (bind "Toggle split direction" "${mod} + O" "hl.dsp.layout(\"togglesplit\")")
 
           # Additions
+          (exec "Hide/show all bars" "${mod} + B" "toggle-bar all")
+          (exec "Hide/show the bar on this monitor" "${mod} + SHIFT + B" "toggle-bar focused")
           (bind "Fullscreen" "${mod} + F" "hl.dsp.window.fullscreen({ action = \"toggle\" })")
           (exec "Clipboard history" "${mod} + SHIFT + V" "${noctalia} panel-toggle clipboard")
           (exec "Emoji picker" "${mod} + period" "${noctalia} panel-toggle launcher /emo")
@@ -558,6 +639,9 @@ in
           hl.on("hyprland.start", function() hl.exec_cmd("monitor-roles") end)
           hl.on("monitor.added", function() hl.exec_cmd("monitor-roles") end)
           hl.on("monitor.removed", function() hl.exec_cmd("monitor-roles") end)
+          -- the autostart apps create their workspaces after login; the script
+          -- moves them to the main display and does nothing when all is in place
+          hl.on("workspace.created", function() hl.exec_cmd("monitor-roles") end)
         ''
         + ''
           local theme_pack = "${config.my.themeState}/current/hyprland.lua"

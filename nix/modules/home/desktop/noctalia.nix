@@ -281,7 +281,7 @@ in
         );
         # A (re)started Noctalia shows both bars everywhere: pick the right one
         # per display again
-        hooks.started = lib.mkIf roles "monitor-roles";
+        hooks.started = lib.mkIf roles "monitor-roles --force";
 
         widget = {
           launcher = {
