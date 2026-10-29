@@ -134,7 +134,14 @@ let
       };
       id = "tordex/nvtop";
       panels = [ "panel" ];
-      widget.nvtop.type = "tordex/nvtop:widget";
+      # The plugin's own widget is a static icon (it only runs nvtop while its
+      # panel is open). The built-in system monitor shows the live value, and
+      # a click opens the panel sorted by GPU load.
+      widget.gpu = {
+        type = "sysmon";
+        stat = "gpu_usage";
+        actions.left = "panel-toggle tordex/nvtop:panel gpu";
+      };
       # NVIDIA only: the plugin needs VRAM figures, which an integrated GPU
       # (listed first by the full build) does not report, and it crashes on them
       packages = [ pkgs.unstable.nvtopPackages.nvidia ];

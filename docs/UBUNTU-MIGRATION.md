@@ -135,7 +135,7 @@ warning says how), then run both switches.
   launcher; `bw serve` locks after 30 minutes), Screen Recorder (Super+Shift+R;
   the bar icon only shows while recording), File Search (`/fs`), Keybind
   Cheatsheet (Super+F1; reads the descriptions of the Hyprland binds), NVTOP
-  (bar widget) and Pomodoro (Super+Ctrl+P). Each is pinned to the newest revision
+  (GPU load in the bar, click for the process list) and Pomodoro (Super+Ctrl+P). Each is pinned to the newest revision
   the packaged Noctalia (plugin API 30) can run, with its tools from Nix.
   Skipped on purpose: emoji picker (the launcher's built-in `/emo` is on
   Super+.), OBS Control
