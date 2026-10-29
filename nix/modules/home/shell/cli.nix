@@ -26,7 +26,7 @@
     eza = {
       enable = true;
       package = pkgs.unstable.eza;
-      icons = "auto";
+      icons = "always";
       git = true;
     };
 

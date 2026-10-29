@@ -76,11 +76,11 @@ in
     shellAliases = {
       c = "clear";
       k = "kubecolor";
-      ls = "eza --icons";
+      ls = "eza --icons=always";
       nv = "nvim";
       python = "python3";
       tf = "terraform";
-      tree = "eza --tree --icons";
+      tree = "eza --tree --icons=always";
     };
 
     sessionVariables = {
@@ -110,8 +110,8 @@ in
         zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
         zstyle ':completion:*' menu no
 
-        zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --tree --icons --level 1 --color=always $realpath'
-        zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'eza --tree --icons --level 1 --color=always $realpath'
+        zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --tree --icons=always --level 1 --color=always $realpath'
+        zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'eza --tree --icons=always --level 1 --color=always $realpath'
         zstyle ':fzf-tab:complete:*:options' fzf-preview
         zstyle ':fzf-tab:complete:*:argument-1' fzf-preview
         zstyle ':fzf-tab:complete:*:*' fzf-preview '
@@ -130,7 +130,7 @@ in
             bat --color=always --style=numbers --line-range=:500 $realpath 2>/dev/null
           fi
         elif [[ -d $realpath ]]; then
-          eza --tree --icons --level 1 --color=always $realpath
+          eza --tree --icons=always --level 1 --color=always $realpath
         fi'
 
         mkcd() {

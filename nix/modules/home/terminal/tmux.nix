@@ -14,6 +14,16 @@ let
   vimIcon = glyph "e615";
   zoomIcon = builtins.fromJSON ''"\udb80\udc4c"''; # U+F004C 󰁌 (surrogate pair)
 
+  # Prompt and message rows: an opaque `fill=` clears the status cells under
+  # them. The catppuccin plugin sets these without a fill (transparent,
+  # centred), so the prompt is drawn on top of the status line (tmux#5328,
+  # partly fixed in 3.8; the fill also hides the cells that stay stale).
+  # Applied after every run of the plugin: at startup and by `theme`.
+  messageStyles = ''
+    set -g message-style "fill=#{@thm_surface_0},bg=#{@thm_surface_0},fg=#{@thm_fg}"
+    set -g message-command-style "fill=#{@thm_surface_0},bg=#{@thm_surface_0},fg=#{@thm_fg}"
+  '';
+
   # Copy-mode `y`: Wayland sessions (Hyprland) or X11 (GNOME on Xorg)
   clipboardCopy = pkgs.writeShellScript "tmux-clipboard-copy" ''
     if [ -n "''${WAYLAND_DISPLAY:-}" ]; then
@@ -31,10 +41,16 @@ in
   xdg.configFile."tmux/theme-reload.conf".text = ''
     source-file ${config.my.themeState}/current/tmux.conf
     run-shell ${pkgs.tmuxPlugins.catppuccin}/share/tmux-plugins/catppuccin/catppuccin.tmux
+    ${messageStyles}
   '';
 
   programs.tmux = {
     enable = true;
+    # Newest release (3.8, unstable) instead of the stable channel's 3.7b: it
+    # carries the fix for the command prompt leaving stale status cells
+    # (tmux#5328). nixpkgs builds with --enable-utf8proc, like the source
+    # build this replaces.
+    package = pkgs.unstable.tmux;
     shell = "${pkgs.zsh}/bin/zsh";
     terminal = "tmux-256color";
     prefix = "C-a";
@@ -128,8 +144,7 @@ in
       set -g status-left-length 100
       set -g window-status-bell-style "default"
       set -g window-status-current-style "default"
-      set -g message-style "fill=#{@thm_surface_0},bg=#{@thm_surface_0},fg=#{@thm_fg}"
-      set -g message-command-style "fill=#{@thm_surface_0},bg=#{@thm_surface_0},fg=#{@thm_fg}"
+      ${messageStyles}
     '';
   };
 }
