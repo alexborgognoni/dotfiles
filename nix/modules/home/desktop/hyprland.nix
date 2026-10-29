@@ -182,6 +182,28 @@ let
     '';
   };
 
+  roles = config.my.desktop.mainMonitors != [ ];
+
+  # Super+N: focus the main display (the one monitor-roles records), then
+  # workspace N, so the key works the same from a side display
+  gotoWorkspace = pkgs.writeShellApplication {
+    name = "goto-workspace";
+    text = ''
+      # Find the running Hyprland when started outside the session
+      if [ -z "''${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+        # shellcheck disable=SC2012
+        HYPRLAND_INSTANCE_SIGNATURE="$(ls -t "''${XDG_RUNTIME_DIR:-/run/user/$UID}/hypr" | head -1)"
+        export HYPRLAND_INSTANCE_SIGNATURE
+      fi
+
+      main="$(awk '$2 == "main" { print $1; exit }' "''${XDG_RUNTIME_DIR:-/tmp}/monitor-roles" 2>/dev/null || true)"
+      if [ -n "$main" ]; then
+        hyprctl dispatch "hl.dsp.focus({ monitor = \"$main\" })" >/dev/null
+      fi
+      hyprctl dispatch "hl.dsp.focus({ workspace = \"$1\" })" >/dev/null
+    '';
+  };
+
   directions = {
     h = "left";
     j = "down";
@@ -199,7 +221,14 @@ let
       key = toString (lib.mod i 10);
     in
     [
-      (bind "Workspace ${toString i}" "${mod} + ${key}" "hl.dsp.focus({ workspace = ${toString i} })")
+      (
+        if roles then
+          # Workspaces 1-10 live on the main display: go there first, also from a
+          # side display
+          exec "Workspace ${toString i}" "${mod} + ${key}" "goto-workspace ${toString i}"
+        else
+          bind "Workspace ${toString i}" "${mod} + ${key}" "hl.dsp.focus({ workspace = ${toString i} })"
+      )
       (bind "Move window to workspace ${toString i}" "${mod} + SHIFT + ${key}"
         "hl.dsp.window.move({ workspace = ${toString i} })"
       )
@@ -241,7 +270,10 @@ in
         '')
       ]
       ++ [ toggleBar ]
-      ++ lib.optional (config.my.desktop.mainMonitors != [ ]) monitorRoles;
+      ++ lib.optionals roles [
+        monitorRoles
+        gotoWorkspace
+      ];
 
     wayland.windowManager.hyprland = {
       enable = true;
