@@ -1,6 +1,7 @@
 # The patched librepods daemon the Noctalia AirPods plugin talks to (a fork of
 # kavishdevar/librepods with a published state file, control verbs for the
-# plugin, AirPods Pro 3 support and a --headless mode). Pinned to a commit.
+# plugin, AirPods Pro 3 support and a --headless mode). Pinned to a commit,
+# with a small patch for the audio handling (see audio.patch below).
 # `librepods-ctl` is the plugin's control tool.
 {
   lib,
@@ -23,6 +24,13 @@ stdenv.mkDerivation {
     rev = "4ed49df0b301ac3e6fba9c81dfbbb6726cc52201";
     hash = "sha256-Ygoqz5lnGMwZkys+Q4c4pyAUI0llvpGZ/ij5E91CkAg=";
   };
+
+  # audio.patch: the fork restarted WirePlumber whenever it judged the A2DP
+  # profile unavailable (its picker rejected every profile with a source, and
+  # PipeWire lists one on the A2DP ones) and switched the card off when the pods
+  # came out, so the AirPods left the output list. Now: no restart, the card
+  # stays, taking a bud out only pauses.
+  patches = [ ./audio.patch ];
 
   nativeBuildInputs = [
     cmake

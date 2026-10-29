@@ -1,0 +1,85 @@
+diff --git a/media/mediacontroller.cpp b/media/mediacontroller.cpp
+index 481d64e..ddb3506 100644
+--- a/media/mediacontroller.cpp
++++ b/media/mediacontroller.cpp
+@@ -247,23 +247,10 @@ bool MediaController::activateA2dpProfile() {
+   }
+ 
+   if (!isA2dpProfileAvailable()) {
+-    // A restart blocks this thread for about 2s, so a chain gets one however many attempts it takes.
+-    if (m_wirePlumberRestartedThisChain) {
+-      LOG_WARN("A2DP profile still not available, WirePlumber was already restarted for this chain");
+-      return false;
+-    }
+-    LOG_WARN("A2DP profile not available, attempting to restart WirePlumber");
+-    m_wirePlumberRestartedThisChain = true;
+-    if (restartWirePlumber()) {
+-      m_deviceOutputName = getAudioDeviceName();
+-      if (!isA2dpProfileAvailable()) {
+-        LOG_ERROR("A2DP profile still not available after WirePlumber restart");
+-        return false;
+-      }
+-    } else {
+-      LOG_ERROR("Could not restart WirePlumber, A2DP profile unavailable");
+-      return false;
+-    }
++    // No WirePlumber restart: it drops every stream and the sink with it, and
++    // BlueZ and WirePlumber set the profile up themselves.
++    LOG_WARN("No A2DP playback profile on the card yet");
++    return false;
+   }
+ 
+   QString preferredProfile = getPreferredA2dpProfile();
+@@ -360,26 +347,13 @@ QString MediaController::getActiveProfile() {
+ }
+ 
+ void MediaController::removeAudioOutputDevice() {
+-  // A retry still in flight would resurrect the sink right after this tears it down.
++  // The card stays: BlueZ keeps the link, and switching its profile off removes
++  // the sink, so the default output moves to another device and the AirPods
++  // vanish from the output list. Taking the pods out only pauses playback.
+   cancelPendingA2dpActivation();
+ 
+-  // Disabling the snap needs no device name, so it runs before the guard that can return.
++  // Disabling the snap needs no device name
+   m_pulseAudio->enableVolumeSnap(QString(), 5);
+-
+-  if (connectedDeviceMacAddress.isEmpty() || m_deviceOutputName.isEmpty()) {
+-    LOG_WARN("Connected device MAC address or output name is empty, cannot remove audio output device");
+-    return;
+-  }
+-
+-  // Ear detection fires on every packet, so without this the card is re-released every few seconds.
+-  if (m_pulseAudio->getActiveCardProfile(m_deviceOutputName) == QStringLiteral("off")) {
+-    return;
+-  }
+-
+-  LOG_INFO("Removing AirPods as audio output device");
+-  if (!m_pulseAudio->setCardProfile(m_deviceOutputName, "off")) {
+-    LOG_ERROR("Failed to remove AirPods as audio output device");
+-  }
+ }
+ 
+ void MediaController::setConnectedDeviceMacAddress(const QString &macAddress) {
+diff --git a/media/profilechoice.hpp b/media/profilechoice.hpp
+index 36a9209..d11678b 100644
+--- a/media/profilechoice.hpp
++++ b/media/profilechoice.hpp
+@@ -61,14 +61,15 @@ inline QString profileDescription(const QVector<ProfileCandidate> &candidates, c
+     return QString();
+ }
+ 
+-// A profile carrying a source is the headset mic path, never the playback one.
++// Only the a2dp-sink profiles play. PipeWire lists a source on those too, so the
++// headset (HSP/HFP) profiles are told apart by name, not by their source count.
+ inline QString bestPlaybackProfile(const QVector<ProfileCandidate> &candidates)
+ {
+     QString best;
+     int bestBitrate = -1;
+     int bestPriority = -1;
+     for (const ProfileCandidate &c : candidates) {
+-        if (!c.available || c.sinks == 0 || c.sources > 0) {
++        if (!c.available || c.sinks == 0 || !c.name.startsWith("a2dp-sink")) {
+             continue;
+         }
+         // The name survives a translated locale, so it is tried first and the description backs it up.
