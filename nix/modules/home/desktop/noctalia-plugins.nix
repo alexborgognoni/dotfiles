@@ -106,6 +106,7 @@ let
       };
       id = "kenn/keybind-cheatsheet";
       panels = [ "cheatsheet" ];
+      widget.keybinds.type = "kenn/keybind-cheatsheet:keybinds";
       settings = {
         hyprland_lua_config = "${config.xdg.configHome}/hypr/hyprland.lua";
         show_undescribed = false;
@@ -133,6 +134,7 @@ let
       };
       id = "tordex/nvtop";
       panels = [ "panel" ];
+      widget.nvtop.type = "tordex/nvtop:widget";
       packages = [ pkgs.unstable.nvtopPackages.full ];
       patch = ''
         substituteInPlace nvtop/panel.luau \

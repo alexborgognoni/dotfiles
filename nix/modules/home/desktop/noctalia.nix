@@ -160,6 +160,9 @@ in
         // {
           start = [
             "launcher"
+          ]
+          ++ lib.optional (lib.elem "keybind-cheatsheet" config.my.desktop.noctalia.plugins) "keybinds"
+          ++ [
             "workspaces"
             "media"
           ];
@@ -167,6 +170,7 @@ in
           end = [
             "tray"
           ]
+          ++ lib.optional (lib.elem "nvtop" config.my.desktop.noctalia.plugins) "nvtop"
           ++ lib.optional config.my.desktop.airpods.enable "airpods"
           ++ lib.optional (lib.elem "screen_recorder" config.my.desktop.noctalia.plugins) "recorder"
           ++ lib.optional (lib.elem "pomodoro" config.my.desktop.noctalia.plugins) "pomodoro"
