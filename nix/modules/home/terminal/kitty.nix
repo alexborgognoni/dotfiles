@@ -14,6 +14,10 @@
       enable = true;
       package = pkgs.unstable.kitty;
 
+      # Without its `sudo` wrapper: that one runs `sudo TERMINFO=...`, which
+      # sudoers refuses for the allow-listed commands (no SETENV)
+      shellIntegration.mode = "enabled no-sudo";
+
       settings = {
         url_style = "curly";
         detect_urls = "yes";
