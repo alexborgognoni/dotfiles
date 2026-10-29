@@ -41,6 +41,7 @@ let
       pkgs.noctalia;
 
   has = plugin: lib.elem plugin config.my.desktop.noctalia.plugins;
+  roles = config.my.desktop.mainMonitors != [ ];
 
   # One look for every pill, single or grouped: same fill, border, padding,
   # corner shape and gap between the things inside
@@ -76,6 +77,29 @@ let
     network_speed_compact = true;
     label_min_width = 48.0;
   };
+
+  # Geometry and pill style shared by the full bar and the workspaces-only bar
+  barCommon = {
+    position = "top";
+    thickness = 42;
+    background_opacity = 0.0;
+    shadow = false;
+    margin_edge = 6;
+    margin_ends = 8;
+    padding = 2;
+    widget_spacing = innerGap;
+
+    capsule = true;
+    capsule_fill = "surface_variant";
+    capsule_opacity = theme.opacity.desktop;
+    capsule_border = "outline";
+    capsule_thickness = 0.8;
+    capsule_padding = pillPadding;
+    # Text in one colour and icons in the accent, in every pill
+    color = "on_surface";
+    icon_color = "primary";
+  }
+  // lib.optionalAttrs square { capsule_radius = 0.0; };
 in
 {
   imports = [ inputs.noctalia.homeModules.default ];
@@ -176,28 +200,7 @@ in
         };
 
         # Floating, transparent bar: every section sits in its own themed bubble.
-        bar.main = {
-          position = "top";
-          thickness = 42;
-          background_opacity = 0.0;
-          shadow = false;
-          margin_edge = 6;
-          margin_ends = 8;
-          padding = 2;
-          widget_spacing = innerGap;
-
-          capsule = true;
-          capsule_fill = "surface_variant";
-          capsule_opacity = theme.opacity.desktop;
-          capsule_border = "outline";
-          capsule_thickness = 0.8;
-          capsule_padding = pillPadding;
-          # Text in one colour and icons in the accent, in every pill
-          color = "on_surface";
-          icon_color = "primary";
-        }
-        // lib.optionalAttrs square { capsule_radius = 0.0; }
-        // {
+        bar.main = barCommon // {
           # One pill per single widget; "group:" entries share a pill.
           start = [
             "launcher"
@@ -264,6 +267,21 @@ in
             }
           ];
         };
+
+        # Other displays than the main one (my.desktop.mainMonitors): only the
+        # workspaces of that display. Both bars exist everywhere; Hyprland's
+        # monitor events show the right one per display (hyprland.nix).
+        bar.basic = lib.mkIf roles (
+          barCommon
+          // {
+            start = [ "workspaces" ];
+            center = [ ];
+            end = [ ];
+          }
+        );
+        # A (re)started Noctalia shows both bars everywhere: pick the right one
+        # per display again
+        hooks.started = lib.mkIf roles "monitor-roles";
 
         widget = {
           launcher = {

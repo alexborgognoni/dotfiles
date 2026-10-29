@@ -42,6 +42,44 @@ let
       repeating = true;
     };
 
+  # Main display = first connected of my.desktop.mainMonitors (by description),
+  # else the internal panel. Workspaces 1-10 live there (the others keep the
+  # leftover ones) and Noctalia shows its full bar there and the
+  # workspaces-only bar elsewhere. Idempotent: it only moves what is on the
+  # wrong display.
+  monitorRoles =
+    (pkgs.writeShellApplication {
+    name = "monitor-roles";
+    runtimeInputs = [ pkgs.jq ];
+    text = ''
+      prefs=(${lib.escapeShellArgs config.my.desktop.mainMonitors})
+      monitors="$(hyprctl monitors -j)"
+
+      main=""
+      for pref in "''${prefs[@]}"; do
+        main="$(jq -r --arg p "$pref" '[.[] | select(.description | contains($p))][0].name // empty' <<<"$monitors")"
+        [ -n "$main" ] && break
+      done
+      if [ -z "$main" ]; then
+        main="$(jq -r '([.[] | select(.name | startswith("eDP"))][0] // .[0]).name' <<<"$monitors")"
+      fi
+
+      workspaces="$(hyprctl workspaces -j)"
+      for id in $(seq 1 10); do
+        current="$(jq -r --argjson id "$id" '.[] | select(.id == $id) | .monitor' <<<"$workspaces")"
+        if [ -n "$current" ] && [ "$current" != "$main" ]; then
+          hyprctl dispatch "hl.dsp.workspace.move({ workspace = \"$id\", monitor = \"$main\" })" >/dev/null
+        fi
+      done
+
+      for name in $(jq -r '.[].name' <<<"$monitors"); do
+        if [ "$name" = "$main" ]; then show=main hide=basic; else show=basic hide=main; fi
+        noctalia msg bar-show "$show" "$name" >/dev/null 2>&1 || true
+        noctalia msg bar-hide "$hide" "$name" >/dev/null 2>&1 || true
+      done
+    '';
+  });
+
   directions = {
     h = "left";
     j = "down";
@@ -77,20 +115,30 @@ let
 in
 {
   config = lib.mkIf config.my.features.desktop.enable {
+
     stylix.targets.hyprland.enable = false;
+
+    # A switch makes Noctalia reload its config, which brings back both bars
+    home.activation.monitorRoles = lib.mkIf (config.my.desktop.mainMonitors != [ ]) (
+      lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        ( sleep 4; ${monitorRoles}/bin/monitor-roles ) >/dev/null 2>&1 &
+      ''
+    );
 
     # Standalone (Ubuntu): the session the display manager starts. The system
     # layer (ansible) installs a wayland-sessions entry pointing here.
-    home.packages = lib.mkIf standalone [
-      (pkgs.writeShellScriptBin "hyprland-session" ''
-        # Home Manager session variables (XDG_DATA_DIRS for Nix apps, ...)
-        if [ -r "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ]; then
-          . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
-        fi
-        export XDG_CURRENT_DESKTOP=Hyprland XDG_SESSION_DESKTOP=Hyprland
-        exec ${pkgs.hyprland}/bin/start-hyprland
-      '')
-    ];
+    home.packages =
+      lib.optionals standalone [
+        (pkgs.writeShellScriptBin "hyprland-session" ''
+          # Home Manager session variables (XDG_DATA_DIRS for Nix apps, ...)
+          if [ -r "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ]; then
+            . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+          fi
+          export XDG_CURRENT_DESKTOP=Hyprland XDG_SESSION_DESKTOP=Hyprland
+          exec ${pkgs.hyprland}/bin/start-hyprland
+        '')
+      ]
+      ++ lib.optional (config.my.desktop.mainMonitors != [ ]) monitorRoles;
 
     wayland.windowManager.hyprland = {
       enable = true;
@@ -500,6 +548,16 @@ in
               "  hl.exec_cmd(${builtins.toJSON (app a.command)}${rules})\n"
             ) config.my.desktop.autostart
           }end)
+        ''
+        + lib.optionalString (config.my.desktop.mainMonitors != [ ]) ''
+          -- Main display and workspaces: monitor-roles (below) does the work. Only
+          -- start, plug and unplug trigger it: its own effects (workspace moves,
+          -- bar changes) raise layout events, and workspace_rule at runtime
+          -- re-applies the monitor setup (a modeset loop that flashes the
+          -- screens), so neither is listened to.
+          hl.on("hyprland.start", function() hl.exec_cmd("monitor-roles") end)
+          hl.on("monitor.added", function() hl.exec_cmd("monitor-roles") end)
+          hl.on("monitor.removed", function() hl.exec_cmd("monitor-roles") end)
         ''
         + ''
           local theme_pack = "${config.my.themeState}/current/hyprland.lua"

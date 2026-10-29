@@ -41,6 +41,14 @@
       # session) per theme, as on NixOS
       themeToolkits = true;
 
+      # Main display: ROG at the desk, Lenovo at the other desk, else the
+      # laptop panel. It gets the full bar and workspaces 1-10; the others get
+      # the workspaces-only bar and the leftover workspaces.
+      mainMonitors = [
+        "ROG PG278QR"
+        "P27h-10"
+      ];
+
       # AirPods in the bar (Noctalia plugin + patched librepods daemon)
       airpods.enable = true;
 

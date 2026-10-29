@@ -144,6 +144,14 @@ warning says how), then run both switches.
   Screen Recorder: the NVIDIA driver speaks NVENC 13.0 and nixpkgs' FFmpeg
   wants 13.1, so hardware encoding on the NVIDIA GPU is unavailable; if a
   recording fails, set `video_encoder = "cpu"` for the plugin.
+- **Main display** (`my.desktop.mainMonitors`): the first connected of the
+  listed monitors (by description), else the internal panel. It keeps the full
+  bar and workspaces 1-10; the other displays get a workspaces-only bar and
+  the leftover workspaces (11, 12, ...). `monitor-roles` does it, started by
+  Hyprland on start/plug/unplug, by Noctalia's `started` hook and after a
+  switch. Do not call `hl.workspace_rule` from event handlers or listen to
+  `monitor.layout_changed`/`config.reloaded` for this: it re-applies the
+  monitor setup in a loop (every screen flashes).
 - **Digital audio outputs** (S/PDIF, USB card profiles): Noctalia lists only
   active devices, GNOME Settings also switches card profiles. Pick the output
   once there (`XDG_CURRENT_DESKTOP=GNOME gnome-control-center sound`; the entry

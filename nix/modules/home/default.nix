@@ -129,6 +129,19 @@
       ];
       description = "Hyprland monitor definitions (passed to hl.monitor).";
     };
+
+    desktop.mainMonitors = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [ "ROG PG278QR" ];
+      description = ''
+        Main display, by (part of) the monitor description, in order of
+        preference: the first one connected wins, otherwise the internal panel.
+        The main display keeps the full Noctalia bar and gets workspaces 1-10;
+        every other display gets the workspaces-only bar and the leftover
+        workspaces. Empty: all displays are alike.
+      '';
+    };
   };
 
   config = {
