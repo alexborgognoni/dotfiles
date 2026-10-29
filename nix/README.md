@@ -249,7 +249,7 @@ only offers those.
 - `my.desktop.airpods.enable`: AirPods in the bar (Noctalia plugin
   `harveywuk/airpods` and the patched librepods daemon as a user service).
 - `my.desktop.noctalia.plugins`: pinned Noctalia plugins (bitwarden,
-  screen_recorder, file-search, keybind-cheatsheet, nvtop, pomodoro, airpods)
+  file-search, keybind-cheatsheet, nvtop, pomodoro, airpods)
   with their tools. Panel placement keys are `<panel id>_placement` and so on.
 - kitty's shell integration has no `sudo` wrapper: it runs `sudo TERMINFO=...`,
   which the sudoers allow-list refuses.

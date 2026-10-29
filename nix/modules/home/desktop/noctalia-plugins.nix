@@ -97,24 +97,6 @@ let
       };
     };
 
-    screen_recorder = {
-      src = fetch {
-        repo = "official-plugins";
-        rev = "d696743c5e6718ed5bf6b4a4ef10d2636002d80c";
-        dir = "screen_recorder";
-        hash = "sha256-5NWh1QmqZgrKcwiOKuQ9vO5S2dV7excqutWnm3KAw/8=";
-      };
-      id = "noctalia/screen_recorder";
-      packages = [ pkgs.unstable.gpu-screen-recorder ];
-      settings = {
-        # Remembers the monitor picked in the portal dialog the first time
-        restore_portal = true;
-        hide_inactive = true;
-      };
-      # Shown in the bar only while recording
-      widget.recorder.type = "noctalia/screen_recorder:recorder";
-    };
-
     file-search = {
       src = fetch {
         repo = "community-plugins";

@@ -213,10 +213,7 @@ in
           ];
           # A lane only gets the room the other two leave: a wide centre pushes
           # the first widgets of the right lane off the bar
-          center = [
-            "group:when"
-          ]
-          ++ lib.optional (has "screen_recorder") "recorder";
+          center = [ "group:when" ];
           end = [
             "group:tools"
             "group:stats"

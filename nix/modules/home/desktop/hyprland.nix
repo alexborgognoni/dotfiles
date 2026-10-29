@@ -574,11 +574,6 @@ in
             "${noctalia} panel-toggle kenn/keybind-cheatsheet:cheatsheet"
           )
         ]
-        ++ lib.optionals (lib.elem "screen_recorder" plugins) [
-          (exec "Start/stop screen recording" "${mod} + SHIFT + R"
-            "${noctalia} plugin noctalia/screen_recorder:service all toggle"
-          )
-        ]
         ++ lib.optionals (lib.elem "pomodoro" plugins) [
           (exec "Pomodoro start/pause" "${mod} + CTRL + P"
             "${noctalia} plugin thepunkoff/pomodoro:pomodoro all toggle"

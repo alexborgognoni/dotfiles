@@ -132,18 +132,15 @@ warning says how), then run both switches.
   otherwise) and is forgotten when the daemon restarts or the buds reconnect.
 - **Noctalia plugins** (`my.desktop.noctalia.plugins`, catalog in
   `nix/modules/home/desktop/noctalia-plugins.nix`): Bitwarden (`/bw` in the
-  launcher; `bw serve` locks after 30 minutes), Screen Recorder (Super+Shift+R;
-  the bar icon only shows while recording), File Search (`/fs`), Keybind
+  launcher; `bw serve` locks after 30 minutes), File Search (`/fs`), Keybind
   Cheatsheet (Super+F1; reads the descriptions of the Hyprland binds), NVTOP
-  (GPU load in the bar, click for the process list) and Pomodoro (Super+Ctrl+P). Each is pinned to the newest revision
-  the packaged Noctalia (plugin API 30) can run, with its tools from Nix.
-  Skipped on purpose: emoji picker (the launcher's built-in `/emo` is on
-  Super+.), OBS Control
-  (Screen Recorder covers it), ALS Brightness (the P1 Gen 5 has no light
-  sensor), Wallpaper Depth (needs desktop widgets and a model download).
-  Screen Recorder: the NVIDIA driver speaks NVENC 13.0 and nixpkgs' FFmpeg
-  wants 13.1, so hardware encoding on the NVIDIA GPU is unavailable; if a
-  recording fails, set `video_encoder = "cpu"` for the plugin.
+  (GPU load in the bar, click for the process list) and Pomodoro
+  (Super+Ctrl+P). Each is pinned to the newest revision the packaged Noctalia
+  (plugin API 30) can run, with its tools from Nix. Skipped on purpose: emoji
+  picker (the launcher's built-in `/emo` is on Super+.), the screen recorder
+  and OBS Control (OBS itself is installed; open it to record), ALS Brightness
+  (the P1 Gen 5 has no light sensor), Wallpaper Depth (needs desktop widgets
+  and a model download).
 - **Main display** (`my.desktop.mainMonitors`): the first connected of the
   listed monitors (by description), else the internal panel. It keeps the full
   bar and workspaces 1-10; the other displays get a workspaces-only bar and

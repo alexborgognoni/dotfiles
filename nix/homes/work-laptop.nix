@@ -55,7 +55,6 @@
       # Noctalia plugins (pinned in modules/home/desktop/noctalia-plugins.nix)
       noctalia.plugins = [
         "bitwarden"
-        "screen_recorder"
         "file-search"
         "keybind-cheatsheet"
         "nvtop"
