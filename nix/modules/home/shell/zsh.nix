@@ -102,6 +102,18 @@ in
         bindkey '^[[1;5C' forward-word
         bindkey '^[[1;5D' backward-word
 
+        # Home, End, Delete: the terminfo codes (application mode, which zsh
+        # switches on while editing) and the common plain sequences; Ubuntu's
+        # /etc/zsh/zshrc did this, the Nix zsh does not read it
+        [[ -n ''${terminfo[khome]} ]] && bindkey "''${terminfo[khome]}" beginning-of-line
+        [[ -n ''${terminfo[kend]} ]] && bindkey "''${terminfo[kend]}" end-of-line
+        [[ -n ''${terminfo[kdch1]} ]] && bindkey "''${terminfo[kdch1]}" delete-char
+        bindkey '^[[H' beginning-of-line
+        bindkey '^[[F' end-of-line
+        bindkey '^[[1~' beginning-of-line
+        bindkey '^[[4~' end-of-line
+        bindkey '^[[3~' delete-char
+
         autoload -U edit-command-line
         zle -N edit-command-line
         bindkey '^x^e' edit-command-line
