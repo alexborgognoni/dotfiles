@@ -87,14 +87,38 @@ let
       fi
 
       # Workspaces 1-10 belong on the main display, also those the autostart
-      # apps create a moment after login
+      # apps fill a moment after login. Only workspaces with windows move:
+      # moving an empty one makes Hyprland create a replacement at once,
+      # which ping-pongs endlessly.
       workspaces="$(hyprctl workspaces -j)"
       for id in $(seq 1 10); do
-        current="$(jq -r --argjson id "$id" '.[] | select(.id == $id) | .monitor' <<<"$workspaces")"
+        current="$(jq -r --argjson id "$id" '.[] | select(.id == $id and .windows > 0) | .monitor' <<<"$workspaces")"
         if [ -n "$current" ] && [ "$current" != "$main" ]; then
           hyprctl dispatch "hl.dsp.workspace.move({ workspace = \"$id\", monitor = \"$main\" })" >/dev/null
         fi
       done
+
+      # The other displays rest on a high-numbered empty workspace (11, 12,
+      # ...), not on whichever low number Hyprland picked: otherwise Super+5
+      # would jump to a side display. The empty low one then disappears.
+      monitors="$(hyprctl monitors -j)"
+      workspaces="$(hyprctl workspaces -j)"
+      focused="$(jq -r '.[] | select(.focused) | .name' <<<"$monitors")"
+      number=10
+      switched=false
+      for name in $(jq -r --arg main "$main" '.[] | select(.name != $main) | .name' <<<"$monitors" | sort); do
+        number=$((number + 1))
+        active="$(jq -r --arg m "$name" '.[] | select(.name == $m) | .activeWorkspace.id' <<<"$monitors")"
+        windows="$(jq -r --argjson id "$active" '.[] | select(.id == $id) | .windows' <<<"$workspaces")"
+        if [ "$active" -ge 1 ] && [ "$active" -le 10 ] && [ "''${windows:-0}" -eq 0 ]; then
+          hyprctl dispatch "hl.dsp.focus({ monitor = \"$name\" })" >/dev/null
+          hyprctl dispatch "hl.dsp.focus({ workspace = \"$number\" })" >/dev/null
+          switched=true
+        fi
+      done
+      if $switched; then
+        hyprctl dispatch "hl.dsp.focus({ monitor = \"$focused\" })" >/dev/null
+      fi
 
       layout="$(jq -r --arg main "$main" '.[] | "\(.name) \(if .name == $main then "main" else "basic" end)"' <<<"$monitors" | sort)"
       if ! $force && [ -r "$state/monitor-roles" ] && [ "$(cat "$state/monitor-roles")" = "$layout" ]; then
@@ -634,9 +658,11 @@ in
           hl.on("hyprland.start", function() hl.exec_cmd("monitor-roles") end)
           hl.on("monitor.added", function() hl.exec_cmd("monitor-roles") end)
           hl.on("monitor.removed", function() hl.exec_cmd("monitor-roles") end)
-          -- the autostart apps create their workspaces after login; the script
-          -- moves them to the main display and does nothing when all is in place
+          -- the autostart apps open their windows after login; the script moves
+          -- their workspaces to the main display and does nothing when all is in
+          -- place (it never moves empty workspaces: that would loop)
           hl.on("workspace.created", function() hl.exec_cmd("monitor-roles") end)
+          hl.on("window.open", function() hl.exec_cmd("monitor-roles") end)
         ''
         + ''
           local theme_pack = "${config.my.themeState}/current/hyprland.lua"

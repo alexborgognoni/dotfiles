@@ -146,8 +146,11 @@ warning says how), then run both switches.
   bar and workspaces 1-10; the other displays get a workspaces-only bar and
   the leftover workspaces (11, 12, ...). `monitor-roles` does it, started by
   Hyprland on start/plug/unplug, by Noctalia's `started` hook and after a
-  switch; it runs one copy at a time, moves workspaces 1-10 as the autostart
-  apps create them, and leaves the bars alone when nothing changed.
+  switch; it runs one copy at a time, moves workspaces 1-10 that have windows
+  to the main display (never empty ones: Hyprland would create a replacement
+  at once and the two would ping-pong), parks every other display on a
+  high-numbered empty workspace (11, 12, ...) and leaves the bars alone when
+  nothing changed.
   `Super+B` hides/shows all bars, `Super+Shift+B` the one on the focused
   display (`toggle-bar`, aware of which bar each display shows). Do not call `hl.workspace_rule` from event handlers or listen to
   `monitor.layout_changed`/`config.reloaded` for this: it re-applies the
