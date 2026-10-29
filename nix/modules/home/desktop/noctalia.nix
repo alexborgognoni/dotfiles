@@ -39,6 +39,27 @@ let
       })
     else
       pkgs.noctalia;
+
+  has = plugin: lib.elem plugin config.my.desktop.noctalia.plugins;
+
+  # Capsule groups share one style
+  group =
+    g:
+    {
+      fill = "surface_variant";
+      border = "outline";
+      opacity = theme.opacity.desktop;
+      widget_spacing = 10;
+    }
+    // g;
+
+  # Compact system monitor value: icon and number, no gauge
+  sysmon = stat: {
+    type = "sysmon";
+    inherit stat;
+    visualization = "none";
+    label_min_width = 36.0;
+  };
 in
 {
   imports = [ inputs.noctalia.homeModules.default ];
@@ -158,52 +179,59 @@ in
         }
         // lib.optionalAttrs square { capsule_radius = 0.0; }
         // {
+          # One pill per single widget; "group:" entries share a pill.
           start = [
             "launcher"
           ]
-          ++ lib.optional (lib.elem "keybind-cheatsheet" config.my.desktop.noctalia.plugins) "keybinds"
+          ++ lib.optional (has "keybind-cheatsheet") "keybinds"
           ++ [
             "workspaces"
-            "media"
+            "active_window"
           ];
-          center = [ "active_window" ];
+          # The date anchors the lane, so the media pill and the recorder
+          # appearing next to the clock do not shift it
+          center = [
+            "group:when"
+            "media"
+          ]
+          ++ lib.optional (has "screen_recorder") "recorder";
           end = [
             "tray"
-          ]
-          ++ lib.optional (lib.elem "nvtop" config.my.desktop.noctalia.plugins) "group:gpu"
-          ++ lib.optional config.my.desktop.airpods.enable "airpods"
-          ++ lib.optional (lib.elem "screen_recorder" config.my.desktop.noctalia.plugins) "recorder"
-          ++ lib.optional (lib.elem "pomodoro" config.my.desktop.noctalia.plugins) "pomodoro"
-          ++ [
-            "group:status"
+            "group:tools"
+            "group:stats"
             "group:system"
-            "clock"
             "session"
           ];
 
-          capsule_group =
-            lib.optional (lib.elem "nvtop" config.my.desktop.noctalia.plugins) {
-              id = "gpu";
-              members = [
-                "gpu"
-                "gpu-vram"
-              ];
-              fill = "surface_variant";
-              border = "outline";
-              opacity = theme.opacity.desktop;
-              widget_spacing = 10;
-            }
-            ++ [
+          capsule_group = map group [
             {
-              id = "status";
+              id = "when";
               members = [
                 "notifications"
-                "clipboard"
+                "date"
+                "time"
               ];
-              fill = "surface_variant";
-              border = "outline";
-              opacity = theme.opacity.desktop;
-              widget_spacing = 10;
+            }
+            {
+              id = "tools";
+              members =
+                lib.optional (has "pomodoro") "pomodoro"
+                ++ lib.optional config.my.desktop.airpods.enable "airpods"
+                ++ [ "clipboard" ];
+            }
+            {
+              id = "stats";
+              members =
+                lib.optionals (has "nvtop") [
+                  "gpu"
+                  "gpu-vram"
+                ]
+                ++ [
+                  "cpu"
+                  "ram"
+                  "net-up"
+                  "net-down"
+                ];
             }
             {
               id = "system";
@@ -211,13 +239,8 @@ in
                 "network"
                 "bluetooth"
                 "volume"
-                "brightness"
                 "battery"
               ];
-              fill = "surface_variant";
-              border = "outline";
-              opacity = theme.opacity.desktop;
-              widget_spacing = 12;
             }
           ];
         };
@@ -239,11 +262,36 @@ in
             display = "icon_and_text";
             show_empty_label = false;
           };
-          clock = {
-            format = "{:%a %d %b   %H:%M}";
+          date = {
+            type = "clock";
+            format = "{:%a %d %b}";
             tooltip_format = "{:%A, %d %B %Y}";
             color = "primary";
+            anchor = true;
           };
+          time = {
+            type = "clock";
+            format = "{:%H:%M}";
+            color = "primary";
+          };
+          cpu = sysmon "cpu_usage";
+          ram = sysmon "ram_pct";
+          net-up = sysmon "net_tx" // {
+            network_speed_compact = true;
+            label_min_width = 46.0;
+          };
+          net-down = sysmon "net_rx" // {
+            network_speed_compact = true;
+            label_min_width = 46.0;
+          };
+          # Only while something plays
+          media = {
+            max_length = 260.0;
+            title_scroll = "on_hover";
+            hide_when_no_media = true;
+          };
+          # Name of the connected device next to the icon
+          bluetooth.show_label = true;
           session = {
             color = "error";
           };
