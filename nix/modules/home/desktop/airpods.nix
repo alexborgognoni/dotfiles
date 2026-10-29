@@ -88,7 +88,11 @@ in
       };
       # Floating, like the shell panels (see noctalia.nix): an attached panel
       # inherits the transparent bar's background
-      plugin_settings."harveywuk/airpods".panel_placement = "floating";
+      plugin_settings."harveywuk/airpods" = {
+        panel_placement = "floating";
+        panel_position = "auto";
+        panel_open_near_click = true;
+      };
       # The widget is placed in the bar in noctalia.nix
       widget.airpods.type = "harveywuk/airpods:airpods";
     };

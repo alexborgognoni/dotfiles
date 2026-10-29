@@ -103,6 +103,10 @@ in
             control_center_placement = "floating";
             wallpaper_placement = "floating";
             session_placement = "floating";
+            # Opened from a bar widget, a panel appears right below that widget
+            open_near_click_control_center = true;
+            open_near_click_wallpaper = true;
+            open_near_click_session = true;
           };
           screenshot.directory = "${config.xdg.userDirs.pictures}/Screenshots";
         };
