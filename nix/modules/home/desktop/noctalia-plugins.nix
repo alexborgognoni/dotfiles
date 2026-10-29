@@ -122,6 +122,9 @@ let
       settings = {
         hyprland_lua_config = "${config.xdg.configHome}/hypr/hyprland.lua";
         show_undescribed = false;
+        # Super+F1 and the bar widget open it the same way: centred
+        cheatsheet_position = "center";
+        cheatsheet_open_near_click = false;
       };
     };
 

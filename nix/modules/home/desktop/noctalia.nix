@@ -167,9 +167,13 @@ in
             wallpaper_placement = "floating";
             session_placement = "floating";
             # Opened from a bar widget, a panel appears right below that widget
+            # (the control center and the wallpaper picker, which have no key).
+            # What a key also opens opens the same way from the bar: in the
+            # centre of the screen, like the launcher and the clipboard.
             open_near_click_control_center = true;
             open_near_click_wallpaper = true;
-            open_near_click_session = true;
+            open_near_click_session = false;
+            session_position = "center";
           };
           screenshot.directory = "${config.xdg.userDirs.pictures}/Screenshots";
         };
