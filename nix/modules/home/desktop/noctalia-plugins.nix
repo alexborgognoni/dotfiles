@@ -135,7 +135,9 @@ let
       id = "tordex/nvtop";
       panels = [ "panel" ];
       widget.nvtop.type = "tordex/nvtop:widget";
-      packages = [ pkgs.unstable.nvtopPackages.full ];
+      # NVIDIA only: the plugin needs VRAM figures, which an integrated GPU
+      # (listed first by the full build) does not report, and it crashes on them
+      packages = [ pkgs.unstable.nvtopPackages.nvidia ];
       patch = ''
         substituteInPlace nvtop/panel.luau \
           --replace-fail '"python3 "' '"${nvtopPython}/bin/python3 "'
