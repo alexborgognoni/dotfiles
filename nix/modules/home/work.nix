@@ -23,14 +23,20 @@ lib.mkIf (config.my.profile == "work") {
   xdg.configFile."systemd/user/zscaler-tray.service" = lib.mkIf config.my.features.gui.enable {
     source = config.lib.file.mkOutOfStoreSymlink "/etc/xdg/systemd/user/ZSTray.service";
   };
-  # The tray needs the bar's tray (StatusNotifier watcher) to show its icon;
-  # only ordering (no Wants: the GNOME session has no Noctalia)
+  # The tray needs the bar's tray (StatusNotifier watcher) to show its icon,
+  # and registers only once, at start. Noctalia counts as started the moment
+  # it launches, seconds before its tray exists: started at login, the tray
+  # ran without an icon. So: ordering (no Wants: the GNOME session has no
+  # Noctalia) and a wait, at most 30 s, for the watcher on the session bus.
   xdg.configFile."systemd/user/zscaler-tray.service.d/10-after-noctalia.conf" =
     lib.mkIf config.my.features.gui.enable
       {
         text = ''
           [Unit]
           After=noctalia.service
+
+          [Service]
+          ExecStartPre=/bin/sh -c 'for i in $(seq 1 100); do busctl --user list | grep -q org.kde.StatusNotifierWatcher && exit 0; sleep 0.3; done; exit 0'
         '';
       };
   # Our entry has a neutral id too: launchers can pass the id as an argument.
@@ -62,8 +68,9 @@ lib.mkIf (config.my.profile == "work") {
             systemctl --user start zscaler-tray.service
             for _ in $(seq 50); do running && break; sleep 0.2; done
           fi
-          # A link (zsa://...) goes to the running tray via Zscaler's script
-          [ $# -eq 0 ] || exec /opt/zscaler/scripts/zstray_desktop.sh "$@"
+          # Zscaler's script hands over to the running tray: a link (zsa://...)
+          # signs in, a plain launch opens the window (the tray icon does too)
+          exec /opt/zscaler/scripts/zstray_desktop.sh "$@"
         '';
       in
       ''
