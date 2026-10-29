@@ -173,7 +173,7 @@ lib.mapAttrs' (
           commands = [
               "google-chrome-stable", "chromium", "microsoft-edge", "teams-for-linux", "code",
               "neovide", "obsidian", "vlc", "obs", "audacity", "ghb", "inkscape", "foliate",
-              "readest", "librepods", "openwhispr", "claude", "claude-vertex", "claude-copilot",
+              "readest", "openwhispr", "claude", "claude-vertex", "claude-copilot",
               "codex", "copilot", "opencode", "herdr", "forge", "github-mcp-server",
               "mcp-language-server", "node", "pnpm", "bun", "tsc", "typescript-language-server",
               "rustup", "go", "uv", "poetry", "aws", "az", "func", "azcopy", "cf", "terraform",

@@ -14,15 +14,6 @@ let
     "opencode/cli.json" = ./opencode/cli.json;
     "opencode/opencode-mem.jsonc" = ./opencode/opencode-mem.jsonc;
     "herdr/config.toml" = pkgs.writeText "herdr-config.toml" "onboarding = false\n";
-  }
-  // lib.optionalAttrs config.my.features.gui.enable {
-    "librepods/app_settings.json" = pkgs.writeText "librepods-settings.json" (
-      builtins.toJSON {
-        theme = "Dracula";
-        tray_text_mode = false;
-        stem_control = false;
-      }
-    );
   };
 in
 {

@@ -66,9 +66,6 @@ let
     inherit (u.opencode) meta;
   };
 
-  # Your LibrePods build (Rust rewrite + local changes), see ./librepods
-  librepods = pkgs.callPackage ./librepods { };
-
   # Readest follows the live theme: its custom theme "Theme" gets the current
   # pack's colors (and the light/dark mode) before every start, and from the
   # `theme` command while Readest is closed (it rewrites its settings while
@@ -216,7 +213,6 @@ in
     inkscape
     foliate
     readest
-    librepods
     chromium
     wineWow64Packages.stable
   ]);
