@@ -14,9 +14,10 @@
       enable = true;
       package = pkgs.unstable.kitty;
 
-      # Without its `sudo` wrapper: that one runs `sudo TERMINFO=...`, which
-      # sudoers refuses for the allow-listed commands (no SETENV)
-      shellIntegration.mode = "enabled no-sudo";
+      # Without its `sudo` wrapper (it runs `sudo TERMINFO=...`, which sudoers
+      # refuses for the allow-listed commands) and without its cursor change
+      # (a beam at the prompt): the cursor stays a block
+      shellIntegration.mode = "enabled no-sudo no-cursor";
 
       settings = {
         url_style = "curly";
@@ -29,6 +30,7 @@
         hide_window_decorations = "no";
         wheel_scroll_multiplier = 1;
 
+        cursor_shape = "block";
         cursor_trail = 3;
         cursor_trail_decay = "0.2 0.3";
 
