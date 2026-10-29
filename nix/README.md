@@ -240,6 +240,16 @@ only offers those.
 - Flakes only see files tracked by git: `git add` new files before building.
 - Noctalia settings changed in its GUI are saved to
   `~/.local/state/noctalia/settings.toml` and override the Nix defaults.
+- Layouts: several `my.keyboard.layout` entries switch with Super+Space (all
+  keyboards at once). Do not use `grp:` options in `my.keyboard.options`:
+  Hyprland keeps the layout per keyboard device.
+- Noctalia panels opened from the bar are floating and solid (an attached
+  panel inherits the transparent bar's opacity). Plugin panels need the same
+  per plugin: `plugin_settings."<id>".panel_placement = "floating"`.
+- `my.desktop.airpods.enable`: AirPods in the bar (Noctalia plugin
+  `harveywuk/airpods` and the patched librepods daemon as a user service).
+- kitty's shell integration has no `sudo` wrapper: it runs `sudo TERMINFO=...`,
+  which the sudoers allow-list refuses.
 - The `work` profile sets the work git identity (with personal identity under
   `~/personal` and `~/dotfiles`), the work GitHub Enterprise SSH host, and CA
   variables for Node/Python.

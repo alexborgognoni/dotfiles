@@ -23,6 +23,15 @@ lib.mkIf (config.my.profile == "work") {
   xdg.configFile."systemd/user/zscaler-tray.service" = lib.mkIf config.my.features.gui.enable {
     source = config.lib.file.mkOutOfStoreSymlink "/etc/xdg/systemd/user/ZSTray.service";
   };
+  # The tray needs the bar's tray (StatusNotifier watcher) to show its icon;
+  # only ordering (no Wants: the GNOME session has no Noctalia)
+  xdg.configFile."systemd/user/zscaler-tray.service.d/10-after-noctalia.conf" =
+    lib.mkIf config.my.features.gui.enable {
+      text = ''
+        [Unit]
+        After=noctalia.service
+      '';
+    };
   # Our entry has a neutral id too: launchers can pass the id as an argument.
   # Zscaler's own entry is hidden.
   xdg.dataFile."applications/ZSTray.desktop" = lib.mkIf config.my.features.gui.enable {

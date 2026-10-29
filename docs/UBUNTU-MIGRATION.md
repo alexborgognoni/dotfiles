@@ -61,7 +61,8 @@ Then log out and back in.
 - GNOME session: looks as before (Catppuccin theme, extensions, keybindings).
 - Login screen gear menu: "Hyprland (Nix)" starts Hyprland with Noctalia;
   `theme` / the Noctalia theme picker switch themes live; Super+Escape locks,
-  your password unlocks.
+  your password unlocks (the lock screen starts in the first keyboard layout,
+  US; Super+Space switches, see "Hyprland session notes").
 - Sound works in both sessions (PipeWire; `pactl info` shows
   "PulseAudio (on PipeWire …)").
 - New terminal: zsh, prompt, aliases, `theme` work.
@@ -107,6 +108,45 @@ warning says how), then run both switches.
 GNOME extensions are pinned per GNOME Shell version: to update them (or add
 one), edit and run `scripts/update-gnome-extensions.sh`.
 
+## Hyprland session notes
+
+- **Keyboard layouts** (`my.keyboard.layout = "us,gb"`): Hyprland keeps the
+  layout per keyboard device, so xkb toggles (`grp:alt_shift_toggle`) only
+  switch the keyboard they were pressed on, and Noctalia's label follows yet
+  another device. That desynchronised the lock screen (a password typed the
+  US way came out as GB). Layouts are therefore switched for all keyboards at
+  once: Super+Space (`hyprctl switchxkblayout all next`, also on the lock
+  screen) or Noctalia's layout button. Do not add `grp:` options.
+- **Lock screen**: Noctalia authenticates against its own PAM service
+  (`/etc/pam.d/noctalia`, from the system layer), because Nix's PAM cannot read
+  Ubuntu's `@include` files, with the setuid helper at
+  `/run/wrappers/bin/unix_chkpwd`. Locked out: Ctrl+Alt+F3, log in,
+  `loginctl unlock-session`.
+- **Panels**: the bar is transparent, so panels that opened attached to it
+  (Control Center, wallpaper, session, the AirPods plugin panel) were
+  transparent too (an attached panel inherits the bar's opacity). They are
+  floating and solid instead (`shell.panel.*_placement`,
+  `transparency_mode`) and open right below the bar widget that was clicked
+  (`open_near_click`). Clipboard and launcher stay centered.
+- **AirPods**: the Noctalia community plugin `harveywuk/airpods` (pinned) with a
+  patched librepods daemon (`nix/packages/librepods-daemon`) as the user service
+  `librepods`; enabled with `my.desktop.airpods.enable`. The case level only
+  shows after a bud has been docked in the case (the AirPods do not send it
+  otherwise) and is forgotten when the daemon restarts or the buds reconnect.
+- **Digital audio outputs** (S/PDIF, USB card profiles): Noctalia lists only
+  active devices, GNOME Settings also switches card profiles. Pick the output
+  once there (`XDG_CURRENT_DESKTOP=GNOME gnome-control-center sound`; the entry
+  is hidden under Hyprland); WirePlumber remembers it.
+- **sudo**: passwordless only for apt, apt-get, systemctl and tee
+  (`/etc/sudoers.d/010-alex-nopasswd`). kitty's `sudo` wrapper (it runs
+  `sudo TERMINFO=...`) is switched off (`shell_integration ... no-sudo`),
+  because sudoers refuses that for allow-listed commands.
+- **tmux** is 3.8 (nixpkgs unstable); the status-line prompt colors are
+  re-applied after every `theme` switch (`modules/home/terminal/tmux.nix`).
+- **Chrome** (Nix) trusts the corporate CA through the `chrome-corporate-cas`
+  system service and signs in through the packaged Entra SSO helper
+  (`nix/packages/linux-entra-sso`), also for the Claude Code native host.
+
 ## Sound: back to PulseAudio
 
 PipeWire is the default; PulseAudio stays installed. To switch back, set
@@ -123,7 +163,10 @@ PipeWire is the default; PulseAudio stays installed. To switch back, set
   took those libraries away (`ZSTray: error while loading shared libraries`,
   then `Could not find QtWebEngineProcess`). Zscaler's own menu entry took
   itself for an already running tray and aborted; it is replaced by
-  "Zscaler Client Connector" from `nix/modules/home/work.nix`.
+  "Zscaler Client Connector" from `nix/modules/home/work.nix`. Hyprland starts
+  the tray at login (`my.desktop.autostart`, after Noctalia); the GNOME
+  session uses Zscaler's own autostart entry. Check after a reboot:
+  `systemctl --user status zscaler-tray`.
 - Readest: select the custom theme "Theme" once; it follows `theme` from
   then on (applied when Readest starts).
 - herdr: `herdr integration install` for opencode, if its files are missing.

@@ -47,9 +47,13 @@
       # Chrome for now; Firefox later (one line)
       browser = "google-chrome.desktop";
 
-      # Session apps (Hyprland). The Zscaler tray starts by itself (its own
-      # systemd user unit on graphical-session.target).
+      # Session apps (Hyprland)
       autostart = [
+        {
+          # Zscaler tray (modules/home/work.nix); the GNOME session starts it
+          # through Zscaler's own autostart entry
+          command = "systemctl --user start zscaler-tray.service";
+        }
         {
           command = "kitty";
           workspace = 1;
