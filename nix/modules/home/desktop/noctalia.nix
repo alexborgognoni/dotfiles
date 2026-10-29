@@ -49,7 +49,7 @@ let
       fill = "surface_variant";
       border = "outline";
       opacity = theme.opacity.desktop;
-      widget_spacing = 10;
+      widget_spacing = 8;
     }
     // g;
 
@@ -58,7 +58,6 @@ let
     type = "sysmon";
     inherit stat;
     visualization = "none";
-    label_min_width = 36.0;
   };
 in
 {
@@ -187,12 +186,12 @@ in
           ++ [
             "workspaces"
             "active_window"
+            "media"
           ];
-          # The date anchors the lane, so the media pill and the recorder
-          # appearing next to the clock do not shift it
+          # A lane only gets the room the other two leave: a wide centre pushes
+          # the first widgets of the right lane off the bar
           center = [
             "group:when"
-            "media"
           ]
           ++ lib.optional (has "screen_recorder") "recorder";
           end = [
@@ -208,8 +207,7 @@ in
               id = "when";
               members = [
                 "notifications"
-                "date"
-                "time"
+                "clock"
               ];
             }
             {
@@ -262,27 +260,18 @@ in
             display = "icon_and_text";
             show_empty_label = false;
           };
-          date = {
-            type = "clock";
-            format = "{:%a %d %b}";
+          clock = {
+            format = "{:%a %d %b   %H:%M}";
             tooltip_format = "{:%A, %d %B %Y}";
-            color = "primary";
-            anchor = true;
-          };
-          time = {
-            type = "clock";
-            format = "{:%H:%M}";
             color = "primary";
           };
           cpu = sysmon "cpu_usage";
           ram = sysmon "ram_pct";
           net-up = sysmon "net_tx" // {
             network_speed_compact = true;
-            label_min_width = 46.0;
           };
           net-down = sysmon "net_rx" // {
             network_speed_compact = true;
-            label_min_width = 46.0;
           };
           # Only while something plays
           media = {

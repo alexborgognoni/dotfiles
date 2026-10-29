@@ -141,14 +141,12 @@ let
         type = "sysmon";
         stat = "gpu_usage";
         visualization = "none";
-        label_min_width = 36.0;
         actions.left = "panel-toggle tordex/nvtop:panel gpu";
       };
       widget.gpu-vram = {
         type = "sysmon";
         stat = "gpu_vram";
         visualization = "none";
-        label_min_width = 36.0;
         actions.left = "panel-toggle tordex/nvtop:panel mem";
       };
       # NVIDIA only: the plugin needs VRAM figures, which an integrated GPU
