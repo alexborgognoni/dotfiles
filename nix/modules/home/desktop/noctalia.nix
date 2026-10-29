@@ -59,20 +59,22 @@ let
     // g;
 
   # Compact system monitor value: icon and number, no gauge. The width is
-  # fixed to the longest value, so the pill never changes size: percentages
-  # up to "100%", network speeds with the short suffix ("947B", "574.1k", "12.3M").
+  # fixed to the widest value, so the pill does not change size as digits
+  # change (Inter's digits are proportional: "88%" is wider than "11%"):
+  # percentages up to "99%", network speeds with the short suffix ("947B",
+  # "574.1k", "12.3M"). Only a full "100%" outgrows the box.
   sysmon = stat: {
     type = "sysmon";
     inherit stat;
     visualization = "none";
-    label_min_width = 30.0;
+    label_min_width = 36.0;
   };
   sysmonRate = stat: {
     type = "sysmon";
     inherit stat;
     visualization = "none";
     network_speed_compact = true;
-    label_min_width = 44.0;
+    label_min_width = 48.0;
   };
 in
 {
