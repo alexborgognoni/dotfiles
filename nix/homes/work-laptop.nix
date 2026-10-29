@@ -44,6 +44,16 @@
       # AirPods in the bar (Noctalia plugin + patched librepods daemon)
       airpods.enable = true;
 
+      # Noctalia plugins (pinned in modules/home/desktop/noctalia-plugins.nix)
+      noctalia.plugins = [
+        "bitwarden"
+        "screen_recorder"
+        "file-search"
+        "keybind-cheatsheet"
+        "nvtop"
+        "pomodoro"
+      ];
+
       # Chrome for now; Firefox later (one line)
       browser = "google-chrome.desktop";
 

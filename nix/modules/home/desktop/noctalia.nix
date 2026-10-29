@@ -168,6 +168,8 @@ in
             "tray"
           ]
           ++ lib.optional config.my.desktop.airpods.enable "airpods"
+          ++ lib.optional (lib.elem "screen_recorder" config.my.desktop.noctalia.plugins) "recorder"
+          ++ lib.optional (lib.elem "pomodoro" config.my.desktop.noctalia.plugins) "pomodoro"
           ++ [
             "group:status"
             "group:system"

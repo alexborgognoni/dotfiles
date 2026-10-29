@@ -18,20 +18,26 @@ let
   app = cmd: if standalone then cmd else "uwsm app -- ${cmd}";
   mod = "SUPER";
   noctalia = "noctalia msg";
+  plugins = config.my.desktop.noctalia.plugins;
 
-  # bind "SUPER + Q" "hl.dsp.window.close()" { locked = true; }
-  bind' = keys: dispatcher: opts: {
+  # bind "Close window" "SUPER + Q" "hl.dsp.window.close()" { locked = true; }
+  # The description is what the Noctalia keybind cheatsheet shows.
+  bind' = description: keys: dispatcher: opts: {
     _args = [
       keys
       (inline dispatcher)
-    ]
-    ++ lib.optional (opts != { }) opts;
+      (opts // { inherit description; })
+    ];
   };
-  bind = keys: dispatcher: bind' keys dispatcher { };
-  exec = keys: cmd: bind keys "hl.dsp.exec_cmd(${builtins.toJSON cmd})";
+  bind =
+    description: keys: dispatcher:
+    bind' description keys dispatcher { };
+  exec =
+    description: keys: cmd:
+    bind description keys "hl.dsp.exec_cmd(${builtins.toJSON cmd})";
   execRepeat =
-    keys: cmd:
-    bind' keys "hl.dsp.exec_cmd(${builtins.toJSON cmd})" {
+    description: keys: cmd:
+    bind' description keys "hl.dsp.exec_cmd(${builtins.toJSON cmd})" {
       locked = true;
       repeating = true;
     };
@@ -53,15 +59,19 @@ let
       key = toString (lib.mod i 10);
     in
     [
-      (bind "${mod} + ${key}" "hl.dsp.focus({ workspace = ${toString i} })")
-      (bind "${mod} + SHIFT + ${key}" "hl.dsp.window.move({ workspace = ${toString i} })")
+      (bind "Workspace ${toString i}" "${mod} + ${key}" "hl.dsp.focus({ workspace = ${toString i} })")
+      (bind "Move window to workspace ${toString i}" "${mod} + SHIFT + ${key}"
+        "hl.dsp.window.move({ workspace = ${toString i} })"
+      )
     ]
   ) (lib.range 1 10);
 
   directionBinds = lib.concatLists (
     lib.mapAttrsToList (key: dir: [
-      (bind "${mod} + ${key}" "hl.dsp.focus({ direction = \"${dir}\" })")
-      (bind "${mod} + SHIFT + ${key}" "hl.dsp.window.move({ direction = \"${dir}\" })")
+      (bind "Focus ${dir}" "${mod} + ${key}" "hl.dsp.focus({ direction = \"${dir}\" })")
+      (bind "Move window ${dir}" "${mod} + SHIFT + ${key}"
+        "hl.dsp.window.move({ direction = \"${dir}\" })"
+      )
     ]) directions
   );
 in
@@ -333,47 +343,47 @@ in
             workspace = "${toString a.workspace} silent";
           }) (lib.filter (a: a.class != null && a.workspace != null) config.my.desktop.autostart)
           ++ [
-          {
-            name = "suppress-maximize-events";
-            match.class = ".*";
-            suppress_event = "maximize";
-          }
-          {
-            name = "fix-xwayland-drags";
-            match = {
-              class = "^$";
-              title = "^$";
-              xwayland = true;
+            {
+              name = "suppress-maximize-events";
+              match.class = ".*";
+              suppress_event = "maximize";
+            }
+            {
+              name = "fix-xwayland-drags";
+              match = {
+                class = "^$";
+                title = "^$";
+                xwayland = true;
+                float = true;
+                fullscreen = false;
+                pin = false;
+              };
+              no_focus = true;
+            }
+            {
+              name = "noctalia-settings";
+              match.class = "dev.noctalia.Noctalia";
               float = true;
-              fullscreen = false;
-              pin = false;
-            };
-            no_focus = true;
-          }
-          {
-            name = "noctalia-settings";
-            match.class = "dev.noctalia.Noctalia";
-            float = true;
-            size = [
-              1080
-              920
-            ];
-          }
-          {
-            name = "theme-picker";
-            match.class = "theme-picker";
-            float = true;
-            center = true;
-            size = [
-              1100
-              560
-            ];
-          }
-          {
-            name = "floating-dialogs";
-            match.class = "^(org.pulseaudio.pavucontrol|nm-connection-editor|blueman-manager|xdg-desktop-portal-gtk)$";
-            float = true;
-          }
+              size = [
+                1080
+                920
+              ];
+            }
+            {
+              name = "theme-picker";
+              match.class = "theme-picker";
+              float = true;
+              center = true;
+              size = [
+                1100
+                560
+              ];
+            }
+            {
+              name = "floating-dialogs";
+              match.class = "^(org.pulseaudio.pavucontrol|nm-connection-editor|blueman-manager|xdg-desktop-portal-gtk)$";
+              float = true;
+            }
           ];
 
         layer_rule = {
@@ -391,54 +401,82 @@ in
         # Super+Shift+Q close, Super+D launcher, vim keys (Super+O toggle split).
         bind = [
           # Hyprland defaults
-          (bind "${mod} + M" "hl.dsp.exit()")
-          (exec "${mod} + E" (app "nautilus --new-window"))
-          (bind "${mod} + V" "hl.dsp.window.float({ action = \"toggle\" })")
-          (bind "${mod} + P" "hl.dsp.window.pseudo()")
-          (bind "${mod} + S" "hl.dsp.workspace.toggle_special(\"magic\")")
-          (bind "${mod} + SHIFT + S" "hl.dsp.window.move({ workspace = \"special:magic\" })")
-          (bind "${mod} + mouse_down" "hl.dsp.focus({ workspace = \"e+1\" })")
-          (bind "${mod} + mouse_up" "hl.dsp.focus({ workspace = \"e-1\" })")
-          (bind' "${mod} + mouse:272" "hl.dsp.window.drag()" { mouse = true; })
-          (bind' "${mod} + mouse:273" "hl.dsp.window.resize()" { mouse = true; })
+          (bind "Exit Hyprland" "${mod} + M" "hl.dsp.exit()")
+          (exec "File manager" "${mod} + E" (app "nautilus --new-window"))
+          (bind "Toggle floating" "${mod} + V" "hl.dsp.window.float({ action = \"toggle\" })")
+          (bind "Pseudo-tile window" "${mod} + P" "hl.dsp.window.pseudo()")
+          (bind "Scratchpad" "${mod} + S" "hl.dsp.workspace.toggle_special(\"magic\")")
+          (bind "Move window to scratchpad" "${mod} + SHIFT + S"
+            "hl.dsp.window.move({ workspace = \"special:magic\" })"
+          )
+          (bind "Next workspace" "${mod} + mouse_down" "hl.dsp.focus({ workspace = \"e+1\" })")
+          (bind "Previous workspace" "${mod} + mouse_up" "hl.dsp.focus({ workspace = \"e-1\" })")
+          (bind' "Move window" "${mod} + mouse:272" "hl.dsp.window.drag()" { mouse = true; })
+          (bind' "Resize window" "${mod} + mouse:273" "hl.dsp.window.resize()" { mouse = true; })
 
           # i3 style (defaults: Super+Q terminal, Super+C close)
-          (exec "${mod} + RETURN" (app "kitty"))
-          (exec "${mod} + SHIFT + RETURN" (app "${pkgs.gtk3}/bin/gtk-launch ${config.my.desktop.browser}"))
-          (bind "${mod} + SHIFT + Q" "hl.dsp.window.close()")
+          (exec "Terminal" "${mod} + RETURN" (app "kitty"))
+          (exec "Browser" "${mod} + SHIFT + RETURN" (
+            app "${pkgs.gtk3}/bin/gtk-launch ${config.my.desktop.browser}"
+          ))
+          (bind "Close window" "${mod} + SHIFT + Q" "hl.dsp.window.close()")
 
           # Launcher (default: Super+R with hyprlauncher) and toggle split
           # (default: Super+J, which focuses down here)
-          (exec "${mod} + D" "${noctalia} panel-toggle launcher")
-          (bind "${mod} + O" "hl.dsp.layout(\"togglesplit\")")
+          (exec "Launcher" "${mod} + D" "${noctalia} panel-toggle launcher")
+          (bind "Toggle split direction" "${mod} + O" "hl.dsp.layout(\"togglesplit\")")
 
           # Additions
-          (bind "${mod} + F" "hl.dsp.window.fullscreen({ action = \"toggle\" })")
-          (exec "${mod} + SHIFT + V" "${noctalia} panel-toggle clipboard")
-          (exec "${mod} + ESCAPE" "${noctalia} session lock")
-          (exec "${mod} + SHIFT + ESCAPE" "${noctalia} panel-toggle session")
-          (exec "${mod} + T" "kitty --class theme-picker --title Themes -e theme pick")
-          (exec "${mod} + SHIFT + T" "kitty --class theme-picker --title Accent -e theme accent")
-          (exec "PRINT" "${noctalia} screenshot-region")
-          (exec "SHIFT + PRINT" "${noctalia} screenshot-fullscreen")
-          (exec "${mod} + PRINT" "${noctalia} screenshot-window")
+          (bind "Fullscreen" "${mod} + F" "hl.dsp.window.fullscreen({ action = \"toggle\" })")
+          (exec "Clipboard history" "${mod} + SHIFT + V" "${noctalia} panel-toggle clipboard")
+          (exec "Lock screen" "${mod} + ESCAPE" "${noctalia} session lock")
+          (exec "Session menu" "${mod} + SHIFT + ESCAPE" "${noctalia} panel-toggle session")
+          (exec "Theme picker" "${mod} + T" "kitty --class theme-picker --title Themes -e theme pick")
+          (exec "Accent picker" "${mod} + SHIFT + T"
+            "kitty --class theme-picker --title Accent -e theme accent"
+          )
+          (exec "Screenshot region" "PRINT" "${noctalia} screenshot-region")
+          (exec "Screenshot screen" "SHIFT + PRINT" "${noctalia} screenshot-fullscreen")
+          (exec "Screenshot window" "${mod} + PRINT" "${noctalia} screenshot-window")
+        ]
+        ++ lib.optionals (lib.elem "keybind-cheatsheet" plugins) [
+          (exec "Keybind cheatsheet" "${mod} + F1"
+            "${noctalia} panel-toggle kenn/keybind-cheatsheet:cheatsheet"
+          )
+        ]
+        ++ lib.optionals (lib.elem "screen_recorder" plugins) [
+          (exec "Start/stop screen recording" "${mod} + SHIFT + R"
+            "${noctalia} plugin noctalia/screen_recorder:service all toggle"
+          )
+        ]
+        ++ lib.optionals (lib.elem "pomodoro" plugins) [
+          (exec "Pomodoro start/pause" "${mod} + CTRL + P"
+            "${noctalia} plugin thepunkoff/pomodoro:pomodoro all toggle"
+          )
+        ]
+        ++ [
 
           # Hyprland keeps the layout per keyboard device, so a layout switch of
           # the xkb kind (grp:... options) only reaches the keyboard it was
           # pressed on. One command for all devices, usable on the lock screen.
-          (bind' "${mod} + SPACE" "hl.dsp.exec_cmd(\"hyprctl switchxkblayout all next\")" { locked = true; })
+          (bind' "Next keyboard layout" "${mod} + SPACE"
+            "hl.dsp.exec_cmd(\"hyprctl switchxkblayout all next\")"
+            { locked = true; }
+          )
 
           # Media keys (as the defaults; Noctalia shows the OSD)
-          (execRepeat "XF86AudioRaiseVolume" "${noctalia} volume-up")
-          (execRepeat "XF86AudioLowerVolume" "${noctalia} volume-down")
-          (execRepeat "XF86AudioMute" "${noctalia} volume-mute")
-          (execRepeat "XF86AudioMicMute" "${noctalia} mic-mute")
-          (execRepeat "XF86MonBrightnessUp" "${noctalia} brightness-up")
-          (execRepeat "XF86MonBrightnessDown" "${noctalia} brightness-down")
-          (bind' "XF86AudioNext" "hl.dsp.exec_cmd(\"playerctl next\")" { locked = true; })
-          (bind' "XF86AudioPrev" "hl.dsp.exec_cmd(\"playerctl previous\")" { locked = true; })
-          (bind' "XF86AudioPlay" "hl.dsp.exec_cmd(\"playerctl play-pause\")" { locked = true; })
-          (bind' "XF86AudioPause" "hl.dsp.exec_cmd(\"playerctl play-pause\")" { locked = true; })
+          (execRepeat "Volume up" "XF86AudioRaiseVolume" "${noctalia} volume-up")
+          (execRepeat "Volume down" "XF86AudioLowerVolume" "${noctalia} volume-down")
+          (execRepeat "Mute" "XF86AudioMute" "${noctalia} volume-mute")
+          (execRepeat "Mute microphone" "XF86AudioMicMute" "${noctalia} mic-mute")
+          (execRepeat "Brightness up" "XF86MonBrightnessUp" "${noctalia} brightness-up")
+          (execRepeat "Brightness down" "XF86MonBrightnessDown" "${noctalia} brightness-down")
+          (bind' "Next track" "XF86AudioNext" "hl.dsp.exec_cmd(\"playerctl next\")" { locked = true; })
+          (bind' "Previous track" "XF86AudioPrev" "hl.dsp.exec_cmd(\"playerctl previous\")" {
+            locked = true;
+          })
+          (bind' "Play/pause" "XF86AudioPlay" "hl.dsp.exec_cmd(\"playerctl play-pause\")" { locked = true; })
+          (bind' "Play/pause" "XF86AudioPause" "hl.dsp.exec_cmd(\"playerctl play-pause\")" { locked = true; })
         ]
         ++ directionBinds
         ++ workspaceBinds;
@@ -450,23 +488,25 @@ in
         # windows of each launch placed on their workspace.
         lib.optionalString (config.my.desktop.autostart != [ ]) ''
           hl.on("hyprland.start", function()
-          ${lib.concatMapStrings (
-            a:
-            let
-              rules = lib.optionalString (
-                a.workspace != null && a.class == null
-              ) ", { workspace = \"${toString a.workspace} silent\" }";
-            in
-            "  hl.exec_cmd(${builtins.toJSON (app a.command)}${rules})\n"
-          ) config.my.desktop.autostart}end)
+          ${
+            lib.concatMapStrings (
+              a:
+              let
+                rules = lib.optionalString (
+                  a.workspace != null && a.class == null
+                ) ", { workspace = \"${toString a.workspace} silent\" }";
+              in
+              "  hl.exec_cmd(${builtins.toJSON (app a.command)}${rules})\n"
+            ) config.my.desktop.autostart
+          }end)
         ''
         + ''
-        local theme_pack = "${config.my.themeState}/current/hyprland.lua"
-        local ok, err = pcall(dofile, theme_pack)
-        if not ok then
-          hl.exec_cmd("notify-send -a Hyprland 'Theme pack failed to load' " .. string.format("%q", tostring(err)))
-        end
-      '';
+          local theme_pack = "${config.my.themeState}/current/hyprland.lua"
+          local ok, err = pcall(dofile, theme_pack)
+          if not ok then
+            hl.exec_cmd("notify-send -a Hyprland 'Theme pack failed to load' " .. string.format("%q", tostring(err)))
+          end
+        '';
     };
   };
 }

@@ -9,7 +9,12 @@
   ...
 }:
 let
-  inherit (lib.hm.gvariant) mkTuple mkDouble mkEmptyArray type;
+  inherit (lib.hm.gvariant)
+    mkTuple
+    mkDouble
+    mkEmptyArray
+    type
+    ;
   none = mkEmptyArray type.string;
 in
 {

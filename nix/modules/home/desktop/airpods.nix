@@ -1,7 +1,6 @@
 # AirPods in the Noctalia bar: the "AirPods" community plugin (battery, listening
 # modes, ear detection) and the patched librepods daemon it drives. The plugin
-# is pinned and offered to Noctalia as a read-only path source, so nothing is
-# fetched or updated at runtime.
+# itself is pinned in noctalia-plugins.nix.
 {
   config,
   lib,
@@ -17,21 +16,10 @@ let
     mkdir -p $out/bin
     ln -s ${daemon}/bin/librepods-ctl $out/bin/librepods-ctl
   '';
-
-  communityPlugins = pkgs.fetchFromGitHub {
-    owner = "noctalia-dev";
-    repo = "community-plugins";
-    rev = "cd454463cdafa8684e7e886fd9bd9bc99b51b462";
-    hash = "sha256-ce+yhW5X3tiIUChNlDuD6S7q4ioWndbhQGnhWzxxebk=";
-  };
-  # A path source is a directory of plugin directories
-  plugins = pkgs.runCommand "noctalia-plugins-airpods" { } ''
-    mkdir -p $out
-    cp -r ${communityPlugins}/airpods $out/airpods
-  '';
 in
 {
-  options.my.desktop.airpods.enable = lib.mkEnableOption "AirPods widget in the Noctalia bar (plugin and daemon)";
+  options.my.desktop.airpods.enable =
+    lib.mkEnableOption "AirPods widget in the Noctalia bar (plugin and daemon)";
 
   config = lib.mkIf (cfg.enable && config.my.features.desktop.enable) {
     home.packages = [ ctl ];
@@ -73,26 +61,9 @@ in
       Install.WantedBy = [ "graphical-session.target" ];
     };
 
+    my.desktop.noctalia.plugins = [ "airpods" ];
+
     programs.noctalia.settings = {
-      plugins = {
-        enabled = [ "harveywuk/airpods" ];
-        auto_update = "none";
-        source = [
-          {
-            name = "pinned";
-            kind = "path";
-            location = "${plugins}";
-            enabled = true;
-          }
-        ];
-      };
-      # Floating, like the shell panels (see noctalia.nix): an attached panel
-      # inherits the transparent bar's background
-      plugin_settings."harveywuk/airpods" = {
-        panel_placement = "floating";
-        panel_position = "auto";
-        panel_open_near_click = true;
-      };
       # The widget is placed in the bar in noctalia.nix
       widget.airpods.type = "harveywuk/airpods:airpods";
     };

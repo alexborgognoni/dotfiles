@@ -113,10 +113,12 @@ in
         "systemd/user/pipewire-pulse.socket".source = "${pipewire}/pipewire-pulse.socket";
         "systemd/user/wireplumber.service".source = "${wireplumber}/wireplumber.service";
         "systemd/user/sockets.target.wants/pipewire.socket".source = "${pipewire}/pipewire.socket";
-        "systemd/user/sockets.target.wants/pipewire-pulse.socket".source = "${pipewire}/pipewire-pulse.socket";
+        "systemd/user/sockets.target.wants/pipewire-pulse.socket".source =
+          "${pipewire}/pipewire-pulse.socket";
         # (no pipewire-session-manager alias: linked through the Nix store,
         # systemd would load it as a second, competing WirePlumber)
-        "systemd/user/pipewire.service.wants/wireplumber.service".source = "${wireplumber}/wireplumber.service";
+        "systemd/user/pipewire.service.wants/wireplumber.service".source =
+          "${wireplumber}/wireplumber.service";
         "systemd/user/pulseaudio.service".source = masked;
         "systemd/user/pulseaudio.socket".source = masked;
         "systemd/user/pipewire-media-session.service".source = masked;

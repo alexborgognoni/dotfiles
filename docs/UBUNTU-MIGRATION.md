@@ -130,6 +130,19 @@ warning says how), then run both switches.
   `librepods`; enabled with `my.desktop.airpods.enable`. The case level only
   shows after a bud has been docked in the case (the AirPods do not send it
   otherwise) and is forgotten when the daemon restarts or the buds reconnect.
+- **Noctalia plugins** (`my.desktop.noctalia.plugins`, catalog in
+  `nix/modules/home/desktop/noctalia-plugins.nix`): Bitwarden (`/bw` in the
+  launcher; `bw serve` locks after 30 minutes), Screen Recorder (Super+Shift+R;
+  the bar icon only shows while recording), File Search (`/fs`), Keybind
+  Cheatsheet (Super+F1; reads the descriptions of the Hyprland binds), NVTOP
+  (`/pan`) and Pomodoro (Super+Ctrl+P). Each is pinned to the newest revision
+  the packaged Noctalia (plugin API 30) can run, with its tools from Nix.
+  Skipped on purpose: emoji picker (the launcher has `/emo`), OBS Control
+  (Screen Recorder covers it), ALS Brightness (the P1 Gen 5 has no light
+  sensor), Wallpaper Depth (needs desktop widgets and a model download).
+  Screen Recorder: the NVIDIA driver speaks NVENC 13.0 and nixpkgs' FFmpeg
+  wants 13.1, so hardware encoding on the NVIDIA GPU is unavailable; if a
+  recording fails, set `video_encoder = "cpu"` for the plugin.
 - **Digital audio outputs** (S/PDIF, USB card profiles): Noctalia lists only
   active devices, GNOME Settings also switches card profiles. Pick the output
   once there (`XDG_CURRENT_DESKTOP=GNOME gnome-control-center sound`; the entry
