@@ -95,8 +95,15 @@ in
           # Everything the first-run wizard asks is configured here
           setup_wizard_enabled = false;
           settings_show_advanced = true;
-          # Opened panels stay opaque; only the bar itself is see-through
-          panel.transparency_mode = "solid";
+          # Opened panels stay opaque; only the bar itself is see-through. An
+          # attached panel inherits the bar's (zero) background opacity, so
+          # they float below the bar instead, where transparency_mode applies.
+          panel = {
+            transparency_mode = "solid";
+            control_center_placement = "floating";
+            wallpaper_placement = "floating";
+            session_placement = "floating";
+          };
           screenshot.directory = "${config.xdg.userDirs.pictures}/Screenshots";
         };
 
