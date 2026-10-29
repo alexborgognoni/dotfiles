@@ -170,7 +170,7 @@ in
           end = [
             "tray"
           ]
-          ++ lib.optional (lib.elem "nvtop" config.my.desktop.noctalia.plugins) "gpu"
+          ++ lib.optional (lib.elem "nvtop" config.my.desktop.noctalia.plugins) "group:gpu"
           ++ lib.optional config.my.desktop.airpods.enable "airpods"
           ++ lib.optional (lib.elem "screen_recorder" config.my.desktop.noctalia.plugins) "recorder"
           ++ lib.optional (lib.elem "pomodoro" config.my.desktop.noctalia.plugins) "pomodoro"
@@ -181,7 +181,19 @@ in
             "session"
           ];
 
-          capsule_group = [
+          capsule_group =
+            lib.optional (lib.elem "nvtop" config.my.desktop.noctalia.plugins) {
+              id = "gpu";
+              members = [
+                "gpu"
+                "gpu-vram"
+              ];
+              fill = "surface_variant";
+              border = "outline";
+              opacity = theme.opacity.desktop;
+              widget_spacing = 10;
+            }
+            ++ [
             {
               id = "status";
               members = [

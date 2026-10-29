@@ -136,11 +136,16 @@ let
       panels = [ "panel" ];
       # The plugin's own widget is a static icon (it only runs nvtop while its
       # panel is open). The built-in system monitor shows the live value, and
-      # a click opens the panel sorted by GPU load.
+      # a click opens the panel sorted by GPU load (load) or memory (VRAM).
       widget.gpu = {
         type = "sysmon";
         stat = "gpu_usage";
         actions.left = "panel-toggle tordex/nvtop:panel gpu";
+      };
+      widget.gpu-vram = {
+        type = "sysmon";
+        stat = "gpu_vram";
+        actions.left = "panel-toggle tordex/nvtop:panel mem";
       };
       # NVIDIA only: the plugin needs VRAM figures, which an integrated GPU
       # (listed first by the full build) does not report, and it crashes on them
