@@ -117,7 +117,14 @@ PipeWire is the default; PulseAudio stays installed. To switch back, set
 
 - Monitor layouts (kanshi): laptop alone, home (Lenovo above), desk (MSI
   rotated left, ROG, laptop); the MSI rotation direction may need flipping.
-- Zscaler tray icon in Noctalia's tray under Hyprland.
+- Zscaler tray icon in Noctalia's tray under Hyprland. The tray is a Qt 6
+  WebEngine app linked against the system Qt (`ansible/ubuntu.yml`: the
+  `libqt6*` packages), because it is not an apt package and autoremove once
+  took those libraries away (`ZSTray: error while loading shared libraries`,
+  then `Could not find QtWebEngineProcess`). Its launcher (`ZSTray.desktop`)
+  also misdetects itself as an already running instance, so start the tray
+  from the session (it is a user unit on `graphical-session.target`), not from
+  the entry.
 - Readest: select the custom theme "Theme" once; it follows `theme` from
   then on (applied when Readest starts).
 - herdr: `herdr integration install` for opencode, if its files are missing.
