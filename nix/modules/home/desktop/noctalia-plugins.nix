@@ -42,6 +42,36 @@ let
       };
       id = "harveywuk/airpods";
       panels = [ "panel" ];
+      # The bar widget draws only the icon; add one thin bar per earbud (green,
+      # red when low). The exact levels are in the tooltip. A headset gets one.
+      patch = ''
+        substituteInPlace airpods/widget.luau \
+          --replace-fail 'barWidget.render(container({ gap = 5, align = "center" }, children))' '
+        if hasAirPods and not barWidget.isVertical() then
+          local function bar(level)
+            local known = type(level) == "number" and level >= 0
+            local value = known and level or 0
+            return ui.progress({
+              progress = value / 100,
+              fill = value <= 20 and "error" or "#a6e3a1",
+              track = "on_surface/0.2",
+              radius = 2,
+              width = 24,
+              height = 4,
+              opacity = known and 1 or 0.4,
+            })
+          end
+          if snapshot.isHeadset == true then
+            table.insert(children, bar(snapshot.headset and snapshot.headset.level))
+          else
+            table.insert(children, ui.column({ gap = 3, align = "center" }, {
+              bar(snapshot.left and snapshot.left.level),
+              bar(snapshot.right and snapshot.right.level),
+            }))
+          end
+        end
+        barWidget.render(container({ gap = 5, align = "center" }, children))'
+      '';
     };
 
     bitwarden = {
@@ -141,12 +171,14 @@ let
         type = "sysmon";
         stat = "gpu_usage";
         visualization = "none";
+        label_min_width = 30.0;
         actions.left = "panel-toggle tordex/nvtop:panel gpu";
       };
       widget.gpu-vram = {
         type = "sysmon";
         stat = "gpu_vram";
         visualization = "none";
+        label_min_width = 30.0;
         actions.left = "panel-toggle tordex/nvtop:panel mem";
       };
       # NVIDIA only: the plugin needs VRAM figures, which an integrated GPU

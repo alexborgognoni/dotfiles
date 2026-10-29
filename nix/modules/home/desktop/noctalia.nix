@@ -42,22 +42,37 @@ let
 
   has = plugin: lib.elem plugin config.my.desktop.noctalia.plugins;
 
-  # Capsule groups share one style
+  # One look for every pill, single or grouped: same fill, border, padding,
+  # corner shape and gap between the things inside
+  pillPadding = 10;
+  innerGap = 8;
   group =
     g:
     {
       fill = "surface_variant";
       border = "outline";
       opacity = theme.opacity.desktop;
-      widget_spacing = 8;
+      padding = pillPadding;
+      widget_spacing = innerGap;
     }
+    // lib.optionalAttrs square { radius = 0.0; }
     // g;
 
-  # Compact system monitor value: icon and number, no gauge
+  # Compact system monitor value: icon and number, no gauge. The width is
+  # fixed to the longest value, so the pill never changes size: percentages
+  # up to "100%", network speeds with the short suffix ("947B", "574.1k", "12.3M").
   sysmon = stat: {
     type = "sysmon";
     inherit stat;
     visualization = "none";
+    label_min_width = 30.0;
+  };
+  sysmonRate = stat: {
+    type = "sysmon";
+    inherit stat;
+    visualization = "none";
+    network_speed_compact = true;
+    label_min_width = 44.0;
   };
 in
 {
@@ -167,14 +182,17 @@ in
           margin_edge = 6;
           margin_ends = 8;
           padding = 2;
-          widget_spacing = 8;
+          widget_spacing = innerGap;
 
           capsule = true;
           capsule_fill = "surface_variant";
           capsule_opacity = theme.opacity.desktop;
           capsule_border = "outline";
           capsule_thickness = 0.8;
-          capsule_padding = 10;
+          capsule_padding = pillPadding;
+          # Text in one colour and icons in the accent, in every pill
+          color = "on_surface";
+          icon_color = "primary";
         }
         // lib.optionalAttrs square { capsule_radius = 0.0; }
         // {
@@ -195,7 +213,6 @@ in
           ]
           ++ lib.optional (has "screen_recorder") "recorder";
           end = [
-            "tray"
             "group:tools"
             "group:stats"
             "group:system"
@@ -212,10 +229,13 @@ in
             }
             {
               id = "tools";
+              # The tray's width changes with the apps running, so it sits at the
+              # left end: only the pill's left edge moves, not its other widgets
               members =
-                lib.optional (has "pomodoro") "pomodoro"
-                ++ lib.optional config.my.desktop.airpods.enable "airpods"
-                ++ [ "clipboard" ];
+                [ "tray" ]
+                ++ lib.optional (has "pomodoro") "pomodoro"
+                ++ [ "clipboard" ]
+                ++ lib.optional config.my.desktop.airpods.enable "airpods";
             }
             {
               id = "stats";
@@ -247,6 +267,7 @@ in
           launcher = {
             capsule_fill = "primary";
             capsule_foreground = "on_primary";
+            icon_color = "on_primary";
           };
           workspaces = {
             style = "regular";
@@ -261,18 +282,13 @@ in
             show_empty_label = false;
           };
           clock = {
-            format = "{:%a %d %b   %H:%M}";
+            format = "{:%H:%M   %a %d %b}";
             tooltip_format = "{:%A, %d %B %Y}";
-            color = "primary";
           };
           cpu = sysmon "cpu_usage";
           ram = sysmon "ram_pct";
-          net-up = sysmon "net_tx" // {
-            network_speed_compact = true;
-          };
-          net-down = sysmon "net_rx" // {
-            network_speed_compact = true;
-          };
+          net-up = sysmonRate "net_tx";
+          net-down = sysmonRate "net_rx";
           # Only while something plays
           media = {
             max_length = 260.0;
@@ -283,6 +299,7 @@ in
           bluetooth.show_label = true;
           session = {
             color = "error";
+            icon_color = "error";
           };
         };
 
