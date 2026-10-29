@@ -48,6 +48,10 @@
       - libqt6webenginecore6-bin
       - libqt6webenginewidgets6
       - libqt6webengine6-data
+      - libqt6opengl6
+      - libqt6positioning6
+      - libqt6printsupport6
+      - libqt6webchannel6
       - qt6-qpa-plugins
     # Corporate browser (Intune/Entra sign-in); maintains its own apt
     # repository after installing
