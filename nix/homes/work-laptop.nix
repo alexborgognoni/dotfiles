@@ -43,6 +43,9 @@
       # session) per theme, as on NixOS
       themeToolkits = true;
 
+      # AirPods in the bar (Noctalia plugin + patched librepods daemon)
+      airpods.enable = true;
+
       # Chrome for now; Firefox later (one line)
       browser = "google-chrome.desktop";
 
@@ -73,7 +76,6 @@
           workspace = 4;
           class = "^chrome-faolnafnngnfdaknnbpnkhgohbobgegn-Default$";
         }
-        { command = "librepods --start-minimized"; }
       ];
     };
 

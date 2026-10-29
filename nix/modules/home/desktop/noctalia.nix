@@ -154,6 +154,9 @@ in
           center = [ "active_window" ];
           end = [
             "tray"
+          ]
+          ++ lib.optional config.my.desktop.airpods.enable "airpods"
+          ++ [
             "group:status"
             "group:system"
             "clock"
