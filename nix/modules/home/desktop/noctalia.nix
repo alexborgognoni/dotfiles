@@ -74,6 +74,8 @@ let
     type = "sysmon";
     inherit stat;
     visualization = "none";
+    # Fast transfers are no fault: an accent tint, not the error red
+    highlight_color = "secondary";
     network_speed_compact = true;
     label_min_width = 48.0;
   };
@@ -318,6 +320,25 @@ in
             color = "error";
             icon_color = "error";
           };
+        };
+
+        # When a stat's value starts to tint toward the highlight colour
+        # (activity) and where it is fully tinted (critical). Raised from the
+        # defaults (50/90): ordinary work no longer lights up. Network speeds
+        # are in MB/s.
+        system.monitor = {
+          cpu_usage_activity_threshold = 70;
+          cpu_usage_critical_threshold = 95;
+          gpu_usage_activity_threshold = 75;
+          gpu_usage_critical_threshold = 98;
+          gpu_vram_activity_threshold = 75;
+          gpu_vram_critical_threshold = 95;
+          ram_pct_activity_threshold = 80;
+          ram_pct_critical_threshold = 95;
+          net_rx_activity_threshold = 5;
+          net_rx_critical_threshold = 50;
+          net_tx_activity_threshold = 5;
+          net_tx_critical_threshold = 50;
         };
 
         notification.background_opacity = theme.opacity.popups;
