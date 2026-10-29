@@ -54,14 +54,18 @@
       type = lib.types.str;
       default = "us";
       example = "gb,us";
-      description = "XKB layout(s); several, comma-separated, to switch between them.";
+      description = "XKB layout(s); several, comma-separated, to switch between them (Super+Space).";
     };
 
     keyboard.options = lib.mkOption {
       type = lib.types.str;
       default = "";
-      example = "grp:alt_shift_toggle";
-      description = "XKB options, e.g. the key combination that switches layouts.";
+      example = "caps:escape";
+      description = ''
+        XKB options. Not for switching layouts: Hyprland keeps the layout per
+        keyboard, so grp:* toggles only reach the keyboard they were pressed on
+        (Super+Space switches all).
+      '';
     };
 
     desktop.themeToolkits = lib.mkOption {

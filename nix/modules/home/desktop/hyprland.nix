@@ -423,6 +423,11 @@ in
           (exec "SHIFT + PRINT" "${noctalia} screenshot-fullscreen")
           (exec "${mod} + PRINT" "${noctalia} screenshot-window")
 
+          # Hyprland keeps the layout per keyboard device, so a layout switch of
+          # the xkb kind (grp:... options) only reaches the keyboard it was
+          # pressed on. One command for all devices, usable on the lock screen.
+          (bind' "${mod} + SPACE" "hl.dsp.exec_cmd(\"hyprctl switchxkblayout all next\")" { locked = true; })
+
           # Media keys (as the defaults; Noctalia shows the OSD)
           (execRepeat "XF86AudioRaiseVolume" "${noctalia} volume-up")
           (execRepeat "XF86AudioLowerVolume" "${noctalia} volume-down")

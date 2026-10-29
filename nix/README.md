@@ -177,6 +177,7 @@ theme's library; rotation defaults are set with `my.wallpaper.rotation`.
 | Super + M | exit Hyprland |
 | Super + V / F / P | toggle floating / fullscreen / pseudotile |
 | Super + O | toggle split |
+| Super + Space | switch keyboard layout (all keyboards, also on the lock screen) |
 | Super + h j k l (or arrows) | focus; + Shift move window |
 | Super + 1..0 | workspace; + Shift move window there |
 | Super + S / Shift+S | special workspace / move window there |

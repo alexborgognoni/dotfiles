@@ -32,11 +32,9 @@
       "gui"
     ];
 
-    # GB and US, Alt+Shift switches (shown in Noctalia's bar)
-    keyboard = {
-      layout = "gb,us";
-      options = "grp:alt_shift_toggle";
-    };
+    # US first (the lock screen and new windows start in it), GB second;
+    # Super+Space switches every keyboard (shown in Noctalia's bar)
+    keyboard.layout = "us,gb";
 
     desktop = {
       # Stylix themes GTK, Qt, the cursor (and GNOME, now only the backup
