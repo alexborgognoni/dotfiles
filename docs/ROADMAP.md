@@ -7,8 +7,10 @@
   `.sh` files), the system-manager layer (one file per concern) and the
   corporate pieces (`modules/home/corporate/`, `system-manager/corporate.nix`).
   Noctalia too (`desktop/noctalia/`: package, bar, plugins and their catalog).
-  Still to do: `theme.nix`
-  (443 lines), `identity.nix`, `standalone.nix`.
+  The theme engine too (`modules/home/theme/`: options and activation, the
+  `theme` command as `.sh`/`.py` files; `themes/`: defaults, accents,
+  wallpapers, pack generator, the catalogue of themes).
+  Still to do: `identity.nix`, `standalone.nix`.
 - **Ansible**: it only applies a package list, repositories, groups and the
   login shell. Decide whether a plain list and a short script replace it
   (one dependency less, less to explain to a coworker).

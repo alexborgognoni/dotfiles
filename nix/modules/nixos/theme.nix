@@ -1,6 +1,6 @@
-# Builds the theme catalogue (themes/default.nix) once and applies the default
+# Builds the theme catalogue (themes/) once and applies the default
 # theme system-wide with Stylix: greeter, console, boot loader, GTK/Qt
-# defaults. Per-user switching lives in modules/home/theme.nix, which gets the
+# defaults. Per-user switching lives in modules/home/theme/, which gets the
 # catalogue as a special argument (modules/nixos/home-manager.nix).
 {
   config,

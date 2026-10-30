@@ -10,7 +10,7 @@
 { config, lib, ... }:
 {
   imports = [
-    ./theme.nix
+    ./theme
     ./identity.nix
     ./shell
     ./terminal

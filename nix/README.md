@@ -43,7 +43,8 @@ modules/
                           + lock-screen helper, corporate
   shared/                 plain data used by several module sets (keyd)
 packages/default.nix      package groups: cli, gui, browsers
-themes/default.nix        theme catalogue (colors, accents, wallpapers, look)
+themes/                   theme catalogue: catalogue.nix (the themes), defaults,
+                          accents, wallpapers, pack.nix (live color files)
 assets/wallpapers/        shared wallpapers (+ themes/<theme>/ for extras)
 pkgs/                     packages not in nixpkgs (forgecode, openwhispr) and
                           the `pkgs.unstable` overlay
@@ -129,8 +130,11 @@ mkpasswd -m yescrypt      # hash for <user>-password
 
 A theme is a complete look: base16 colors, an accent palette, a wallpaper
 library, fonts, cursor, icons, opacity and window decoration (rounding,
-borders, gaps, shadow, blur). `themes/default.nix` has shared defaults; each
-theme overrides only what differs.
+borders, gaps, shadow, blur). `themes/defaults.nix` has the shared defaults;
+`themes/catalogue.nix` lists the themes, each overriding only what differs (add
+a theme there: a name from nixpkgs' base16-schemes is enough). The rest of
+`themes/` is machinery: accents, wallpapers, and `pack.nix`, which generates
+the color files below.
 
 ```sh
 theme                     # picker with live preview (Super+T)
