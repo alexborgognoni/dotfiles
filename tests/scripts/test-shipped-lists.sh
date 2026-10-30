@@ -54,9 +54,10 @@ for danger in . .config .local .local/share .cache .ssh .gnupg .mozilla .config/
   assert_nomatch "$(list_entries home-leftovers.list | grep -Fx -- "$danger" || true)" '.' "home list must not contain $danger"
 done
 
-# the system list: absolute, only /usr/local and /opt, nothing broad
+# the system list: absolute, only /usr/local and /opt (plus Flatpak's own two
+# leftover directories), nothing broad
 while IFS= read -r e; do
-  assert_match "$e" '^/(usr/local|opt)/.+' "system entry is under /usr/local or /opt: $e"
+  assert_match "$e" '^/(usr/local|opt)/.+|^/var/lib/flatpak$|^/var/tmp/flatpak-cache-\*$' "system entry is under /usr/local or /opt (or is Flatpak's): $e"
   assert_nomatch "$e" '^/(usr/local|opt)/\*?$|\.\.' "system entry is specific, not a whole directory: $e"
 done < <(list_entries system-leftovers.list)
 

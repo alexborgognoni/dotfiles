@@ -33,6 +33,9 @@
 .config/teams-for-linux
 .brewenv_cache
 .cache/Homebrew
+.var
+.local/share/flatpak
+.cache/flatpak
 .zinit
 .local/share/zinit
 .tmux/plugins

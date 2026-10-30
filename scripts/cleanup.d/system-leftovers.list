@@ -15,3 +15,6 @@
 /usr/local/bin/tmux
 /usr/local/bin/xdotool
 /opt/nvim-linux-x86_64
+# Flatpak runtimes (GBs) that outlive the flatpak program and its apps
+/var/lib/flatpak
+/var/tmp/flatpak-cache-*
