@@ -174,7 +174,7 @@ lib.mapAttrs' (
 
       with subtest("applications and tools are installed"):
           commands = [
-              "google-chrome-stable", "chromium", "microsoft-edge", "teams-for-linux", "code",
+              "google-chrome-stable", "chromium", "microsoft-edge", "code",
               "neovide", "obsidian", "vlc", "obs", "audacity", "ghb", "inkscape", "foliate",
               "readest", "openwhispr", "claude",
               "codex", "copilot", "opencode", "herdr", "forge", "github-mcp-server",
