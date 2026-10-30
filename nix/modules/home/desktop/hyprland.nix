@@ -204,6 +204,29 @@ let
     '';
   };
 
+  # The session's apps start only once the user manager knows the Wayland
+  # display and the settings portal answers with a colour scheme. An app
+  # started earlier (Chrome at login) never learns the scheme the portal
+  # reports a moment later, and stays light. Gives up after 40 s.
+  waitSession = pkgs.writeShellApplication {
+    name = "wait-session";
+    runtimeInputs = [ pkgs.glib ];
+    text = ''
+      for _ in $(seq 1 200); do
+        if systemctl --user show-environment | grep -q '^WAYLAND_DISPLAY='; then
+          answer="$(gdbus call --session --timeout 3 --dest org.freedesktop.portal.Desktop \
+            --object-path /org/freedesktop/portal/desktop \
+            --method org.freedesktop.portal.Settings.Read org.freedesktop.appearance color-scheme 2>/dev/null || true)"
+          case "$answer" in
+            *"uint32 1"* | *"uint32 2"*) exit 0 ;;
+          esac
+        fi
+        sleep 0.2
+      done
+      exit 0
+    '';
+  };
+
   directions = {
     h = "left";
     j = "down";
@@ -269,7 +292,10 @@ in
           exec ${pkgs.hyprland}/bin/start-hyprland
         '')
       ]
-      ++ [ toggleBar ]
+      ++ [
+        toggleBar
+        waitSession
+      ]
       ++ lib.optionals roles [
         monitorRoles
         gotoWorkspace
@@ -677,7 +703,7 @@ in
                   a.workspace != null && a.class == null
                 ) ", { workspace = \"${toString a.workspace} silent\" }";
               in
-              "  hl.exec_cmd(${builtins.toJSON (app a.command)}${rules})\n"
+              "  hl.exec_cmd(${builtins.toJSON "wait-session; exec ${app a.command}"}${rules})\n"
             ) config.my.desktop.autostart
           }end)
         ''
