@@ -98,7 +98,13 @@ in
       (exec "Hide/show the bar on this monitor" "${mod} + SHIFT + B" "toggle-bar focused")
       (bind "Fullscreen" "${mod} + F" "hl.dsp.window.fullscreen({ action = \"toggle\" })")
       (exec "Clipboard history" "${mod} + SHIFT + V" "${noctalia} panel-toggle clipboard")
-      (exec "Emoji picker" "${mod} + period" "${noctalia} panel-toggle launcher /emo")
+      (
+        if lib.elem "emoji-picker" plugins then
+          exec "Emoji and character picker" "${mod} + period"
+            "${noctalia} panel-toggle liamwh/emoji-picker:desktop"
+        else
+          exec "Emoji picker" "${mod} + period" "${noctalia} panel-toggle launcher /emo"
+      )
       (exec "Lock screen" "${mod} + ESCAPE" "${noctalia} session lock")
       (exec "Session menu" "${mod} + SHIFT + ESCAPE" "${noctalia} panel-toggle session")
       (exec "Theme picker" "${mod} + T" "kitty --class theme-picker --title Themes -e theme pick")

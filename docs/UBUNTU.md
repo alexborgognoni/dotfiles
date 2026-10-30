@@ -132,11 +132,21 @@ warning says how), then run both switches.
   `nix/modules/home/desktop/noctalia/plugin-catalog.nix`): Bitwarden (`/bw` in the
   launcher; `bw serve` locks after 30 minutes), File Search (`/fs`), Keybind
   Cheatsheet (Super+F1), NVTOP (GPU load in the bar, click for the process
-  list), Pomodoro (Super+Ctrl+P), AirPods, and Hyprland Settings (below). Each
-  is pinned to the newest revision the packaged Noctalia can load, with its
-  tools from Nix. Skipped on purpose: emoji picker (the launcher's `/emo` is on
-  Super+.), screen recorder and OBS Control (open OBS to record), ALS
-  Brightness (no light sensor on the P1 Gen 5), Wallpaper Depth.
+  list), Pomodoro (Super+Ctrl+P), Color Picker (bar icon in the tools pill:
+  click to open, right click to pick a color straight to the clipboard;
+  hyprpicker), Emoji & Symbol Picker (Super+.), AirPods, and Hyprland Settings
+  (below). Each is pinned to the newest revision the packaged Noctalia can
+  load, with its tools from Nix. Skipped on purpose: screen recorder and OBS
+  Control (open OBS to record), ALS Brightness (no light sensor on the P1
+  Gen 5), Wallpaper Depth.
+- **Typing other layouts' characters** without switching the keyboard: Super+.
+  opens the emoji picker, whose "Characters" tab starts with ä ö ü ß é è ê à ç
+  î ï ô ù û ÿ œ æ (German and French first, then the other Latin letters and
+  the quotation marks «»„“”). Search them as you would say them: `a umlaut`,
+  `e acute`, `sharp s` or `eszett`, `c cedilla`, `oe`, `german`, `french`,
+  `guillemet`. Enter copies the character (paste with Ctrl+V); what you pick
+  often rises into "Frequently Used". The plugin's dataset is extended by
+  `plugin-patches/latin-letters.py` (names and keywords from Unicode data).
 - **Hyprland Settings** (plugin, bar button left of the shortcuts button,
   `/hyprland`): displays (only valid resolutions, refresh rates and scales),
   input, look, with a 15 s keep-or-revert. A kept change goes to

@@ -66,6 +66,8 @@ in
       # Noctalia plugins (pinned in modules/home/desktop/noctalia/plugin-catalog.nix)
       noctalia.plugins = [
         "bitwarden"
+        "color_picker"
+        "emoji-picker"
         "file-search"
         "keybind-cheatsheet"
         "nvtop"

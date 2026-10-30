@@ -118,6 +118,7 @@ in
             ]
             ++ lib.optional (has "pomodoro") "pomodoro"
             ++ [ "clipboard" ]
+            ++ lib.optional (has "color_picker") "color-picker"
             ++ lib.optional config.my.desktop.airpods.enable "airpods";
           }
           {

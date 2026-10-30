@@ -2,6 +2,18 @@
 # widgets each brings (see plugins.nix for how a revision is chosen).
 { config, pkgs }:
 let
+  inherit (pkgs) lib;
+
+  # Panels opened by a key open in the centre of the screen
+  centred =
+    panels:
+    lib.listToAttrs (
+      lib.concatMap (panel: [
+        (lib.nameValuePair "${panel}_position" "center")
+        (lib.nameValuePair "${panel}_open_near_click" false)
+      ]) panels
+    );
+
   fetch =
     {
       repo,
@@ -83,6 +95,50 @@ in
       vault_timeout = "30";
       clear_clipboard_seconds = 45;
     };
+  };
+
+  # Pick a color anywhere on the screen (click the bar icon; right click picks
+  # straight to the clipboard). v1.0.7 is the newest release plugin API 39
+  # (Noctalia 5.4) can load; v2.0 needs 43. hyprpicker brings wl-clipboard.
+  color_picker = {
+    src = fetch {
+      repo = "community-plugins";
+      rev = "f05b3e45e59b9128834330036ac93efb61af00a4";
+      dir = "color_picker";
+      hash = "sha256-DK3XVBmv3uLZoWlPMlvrQLuHOJ2MWJMpGzi6pmxmons=";
+    };
+    id = "oldirtty/color_picker";
+    panels = [ "panel" ];
+    packages = [ pkgs.unstable.hyprpicker ];
+    widget.color-picker.type = "oldirtty/color_picker:widget";
+  };
+
+  # Emoji and symbols with search, categories and "frequently used" (Super+.).
+  # v1.2.1 is the newest release plugin API 39 can load. Its dataset only has
+  # emoji and symbols: the patch adds the Latin letters of other layouts (ä ö ü
+  # ß é è ç œ ñ ..., German and French first) and the quotation marks of those
+  # languages, searchable as "a umlaut", "e acute", "sharp s", "guillemet".
+  emoji-picker = {
+    src = fetch {
+      repo = "community-plugins";
+      rev = "1ef3097060a9200fee0ab70bd0217720d5d9e055";
+      dir = "emoji-picker";
+      hash = "sha256-Q22AqYH/ODUGBHFhwzobVfXi2RtPOjKzWg7coXu+/XE=";
+    };
+    id = "liamwh/emoji-picker";
+    panels = [
+      "wide"
+      "desktop"
+      "compact"
+    ];
+    settings = centred [
+      "wide"
+      "desktop"
+      "compact"
+    ];
+    patch = ''
+      ${pkgs.python3}/bin/python3 ${./plugin-patches/latin-letters.py} emoji-picker/assets/emoji.json
+    '';
   };
 
   file-search = {
