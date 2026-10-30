@@ -1,15 +1,16 @@
-# Keyboard remapping shared by NixOS (services.keyd) and Ubuntu
-# (system-manager): Caps Lock = Escape, Alt+hjkl = arrow keys, on every
-# keyboard, in the console and all sessions.
+# Key remapping data shared by NixOS (services.keyd) and Ubuntu
+# (system-manager), on every keyboard, in the console and all sessions.
 {
   ids = [ "*" ];
-  settings = {
-    main.capslock = "esc";
-    alt = {
-      h = "left";
-      j = "down";
-      k = "up";
-      l = "right";
-    };
+
+  # Everywhere: Caps Lock = Escape
+  settings.main.capslock = "esc";
+
+  # Opt in (corporate laptop): Alt+hjkl = arrow keys
+  altArrows.alt = {
+    h = "left";
+    j = "down";
+    k = "up";
+    l = "right";
   };
 }

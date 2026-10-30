@@ -274,7 +274,7 @@ in
 
         # Other displays than the main one (my.desktop.mainMonitors): only the
         # workspaces of that display. Both bars exist everywhere; Hyprland's
-        # monitor events show the right one per display (hyprland.nix).
+        # monitor events show the right one per display (hyprland/monitors.nix).
         bar.basic = lib.mkIf roles (
           barCommon
           // {

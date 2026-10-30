@@ -36,9 +36,11 @@ modules/
                           reads osConfig): theme engine, identity, shell,
                           terminal, editor, desktop, Firefox, fonts, packages,
                           standalone (generic Linux, GPU, nh, user secrets,
-                          sound server), gnome (Ubuntu's GNOME)
-  system-manager/         Ubuntu root level: nix.conf, keyd, GPU drivers,
-                          Hyprland session + portal, lock-screen helper
+                          sound server), gnome (Ubuntu's GNOME), corporate
+                          (Zscaler tray, Entra SSO, Artifactory, company tools)
+  system-manager/         Ubuntu root level, one file per concern: nix.conf,
+                          keyd, tweaks, GPU drivers, Hyprland session + portal
+                          + lock-screen helper, corporate
   shared/                 plain data used by several module sets (keyd)
 packages/default.nix      package groups: cli, gui, browsers
 themes/default.nix        theme catalogue (colors, accents, wallpapers, look)
@@ -93,8 +95,9 @@ at the system level, a standalone machine picks groups with
 - Projects should bring their own toolchains (`nix develop`, direnv, uv):
   the global Python, Node, Rust (rustup) and Go are for quick work.
 - Databases run per project in Docker; only the clients are installed.
-- Docker, libvirt/virt-manager and keyd (Caps Lock = Escape, Alt+hjkl =
-  arrows, everywhere) are system modules in `modules/nixos/desktop/`.
+- Docker, libvirt/virt-manager and keyd (Caps Lock = Escape) are system
+  modules in `modules/nixos/desktop/`. Alt+hjkl as arrow keys is only for the
+  corporate laptop (below).
 
 ## Secrets (sops-nix)
 
@@ -185,6 +188,21 @@ theme's library; rotation defaults are set with `my.wallpaper.rotation`.
 | Super + T / Shift+T | theme picker / accent picker |
 | Super + Escape / Shift+Escape | lock screen / session menu (log out, power) |
 | Print / Shift+Print / Super+Print | screenshot region / screen / window (to ~/Pictures/Screenshots and the clipboard) |
+
+## Corporate
+
+Everything that only makes sense on a company laptop is separate, so a
+personal machine never gets it and a coworker can swap it for their own:
+
+| Layer | Module | Switched on by | Contents |
+|---|---|---|---|
+| user (Home Manager) | `modules/home/corporate/` | `my.corporate.enable`, default: `my.profile == "work"` | Zscaler tray (unit, launcher, `zsa://` links), Entra ID SSO for Chrome, pip through Artifactory, `fix-zscaler`/`net-diag`/`net-rescue`, Claude Code against the company's Vertex AI and Copilot |
+| root (system-manager) | `modules/system-manager/corporate.nix` | `my.corporate.enable = true` in `systems/<machine>.nix` | corporate root CA for the Nix daemon and for Chrome, Alt+hjkl as arrow keys (keyd) |
+| NixOS | `modules/nixos/core/corporate-ca.nix` | `my.corporateCA = [ ./root.crt ]` | extra root CAs, also in the build sandbox |
+
+Machine-specific values of the laptop (Docker's network, NTP servers) are in
+`systems/work-laptop.nix` and `homes/work-laptop.nix`. The apt side
+(Zscaler's Qt libraries, Edge) is `../ansible/ubuntu.yml`.
 
 ## Checks
 

@@ -19,9 +19,8 @@
     ./browser.nix
     ./fonts.nix
     ./packages.nix
-    ./scripts
     ./standalone.nix
-    ./work.nix
+    ./corporate
     ./apps
     ./gnome
   ];

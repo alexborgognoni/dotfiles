@@ -66,7 +66,8 @@ Then log out and back in.
 - `git config user.email` is the work address; in `~/dotfiles` and
   `~/personal/*` it is the personal one; commits are signed.
 - `ssh -T git@github.com` (personal key) and GitHub Enterprise (work key).
-- Caps Lock is Escape, Alt+hjkl are arrows (keyd).
+- Caps Lock is Escape, Alt+hjkl are arrows (keyd; the arrows are part of the
+  corporate module, `nix/modules/system-manager/corporate.nix`).
 - `kitty`, `code`, `obsidian` start; NVIDIA:
   `__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia glxinfo -B`
   via `nix shell nixpkgs#mesa-demos`.
@@ -193,7 +194,7 @@ PipeWire is the default; PulseAudio stays installed. To switch back, set
   away; `qt6-wayland` makes its window native Wayland instead of a blurry
   XWayland one). Zscaler's own menu entry took itself for an already running
   tray and aborted; "Zscaler Client Connector" from
-  `nix/modules/home/work.nix` replaces it and opens the window of a running
+  `nix/modules/home/corporate/zscaler.nix` replaces it and opens the window of a running
   tray. The tray registers its icon only at start, so the unit waits for
   Noctalia's tray (`zscaler-tray.service.d`). Hyprland starts it at login
   (`my.desktop.autostart`); the GNOME session uses Zscaler's own autostart

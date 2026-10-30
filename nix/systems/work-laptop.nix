@@ -2,6 +2,7 @@
 # level is homes/work-laptop.nix; apt packages are ansible/ubuntu.yml.
 {
   my.user = "Alex";
+  my.corporate.enable = true;
   system-manager.allowAnyDistro = false;
 
   # Hand-edited files of this laptop, taken over from the pre-Nix setup (the

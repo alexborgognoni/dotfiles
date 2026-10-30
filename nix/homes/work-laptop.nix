@@ -79,7 +79,7 @@ in
       # Session apps (Hyprland)
       autostart = [
         {
-          # Zscaler tray (modules/home/work.nix); the GNOME session starts it
+          # Zscaler tray (modules/home/corporate/zscaler.nix); the GNOME session starts it
           # through Zscaler's own autostart entry
           command = "systemctl --user start zscaler-tray.service";
         }

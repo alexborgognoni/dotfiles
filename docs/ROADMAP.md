@@ -2,9 +2,12 @@
 
 ## Next
 
-- **Refactor and simplify**: the large modules (`hyprland.nix`, `noctalia.nix`)
-  and the small helper scripts embedded in them (`monitor-roles`, `toggle-bar`,
-  `wait-session`) should become modules of their own; remove what is unused.
+- **Refactor and simplify**: done for Hyprland (`desktop/hyprland/`: binds,
+  rules, animations, monitors, session, settings panel; the helper scripts are
+  `.sh` files), the system-manager layer (one file per concern) and the
+  corporate pieces (`modules/home/corporate/`, `system-manager/corporate.nix`).
+  Still to do: `noctalia.nix` (bar layout, pills, panels), `theme.nix`
+  (443 lines), `identity.nix`, `standalone.nix`.
 - **Ansible**: it only applies a package list, repositories, groups and the
   login shell. Decide whether a plain list and a short script replace it
   (one dependency less, less to explain to a coworker).

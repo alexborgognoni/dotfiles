@@ -144,7 +144,7 @@ let
     # look, with a 15 s keep-or-revert. Needs Hyprland 0.56+ and the Lua it is
     # built against; v1.0.0 is the newest release plugin API 32 (Noctalia 5.4)
     # can load. Its changes go to ~/.config/hypr/hyprland-settings.lua, which
-    # hyprland.nix loads last.
+    # hyprland/settings-panel.nix loads it last.
     hyprland-settings = {
       src = fetch {
         repo = "community-plugins";
