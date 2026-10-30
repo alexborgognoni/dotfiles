@@ -289,7 +289,7 @@ in
             . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
           fi
           export XDG_CURRENT_DESKTOP=Hyprland XDG_SESSION_DESKTOP=Hyprland
-          exec ${pkgs.hyprland}/bin/start-hyprland
+          exec ${pkgs.unstable.hyprland}/bin/start-hyprland
         '')
       ]
       ++ [
@@ -306,8 +306,9 @@ in
       # NixOS installs Hyprland and its portal system-wide (programs.hyprland)
       # and UWSM manages the session; standalone, Home Manager installs both
       # and its systemd integration starts graphical-session.target.
-      package = if standalone then pkgs.hyprland else null;
-      portalPackage = if standalone then pkgs.xdg-desktop-portal-hyprland else null;
+      # Newest release (the stable channel lags a minor version behind)
+      package = if standalone then pkgs.unstable.hyprland else null;
+      portalPackage = if standalone then pkgs.unstable.xdg-desktop-portal-hyprland else null;
       systemd.enable = standalone;
       # The session's whole environment (cursor, Qt/GTK theming, PATH, ...) for
       # apps systemd starts, e.g. files opened from Nautilus; without it

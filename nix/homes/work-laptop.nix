@@ -109,6 +109,7 @@
   # outputs). kanshi applies the profile whose monitors are all connected.
   services.kanshi = {
     enable = true;
+    package = pkgs.unstable.kanshi;
     systemdTarget = "hyprland-session.target";
     settings =
       let
@@ -126,7 +127,9 @@
             {
               criteria = laptop;
               mode = "2560x1600@165";
-              scale = 1.5;
+              # Valid scales for this panel (whole logical pixels): 1.0, 1.25,
+              # 1.6, 2.0. Hyprland silently rounds anything else (1.5 -> 1.6).
+              scale = 1.25;
             }
           ];
         }

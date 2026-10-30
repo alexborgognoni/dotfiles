@@ -28,7 +28,7 @@ let
   # (modules/system-manager: /etc/pam.d/noctalia).
   noctalia =
     if config.my.standalone then
-      pkgs.noctalia.overrideAttrs (old: {
+      pkgs.unstable.noctalia.overrideAttrs (old: {
         # Upstream's tests run on Hydra for the same sources; icon_resolver
         # depends on the build host's environment.
         doCheck = false;
@@ -38,7 +38,7 @@ let
         '';
       })
     else
-      pkgs.noctalia;
+      pkgs.unstable.noctalia;
 
   has = plugin: lib.elem plugin config.my.desktop.noctalia.plugins;
   roles = config.my.desktop.mainMonitors != [ ];
@@ -50,8 +50,8 @@ let
   group =
     g:
     {
-      fill = "surface_variant";
-      border = "outline";
+      fill = "surface_container";
+      border = "outline_variant";
       opacity = theme.opacity.desktop;
       padding = pillPadding;
       widget_spacing = innerGap;
@@ -92,9 +92,9 @@ let
     widget_spacing = innerGap;
 
     capsule = true;
-    capsule_fill = "surface_variant";
+    capsule_fill = "surface_container";
     capsule_opacity = theme.opacity.desktop;
-    capsule_border = "outline";
+    capsule_border = "outline_variant";
     capsule_thickness = 0.8;
     capsule_padding = pillPadding;
     # Text in one colour and icons in the accent, in every pill

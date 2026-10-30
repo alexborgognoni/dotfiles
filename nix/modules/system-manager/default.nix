@@ -19,7 +19,7 @@ let
   ca = "/etc/ssl/certs/ca-certificates.crt";
   keyd = import ../shared/keyd.nix;
   desktop = homeConfig.my.features.desktop.enable;
-  portal = pkgs.xdg-desktop-portal-hyprland;
+  portal = pkgs.unstable.xdg-desktop-portal-hyprland;
 in
 {
   options.my.user = lib.mkOption {

@@ -3,6 +3,9 @@
   programs.hyprland = {
     enable = true;
     withUWSM = true;
+    # Newest release (the stable channel lags a minor version behind)
+    package = pkgs.unstable.hyprland;
+    portalPackage = pkgs.unstable.xdg-desktop-portal-hyprland;
   };
 
   xdg.portal = {

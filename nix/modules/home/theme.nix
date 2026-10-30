@@ -110,7 +110,7 @@ let
       # Explicit, so reloads also work from the activation service's bare PATH.
       ++ lib.optional features.gui.enable config.programs.kitty.package
       ++ lib.optionals features.desktop.enable [
-        pkgs.hyprland
+        pkgs.unstable.hyprland
         config.programs.noctalia.package
       ];
     text = ''
