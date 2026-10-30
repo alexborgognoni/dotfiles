@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Verify the Ubuntu install end to end in the test VM (tests/ubuntu-vm/create.sh,
-# then ./install in it). Run from the host while the VM is logged in to
-# "Hyprland (Nix)" (create.sh sets up auto-login):
+# Verify the Ubuntu install end to end in the test VM. run.sh does everything
+# (create.sh, ./install, auto-login, this script); to run only this, the VM must
+# be logged in to "Hyprland (Nix)":
 #
 #   tests/ubuntu-vm/verify.sh [user@host]      (default: Alex@192.168.123.11)
 #

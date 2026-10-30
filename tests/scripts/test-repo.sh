@@ -38,7 +38,7 @@ for f in scripts/bootstrap-nix.sh scripts/snapshot-system.sh scripts/cleanup-ubu
 done
 
 # --- the scripts people run are executable ----------------------------------
-for f in install scripts/bootstrap-nix.sh scripts/snapshot-system.sh scripts/cleanup-ubuntu.sh tests/scripts/run.sh tests/ubuntu-vm/create.sh tests/ubuntu-vm/verify.sh; do
+for f in install scripts/bootstrap-nix.sh scripts/snapshot-system.sh scripts/cleanup-ubuntu.sh tests/scripts/run.sh tests/ubuntu-vm/create.sh tests/ubuntu-vm/run.sh tests/ubuntu-vm/verify.sh; do
   [ -x "$f" ] && ok || fail "$f is not executable"
 done
 
