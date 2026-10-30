@@ -5,6 +5,17 @@
 #
 #   nh home switch            (or: home-manager switch --flake ~/dotfiles/nix#alex@work-laptop)
 { pkgs, ... }:
+let
+  # Screen scales: the one lever for the size of everything (windows, bar,
+  # text, cursor). Valid values give whole logical pixels: for the laptop
+  # panel (2560x1600) 1.0, 1.25, 1.6 and 2.0; for the 2560x1440 screens 1.0,
+  # 1.25, 2.0. Hyprland rounds anything else (1.5 becomes 1.6).
+  scales = {
+    laptopAlone = 1.25; # the panel as the only screen
+    laptopDocked = 1.0; # the panel next to external screens
+    external = 1.0;
+  };
+in
 {
   home.packages = [ pkgs.unstable.google-chrome ];
 
@@ -128,9 +139,7 @@
             {
               criteria = laptop;
               mode = "2560x1600@165";
-              # Valid scales for this panel (whole logical pixels): 1.0, 1.25,
-              # 1.6, 2.0. Hyprland silently rounds anything else (1.5 -> 1.6).
-              scale = 1.25;
+              scale = scales.laptopAlone;
             }
           ];
         }
@@ -142,12 +151,13 @@
               criteria = lenovo;
               mode = "2560x1440@60";
               position = "0,0";
+              scale = scales.external;
             }
             {
               criteria = laptop;
               mode = "2560x1600@165";
               position = "0,1440";
-              scale = 1.0;
+              scale = scales.laptopDocked;
             }
           ];
         }
@@ -161,17 +171,19 @@
               mode = "1920x1080@60";
               transform = "90";
               position = "0,0";
+              scale = scales.external;
             }
             {
               criteria = rog;
               mode = "2560x1440@165";
               position = "1080,331";
+              scale = scales.external;
             }
             {
               criteria = laptop;
               mode = "2560x1600@165";
               position = "3640,331";
-              scale = 1.0;
+              scale = scales.laptopDocked;
             }
           ];
         }
