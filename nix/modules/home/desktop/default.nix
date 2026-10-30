@@ -1,6 +1,6 @@
 {
   imports = [
-    ./hyprland.nix
+    ./hyprland
     ./noctalia.nix
     ./noctalia-plugins.nix
     ./apps.nix
