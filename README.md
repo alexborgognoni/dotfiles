@@ -45,6 +45,7 @@ nix/               the flake: hosts, homes, modules, themes, secrets   -> nix/RE
 ansible/ubuntu.yml the apt packages Nix cannot provide on Ubuntu
 scripts/           Nix bootstrap, snapshot, optional cleanup           -> scripts/README.md
 tests/ubuntu-vm/   fresh Ubuntu VM: create it, run ./install, verify
+tests/scripts/     tests for the scripts: tests/scripts/run.sh
 docs/              runbook, plan, roadmap
 ```
 

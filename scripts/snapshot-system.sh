@@ -15,12 +15,13 @@
 # Restore a file:  age -d -i ~/.config/sops/age/keys.txt <archive> | zstd -d | tar -x <path>
 set -euo pipefail
 
+# shellcheck source=lib/common.sh
+. "$(dirname "$0")/lib/common.sh"
+
 out="${1:-$HOME/Backups}"
 recipient="$(grep -o 'age1[a-z0-9]*' "$dotfiles/nix/.sops.yaml" | head -1)" # admin key
 stamp="$(date +%Y%m%d-%H%M%S)"
 archive="$out/system-snapshot-$(hostname)-$stamp.tar.zst.age"
-
-. "$(dirname "$0")/lib/common.sh"
 
 [ -n "$recipient" ] || die "no age recipient in nix/.sops.yaml"
 if [ -r /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then

@@ -43,7 +43,28 @@ origin_foreign() {
     /^[^ ].*:$/ { pkg = substr($0, 1, length($0) - 1); installed = 0; next }
     /\*\*\*/ { installed = 1; next }
     installed && /^ +[0-9]+ / {
-      if ($2 !~ /^https?:\/\/[A-Za-z0-9.-]*ubuntu\.com\//) print pkg
+      if ($2 !~ /^https?:\/\/([A-Za-z0-9-]+\.)*ubuntu\.com\//) print pkg
       installed = 0
     }'
+}
+
+# apt_plan <manual> <initial> <declared> <installed>: decides what goes. The
+# arguments are files with one package name per line: installed by hand, in the
+# original installation, declared in ansible/ubuntu.yml, and everything
+# installed. Prints "remove <package>" and "vendor <package>" (kept: installed
+# from outside Ubuntu's archive). Precedence: drop list, protect list, vendor
+# origin, then anything not in the original installation or declared goes.
+apt_plan() {
+  local protect drop candidates foreign dropped
+  protect="$(list_regex protect-packages.list)"
+  drop="$(list_regex drop-packages.list)"
+  candidates="$(sort -u "$1" | comm -23 - <(sort -u "$2") | comm -23 - <(sort -u "$3") | grep -vE "$protect" || true)"
+  # shellcheck disable=SC2086
+  foreign="$(origin_foreign $candidates | sort -u)"
+  dropped="$(grep -E "$drop" "$4" | sort -u || true)"
+  {
+    printf '%s\n' "$candidates" | sed '/^$/d' | sort -u | comm -23 - <(printf '%s\n' "$foreign")
+    printf '%s\n' "$dropped"
+  } | sed '/^$/d' | sort -u | sed 's/^/remove /'
+  printf '%s\n' "$foreign" | sed '/^$/d' | comm -23 - <(printf '%s\n' "$dropped" | sort -u) | sed 's/^/vendor /'
 }

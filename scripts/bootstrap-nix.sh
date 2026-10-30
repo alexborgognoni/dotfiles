@@ -10,6 +10,7 @@ ca=/etc/ssl/certs/ca-certificates.crt
 user="$(id -un)"
 version=2.35.4
 
+# shellcheck source=lib/common.sh
 . "$(dirname "$0")/lib/common.sh"
 
 [ "$(id -u)" -ne 0 ] || die "run as your user, not root"

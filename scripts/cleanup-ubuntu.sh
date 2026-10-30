@@ -21,14 +21,13 @@ for arg in "$@"; do
     --yes) assume_yes=true ;;
   esac
 done
+# shellcheck source=lib/common.sh
 . "$(dirname "$0")/lib/common.sh"
 
 # What stays and what goes is data, in scripts/cleanup.d/*.list (see
 # scripts/README.md); ~/.config/dotfiles/cleanup.d/ adds machine-specific entries.
 # Order of precedence for apt packages: drop list, then protect list, then
 # "installed from outside Ubuntu's archive" (kept), then default: removed.
-protect="$(list_regex protect-packages.list)"
-drop="$(list_regex drop-packages.list)"
 snap_keep="$(list_regex keep-snaps.list)"
 
 if ! ls "$HOME"/Backups/system-snapshot-*.tar.zst.age >/dev/null 2>&1; then
@@ -44,16 +43,15 @@ declared="$(python3 -c "
 import yaml,sys
 play=yaml.safe_load(open('$dotfiles/ansible/ubuntu.yml'))[0]['vars']
 print('\n'.join(play['apt_packages'] + list(play.get('vendor_debs',{}))))" | sort -u)"
-apt_candidates="$(apt-mark showmanual | sort -u \
-  | comm -23 - <(printf '%s\n' "$initial") \
-  | comm -23 - <(printf '%s\n' "$declared") \
-  | grep -vE "$protect" || true)"
-# Vendor packages (corporate agents, Docker, Edge, local .debs) stay unless
-# the drop list names them
-# shellcheck disable=SC2086
-apt_foreign="$(origin_foreign $apt_candidates | sort -u)"
-apt_remove="$(comm -23 <(printf '%s\n' "$apt_candidates" | sed '/^$/d' | sort -u) <(printf '%s\n' "$apt_foreign"))"
-apt_remove="$( { printf '%s\n' "$apt_remove"; dpkg-query -W -f '${Package}\n' | grep -E "$drop" || true; } | sed '/^$/d' | sort -u)"
+plan_dir="$(mktemp -d)"
+apt-mark showmanual > "$plan_dir/manual"
+printf '%s\n' "$initial" > "$plan_dir/initial"
+printf '%s\n' "$declared" > "$plan_dir/declared"
+dpkg-query -W -f '${Package}\n' > "$plan_dir/installed"
+plan="$(apt_plan "$plan_dir/manual" "$plan_dir/initial" "$plan_dir/declared" "$plan_dir/installed")"
+rm -rf "$plan_dir"
+apt_remove="$(awk '$1 == "remove" { print $2 }' <<<"$plan")"
+apt_foreign="$(awk '$1 == "vendor" { print $2 }' <<<"$plan")"
 
 log "apt: packages to remove: installed by hand or dropped tool families ($(printf '%s' "$apt_remove" | grep -c . || true))"
 printf '%s\n' "$apt_remove" | column -c 120 | sed 's/^/    /'
@@ -149,6 +147,7 @@ for d in "$HOME"/.vscode/extensions/*-[0-9]*; do
   [ -L "$HOME/.vscode/extensions/$id" ] && home_remove+=("${d#"$HOME"/}")
 done
 log "home: old tools and leftovers (${#home_remove[@]}; Home Manager's links inside are kept)"
+# shellcheck disable=SC2088 # a label, not a path to expand
 for p in "${home_remove[@]}"; do item "~/$p"; done
 pwa="$(grep -l '/opt/google/chrome/google-chrome' "$HOME"/.local/share/applications/chrome-*.desktop 2>/dev/null || true)"
 log "Chrome web app launchers to point at Nix's Chrome"

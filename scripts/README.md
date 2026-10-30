@@ -44,3 +44,17 @@ repository, create the same file name under
 Assumptions: Ubuntu with apt and systemd, `/var/log/installer/initial-status.gz`
 present (the script stops if it is not), a snapshot in `~/Backups` before
 `--apply`. Always read the dry run first.
+
+## Tests
+
+```sh
+tests/scripts/run.sh            # all
+tests/scripts/run.sh apt-plan   # files matching a pattern
+```
+
+Hermetic (a stubbed `apt-cache`, temporary lists), except
+`test-cleanup-smoke.sh`, which runs the real dry run (read-only) and skips
+itself where it cannot. They cover the list parsing, the apt decision and the
+vendor-origin check, the shipped lists (nothing dangerous, no clash with
+`ansible/ubuntu.yml`), and the repository (shellcheck, Markdown links, no
+references to removed files). Run them after editing a list.
