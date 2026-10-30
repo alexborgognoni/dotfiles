@@ -83,11 +83,20 @@ fi
 log "4/6 apt packages, groups, login shell"
 sudo "$dir/scripts/apt-layer.sh"
 
+# Behind a TLS-inspecting proxy a download can be cut off, and a failed fetch is
+# final (git does not retry): both steps are idempotent, so try once more
+retry() {
+  "$@" || {
+    printf '\033[1;33mwarning:\033[0m failed (a dropped download?); trying once more\n' >&2
+    "$@"
+  }
+}
+
 log "5/6 System configuration (system-manager)"
-nixcmd run "$dir/nix#system-manager" -- switch --flake "$dir/nix#$machine" --sudo
+retry nixcmd run "$dir/nix#system-manager" -- switch --flake "$dir/nix#$machine" --sudo
 
 log "6/6 User configuration (Home Manager)"
-nixcmd run "$dir/nix#home-manager" -- switch --flake "$dir/nix#$home_config" -b hm-backup
+retry nixcmd run "$dir/nix#home-manager" -- switch --flake "$dir/nix#$home_config" -b hm-backup
 
 log "Done"
 cat <<EOF

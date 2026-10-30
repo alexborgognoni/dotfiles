@@ -71,7 +71,7 @@ scp "${ssh_opts[@]}" "$keyfile" "$target:.config/sops/age/keys.txt" >/dev/null |
 vm 'chmod 600 ~/.config/sops/age/keys.txt'
 
 phase "4/6 ./install in the VM (branch $branch)"
-vm "rm -f ~/install.exit ~/install.log; setsid nohup bash -c 'curl -fsSL https://raw.githubusercontent.com/alexborgognoni/dotfiles/$branch/install | DOTFILES_BRANCH=$branch bash; echo \$? > ~/install.exit' > ~/install.log 2>&1 < /dev/null &" || die "starting install"
+vm "rm -f ~/install.exit ~/install.log; setsid nohup bash -c 'curl -fsSL https://raw.githubusercontent.com/alexborgognoni/dotfiles/$branch/install?cb=$(date +%s) | DOTFILES_BRANCH=$branch bash; echo \$? > ~/install.exit' > ~/install.log 2>&1 < /dev/null &" || die "starting install"
 shown=0
 waited=0
 until vm 'test -f ~/install.exit' 2>/dev/null; do
