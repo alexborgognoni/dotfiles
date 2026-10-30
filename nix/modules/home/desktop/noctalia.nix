@@ -243,6 +243,7 @@ in
                 [ "tray" ]
                 ++ lib.optional (has "pomodoro") "pomodoro"
                 ++ [ "clipboard" ]
+                ++ lib.optional (has "hyprland-settings") "hypr-settings"
                 ++ lib.optional config.my.desktop.airpods.enable "airpods";
             }
             {

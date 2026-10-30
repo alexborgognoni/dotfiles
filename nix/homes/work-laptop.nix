@@ -59,6 +59,7 @@
         "keybind-cheatsheet"
         "nvtop"
         "pomodoro"
+        "hyprland-settings"
       ];
 
       # Chrome for now; Firefox later (one line)

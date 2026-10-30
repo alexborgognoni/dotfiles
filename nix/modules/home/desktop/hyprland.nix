@@ -729,6 +729,13 @@ in
           if not ok then
             hl.exec_cmd("notify-send -a Hyprland 'Theme pack failed to load' " .. string.format("%q", tostring(err)))
           end
+        ''
+        + lib.optionalString (lib.elem "hyprland-settings" plugins) ''
+          -- Written by the Noctalia "Hyprland Settings" panel (display tweaks,
+          -- input, look): loaded last, so a kept change wins over the settings
+          -- above until kanshi re-applies a profile (login, plug, unplug). The
+          -- file is created by the panel; no file, no error.
+          pcall(require, "hyprland-settings")
         '';
     };
   };

@@ -140,6 +140,28 @@ let
       widget.pomodoro.type = "thepunkoff/pomodoro:widget";
     };
 
+    # Displays (resolution, refresh rate, scale, rotation, order), input and
+    # look, with a 15 s keep-or-revert. Needs Hyprland 0.56+ and the Lua it is
+    # built against; v1.0.0 is the newest release plugin API 32 (Noctalia 5.4)
+    # can load. Its changes go to ~/.config/hypr/hyprland-settings.lua, which
+    # hyprland.nix loads last.
+    hyprland-settings = {
+      src = fetch {
+        repo = "community-plugins";
+        rev = "5e72a6e85b64137cf620f0946160a186f4e67761";
+        dir = "hyprland-settings";
+        hash = "sha256-Ig9dMIqJlav2Ooef0ljbitWfXZYaalSFjEsiov0PABI=";
+      };
+      id = "michael-retunzew/hyprland-settings";
+      panels = [ "panel" ];
+      packages = [ pkgs.unstable.lua5_5 ];
+      settings = {
+        panel_position = "center";
+        panel_open_near_click = false;
+      };
+      widget.hypr-settings.type = "michael-retunzew/hyprland-settings:button";
+    };
+
     nvtop = {
       src = fetch {
         repo = "community-plugins";
