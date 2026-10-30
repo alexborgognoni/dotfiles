@@ -4,7 +4,8 @@
 #   Chrome   the host is registered here; the extension comes from the Chrome
 #            Web Store (it updates itself, and needs a matching host)
 #   Firefox  the host is made known to the Nix Firefox, and the signed extension
-#            of the same release is force-installed, both declaratively
+#   and Zen  of the same release is force-installed, both declaratively
+#            (Zen is a Firefox fork: the same host and extension)
 # After the first start: click the extension's icon and allow "Access your data
 # for login.microsoftonline.com" (Firefox asks the user for host permissions).
 # On Firefox SSO is per container: on in the default container only.
@@ -23,6 +24,11 @@ in
       "${entraSso}/share/linux-entra-sso/chrome/linux_entra_sso.json";
 
     programs.firefox = {
+      nativeMessagingHosts = [ entraSso ];
+      profiles.default.extensions.packages = [ entraSso.firefoxExtension ];
+    };
+
+    programs.zen-browser = {
       nativeMessagingHosts = [ entraSso ];
       profiles.default.extensions.packages = [ entraSso.firefoxExtension ];
     };

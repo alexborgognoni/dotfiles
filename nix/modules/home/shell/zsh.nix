@@ -73,6 +73,7 @@
       c = "clear";
       k = "kubecolor";
       ls = "eza --icons=always";
+      neofetch = "fastfetch"; # neofetch is abandoned upstream; fastfetch is its successor
       nv = "nvim";
       python = "python3";
       tf = "terraform";

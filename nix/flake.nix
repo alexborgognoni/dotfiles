@@ -42,6 +42,14 @@
       flake = false;
     };
 
+    # Zen Browser (a Firefox fork, not in nixpkgs): the release binaries wrapped
+    # for Nix, and a Home Manager module like programs.firefox.
+    zen-browser = {
+      url = "github:0xc000022070/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.home-manager.follows = "home-manager";
+    };
+
     # Only the Home Manager module is used; the package comes from nixpkgs.
     noctalia = {
       url = "github:noctalia-dev/noctalia";

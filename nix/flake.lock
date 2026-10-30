@@ -369,7 +369,8 @@
         "nur": "nur",
         "sops-nix": "sops-nix",
         "stylix": "stylix",
-        "system-manager": "system-manager"
+        "system-manager": "system-manager",
+        "zen-browser": "zen-browser"
       }
     },
     "sops-nix": {
@@ -571,6 +572,29 @@
         "owner": "jfroche",
         "ref": "system-manager",
         "repo": "userborn",
+        "type": "github"
+      }
+    },
+    "zen-browser": {
+      "inputs": {
+        "home-manager": [
+          "home-manager"
+        ],
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1793309674,
+        "narHash": "sha256-d1Tvbgn//HQ3f1PDh/iIMEpvuUu9Lc4lJqiwGl18cY8=",
+        "owner": "0xc000022070",
+        "repo": "zen-browser-flake",
+        "rev": "2656d974602749ca5594b133e3022a241ab5d4e0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "0xc000022070",
+        "repo": "zen-browser-flake",
         "type": "github"
       }
     }
