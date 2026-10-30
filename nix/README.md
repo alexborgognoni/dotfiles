@@ -208,7 +208,7 @@ personal machine never gets it and a coworker can swap it for their own:
 
 | Layer | Module | Switched on by | Contents |
 |---|---|---|---|
-| user (Home Manager) | `modules/home/corporate/` | `my.corporate.enable`, default: `my.profile == "work"` | Zscaler tray (unit, launcher, `zsa://` links), Entra ID SSO for Chrome, the work identity (git email, GPG/SSH keys, GitHub Enterprise: `my.identity.work`), pip through Artifactory, `fix-zscaler`/`net-diag`/`net-rescue`, Claude Code against the company's Vertex AI and Copilot |
+| user (Home Manager) | `modules/home/corporate/` | `my.corporate.enable`, default: `my.profile == "work"` | Zscaler tray (unit, launcher, `zsa://` links), Entra ID SSO for Chrome and Firefox, the work identity (git email, GPG/SSH keys, GitHub Enterprise: `my.identity.work`), pip through Artifactory, `fix-zscaler`/`net-diag`/`net-rescue`, Claude Code against the company's Vertex AI and Copilot |
 | root (system-manager) | `modules/system-manager/corporate.nix` | `my.corporate.enable = true` in `systems/<machine>.nix` | corporate root CA for the Nix daemon and for Chrome, Alt+hjkl as arrow keys (keyd) |
 | NixOS | `modules/nixos/core/corporate-ca.nix` | `my.corporateCA = [ ./root.crt ]` | extra root CAs, also in the build sandbox |
 

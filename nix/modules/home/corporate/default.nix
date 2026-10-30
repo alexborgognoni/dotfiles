@@ -2,7 +2,7 @@
 # the profile; the root-level counterpart is modules/system-manager/corporate.nix.
 #
 #   zscaler.nix         Zscaler Client Connector tray: unit, launcher, sign-in links
-#   entra-sso.nix       Entra ID single sign-on in Chrome
+#   entra-sso.nix       Entra ID single sign-on in Chrome and Firefox
 #   artifactory.nix     pip through the company's Artifactory mirror
 #   ca-env.nix          Python and Node trust the corporate root CAs
 #   network-rescue.nix  fix-zscaler, net-diag, net-rescue (scripts/)

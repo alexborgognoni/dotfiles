@@ -189,6 +189,15 @@ warning says how), then run both switches.
 - **Chrome** (Nix) trusts the corporate CA through the `chrome-corporate-cas`
   system service and signs in through the packaged Entra SSO helper
   (`nix/packages/linux-entra-sso`), also for the Claude Code native host.
+- **Entra SSO in Firefox** (Nix) works the same way: the host is made known to
+  Firefox and the signed extension of the same release is installed with the
+  profile (`modules/home/corporate/entra-sso.nix`). Host and extension must be
+  the same version (the Chrome extension updates itself from the Web Store, so
+  bump the package when it moves; update steps are in the package's header).
+  Once, in Firefox: click the extension's icon and allow "Access your data for
+  login.microsoftonline.com". SSO is per container, on in the default one.
+  Test: `linux-entra-sso --interactive getAccounts` from the package prints the
+  broker's accounts (Intune must be signed in).
 
 ## Sound: back to PulseAudio
 
