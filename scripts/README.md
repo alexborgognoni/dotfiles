@@ -57,4 +57,6 @@ Hermetic (a stubbed `apt-cache`, temporary lists), except
 itself where it cannot. They cover the list parsing, the apt decision and the
 vendor-origin check, the shipped lists (nothing dangerous, no clash with
 `ansible/ubuntu.yml`), the repository (Markdown links, no references to
-removed files) and the formatters and linters (`test-lint.sh`, needs Nix). Run them after editing a list.
+removed files), secrets hygiene (`test-secrets.sh`: sops files encrypted, the right
+recipients, no keys in git) and the formatters and linters (`test-lint.sh`, needs
+Nix). Run them after editing a list.

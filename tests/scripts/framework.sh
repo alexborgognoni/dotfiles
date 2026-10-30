@@ -16,9 +16,9 @@ fail() {
 # assert_eq <actual> <expected> <what>
 assert_eq() { if [ "$1" = "$2" ]; then ok; else fail "$3: expected [$2], got [$1]"; fi; }
 # assert_match <text> <ERE> <what>
-assert_match() { if printf '%s' "$1" | grep -qE "$2"; then ok; else fail "$3: [$1] does not match $2"; fi; }
+assert_match() { if printf '%s' "$1" | grep -qE -e "$2"; then ok; else fail "$3: [$1] does not match $2"; fi; }
 # assert_nomatch <text> <ERE> <what>
-assert_nomatch() { if printf '%s' "$1" | grep -qE "$2"; then fail "$3: [$1] matches $2"; else ok; fi; }
+assert_nomatch() { if printf '%s' "$1" | grep -qE -e "$2"; then fail "$3: [$1] matches $2"; else ok; fi; }
 
 # a throw-away directory, removed when the test ends
 # shellcheck disable=SC2034 # used by the test files

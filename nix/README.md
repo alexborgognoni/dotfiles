@@ -117,9 +117,15 @@ mkpasswd -m yescrypt      # hash for <user>-password
   and without the machines' host keys, the secrets are gone.
 - Identity keys: `personal.yaml` (every machine) and `work.yaml` (only the
   work laptop, i.e. the admin key) hold the SSH and GPG private keys. NixOS
-  decrypts them at boot, standalone Home Manager at activation; they end up as
+  decrypts the personal ones at boot, standalone Home Manager at activation
+  (the work ones too, through the corporate module); they end up as
   `~/.ssh/id_ed25519*` (owner-only) and in the GPG keyring, and commits are
-  signed with the profile's key.
+  signed with the profile's key. Which secret belongs where is one table,
+  `modules/shared/identity-secrets.nix`: a new one is a row there and a value
+  in its sops file.
+- `tests/scripts/run.sh secrets` checks that every sops file is encrypted, that
+  only keys declared in `.sops.yaml` can decrypt them (the work file: the admin
+  key only), and that no private key or token is in git.
 - With `my.secrets.enable`, users are declarative (`mutableUsers = false`):
   the login password is the `<user>-password` secret; `passwd` has no effect.
 - New machine: `ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub`, add the key

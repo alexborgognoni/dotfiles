@@ -15,11 +15,16 @@
 let
   cfg = config.my.secrets;
   user = config.my.user.name;
-  isWork = config.my.profile == "work";
-  identitySecret = sopsFile: {
-    inherit sopsFile;
-    owner = user;
-    mode = "0400";
+
+  # SSH and GPG keys, readable only by the user. The work keys exist only on
+  # the corporate laptop (standalone Home Manager), not here.
+  identity = (import ../../shared/identity-secrets.nix { inherit lib; }).forGroup {
+    inherit config;
+    group = "personal";
+    extra = {
+      owner = user;
+      mode = "0400";
+    };
   };
 in
 {
@@ -49,25 +54,12 @@ in
         age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
         secrets = {
           "${user}-password".neededForUsers = true;
-
-          # Identity keys, readable only by the user (see modules/home/identity/)
-          ssh-personal = identitySecret ../../../secrets/personal.yaml;
-          gpg-personal = identitySecret ../../../secrets/personal.yaml;
         }
-        // lib.optionalAttrs isWork {
-          ssh-work = identitySecret ../../../secrets/work.yaml;
-          gpg-work = identitySecret ../../../secrets/work.yaml;
-        };
+        // identity.secrets;
       };
 
-      home-manager.users.${user}.my.identity.files = {
-        sshPersonal = config.sops.secrets.ssh-personal.path;
-        gpgPersonal = config.sops.secrets.gpg-personal.path;
-      }
-      // lib.optionalAttrs isWork {
-        sshWork = config.sops.secrets.ssh-work.path;
-        gpgWork = config.sops.secrets.gpg-work.path;
-      };
+      # (modules/home/identity/ puts them in ~/.ssh and the GPG keyring)
+      home-manager.users.${user}.my.identity.files = identity.files;
 
       users.mutableUsers = false;
       users.users.${user}.hashedPasswordFile = config.sops.secrets."${user}-password".path;

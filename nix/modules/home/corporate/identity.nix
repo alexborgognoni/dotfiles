@@ -3,18 +3,18 @@
 # for ~/personal and ~/dotfiles. The private keys are the sops secrets
 # `work.yaml`.
 { config, lib, ... }:
+let
+  work = (import ../../shared/identity-secrets.nix { inherit lib; }).forGroup {
+    inherit config;
+    group = "work";
+  };
+in
 {
   config = lib.mkIf config.my.corporate.enable {
     # The work keys, decrypted like the personal ones (standalone: sops-nix of
     # Home Manager; on NixOS the secrets module hands them over)
-    sops.secrets = lib.mkIf config.my.standalone {
-      ssh-work.sopsFile = ../../../secrets/work.yaml;
-      gpg-work.sopsFile = ../../../secrets/work.yaml;
-    };
-    my.identity.files = lib.mkIf config.my.standalone {
-      sshWork = config.sops.secrets.ssh-work.path;
-      gpgWork = config.sops.secrets.gpg-work.path;
-    };
+    sops.secrets = lib.mkIf config.my.standalone work.secrets;
+    my.identity.files = lib.mkIf config.my.standalone work.files;
 
     my.identity.work = {
       email = "alex.borgognoni@deutsche-boerse.com";

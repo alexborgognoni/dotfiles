@@ -12,6 +12,7 @@
 #   gpg.nix   gpg agent, import of the secret keys
 { lib, ... }:
 let
+  secrets = import ../../shared/identity-secrets.nix { inherit lib; };
   identityOptions = {
     email = lib.mkOption { type = lib.types.str; };
     gpgKey = lib.mkOption {
@@ -65,7 +66,7 @@ in
       '';
     };
 
-    files = lib.genAttrs [ "sshPersonal" "sshWork" "gpgPersonal" "gpgWork" ] (
+    files = lib.genAttrs secrets.slots (
       name:
       lib.mkOption {
         type = lib.types.nullOr lib.types.str;

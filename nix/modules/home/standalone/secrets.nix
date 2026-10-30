@@ -6,16 +6,19 @@
   lib,
   ...
 }:
+let
+  personal = (import ../../shared/identity-secrets.nix { inherit lib; }).forGroup {
+    inherit config;
+    group = "personal";
+  };
+in
 {
   imports = [ inputs.sops-nix.homeManagerModules.sops ];
 
   config = lib.mkIf config.my.standalone {
     sops = {
       age.keyFile = "${config.xdg.configHome}/sops/age/keys.txt";
-      secrets = {
-        ssh-personal.sopsFile = ../../../secrets/personal.yaml;
-        gpg-personal.sopsFile = ../../../secrets/personal.yaml;
-      };
+      inherit (personal) secrets;
     };
 
     # sops-nix decrypts through a systemd user service. Without a running
@@ -29,9 +32,6 @@
       fi
     '';
 
-    my.identity.files = {
-      sshPersonal = config.sops.secrets.ssh-personal.path;
-      gpgPersonal = config.sops.secrets.gpg-personal.path;
-    };
+    my.identity.files = personal.files;
   };
 }
