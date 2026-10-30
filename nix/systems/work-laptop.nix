@@ -1,5 +1,5 @@
 # Ubuntu work laptop: root-level configuration (system-manager). The user
-# level is homes/work-laptop.nix; apt packages are ansible/ubuntu.yml.
+# level is homes/work-laptop.nix; apt packages are apt/ (scripts/apt-layer.sh).
 {
   my.user = "Alex";
   my.corporate.enable = true;

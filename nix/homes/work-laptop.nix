@@ -1,6 +1,6 @@
 # Ubuntu 22.04 work laptop (Intel + NVIDIA RTX A2000, PRIME on-demand),
 # standalone Home Manager. Ubuntu keeps the OS, GNOME, drivers, corporate
-# software and system services (see ../../ansible/ubuntu.yml); Nix provides
+# software and system services (see ../../apt/); Nix provides
 # everything user-level, including the Hyprland session.
 #
 #   nh home switch            (or: home-manager switch --flake ~/dotfiles/nix#alex@work-laptop)

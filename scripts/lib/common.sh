@@ -18,13 +18,26 @@ die() {
 # A list of the same name in ~/.config/dotfiles/cleanup.d/ is added to it, so
 # one machine (or one coworker) can extend them without touching the repo.
 
-# list_entries <name>: the entries of both files
-list_entries() {
+# normalize: stdin without comments, blank lines and surrounding whitespace
+normalize() { sed -E 's/[[:space:]]*#.*$//; s/^[[:space:]]+//; s/[[:space:]]+$//; /^$/d'; }
+
+# entries_of <file>...: the normalized lines of the readable ones
+entries_of() {
   local f
-  for f in "$dotfiles/scripts/cleanup.d/$1" "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/cleanup.d/$1"; do
-    [ -r "$f" ] && sed -E 's/[[:space:]]*#.*$//; s/^[[:space:]]+//; s/[[:space:]]+$//; /^$/d' "$f"
+  for f in "$@"; do
+    [ -r "$f" ] && normalize <"$f"
   done
   return 0
+}
+
+# list_entries <name>: the entries of both files
+list_entries() {
+  entries_of "$dotfiles/scripts/cleanup.d/$1" "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/cleanup.d/$1"
+}
+
+# apt_entries <name>: the same for the apt lists in apt/ (apt-layer.sh)
+apt_entries() {
+  entries_of "$dotfiles/apt/$1" "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/apt/$1"
 }
 
 # list_regex <name>: ERE matching a whole name; "*" is a wildcard, "[0-9]"
@@ -53,7 +66,7 @@ origin_foreign() {
 
 # apt_plan <manual> <initial> <declared> <installed>: decides what goes. The
 # arguments are files with one package name per line: installed by hand, in the
-# original installation, declared in ansible/ubuntu.yml, and everything
+# original installation, declared in apt/ (packages.list, vendor-debs.list), and everything
 # installed. Prints "remove <package>" and "vendor <package>" (kept: installed
 # from outside Ubuntu's archive). Precedence: drop list, protect list, vendor
 # origin, then anything not in the original installation or declared goes.

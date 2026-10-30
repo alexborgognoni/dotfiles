@@ -30,20 +30,15 @@ for p in postgresql-14 vim google-chrome-stable; do
   assert_nomatch "$p" "$protect" "not protected by name: $p"
 done
 
-# the drop list and the apt packages Ansible declares do not contradict
-if python3 -c "import yaml" 2>/dev/null; then
-  declared="$(python3 -c "
-import yaml
-v = yaml.safe_load(open('$repo/ansible/ubuntu.yml'))[0]['vars']
-print('\n'.join(v['apt_packages'] + list(v.get('vendor_debs', {}))))")"
-  drop="$(list_regex drop-packages.list)"
-  clash="$(printf '%s\n' "$declared" | grep -E "$drop" | paste -sd, || true)"
-  assert_eq "$clash" "" "no package declared in ansible/ubuntu.yml is in the drop list"
-  # ...and the declared packages are not the ones the protect list would hide twice
-  assert_match "$(printf '%s\n' "$declared" | wc -l | tr -d ' ')" '^[1-9]' "ansible/ubuntu.yml declares packages"
-else
-  echo "  skip: python3 yaml not available (ansible/ubuntu.yml consistency)"
-fi
+# the drop list and the apt packages apt/ declares do not contradict
+declared="$({
+  apt_entries packages.list
+  apt_entries vendor-debs.list | awk '{ print $1 }'
+})"
+drop="$(list_regex drop-packages.list)"
+clash="$(printf '%s\n' "$declared" | grep -E "$drop" | paste -sd, || true)"
+assert_eq "$clash" "" "no package declared in apt/ is in the drop list"
+assert_match "$(printf '%s\n' "$declared" | wc -l | tr -d ' ')" '^[1-9]' "apt/ declares packages"
 
 # snaps
 snaps="$(list_regex keep-snaps.list)"

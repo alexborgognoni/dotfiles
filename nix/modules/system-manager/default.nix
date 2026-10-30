@@ -1,7 +1,7 @@
 # Ubuntu system layer with system-manager (NixOS-style /etc files, systemd
 # units and tmpfiles on a non-NixOS distribution). Everything here is root
 # level; the user level is Home Manager (modules/home, homes/<machine>.nix).
-# apt packages, groups and the login shell stay with ansible/ubuntu.yml.
+# apt packages, groups and the login shell stay with scripts/apt-layer.sh.
 #
 #   sudo system-manager switch --flake ~/dotfiles/nix#<machine>
 #   (or: nix run ~/dotfiles/nix#system-manager -- switch --flake ... --sudo)
@@ -31,7 +31,7 @@
   config = {
     nixpkgs.hostPlatform = "x86_64-linux";
 
-    # Users and groups belong to Ubuntu (and ansible/ubuntu.yml): never let
+    # Users and groups belong to Ubuntu (and scripts/apt-layer.sh): never let
     # system-manager write /etc/passwd or /etc/group.
     services.userborn.enable = false;
   };

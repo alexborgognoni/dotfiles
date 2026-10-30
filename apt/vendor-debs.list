@@ -1,0 +1,4 @@
+# Vendor packages installed from a .deb when missing: <package> <url>.
+# The corporate browser (Intune/Entra sign-in) maintains its own apt repository
+# after installing.
+microsoft-edge-stable https://go.microsoft.com/fwlink?linkid=2149051&brand=M102

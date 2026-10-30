@@ -38,7 +38,8 @@ check() {
 
 section() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 
-section "System layer (Ansible, system-manager)"
+section "System layer (apt layer, system-manager)"
+check "apt layer is up to date (apt-layer.sh --check)" '$HOME/dotfiles/scripts/apt-layer.sh --check >/dev/null'
 check "zsh is the login shell" '[ "$(getent passwd $(id -un) | cut -d: -f7)" = /usr/bin/zsh ]'
 check "docker group, docker running" 'id -nG | grep -qw docker && systemctl is-active -q docker'
 check "Chrome and Edge installed (apt)" 'command -v google-chrome && command -v microsoft-edge'

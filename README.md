@@ -5,8 +5,8 @@ no per-tool installers):
 
 - **Ubuntu work laptop**: Ubuntu keeps the OS, drivers and corporate software;
   Nix (Home Manager + [system-manager](https://github.com/numtide/system-manager))
-  owns everything else, including a Hyprland session next to GNOME. A slim
-  Ansible playbook installs the few apt packages Nix cannot provide.
+  owns everything else, including a Hyprland session next to GNOME. A short
+  script and two plain lists install the few apt packages Nix cannot provide.
 - **NixOS** (a VM, later a home PC): the same user-level modules.
 
 The desktop is Hyprland with the Noctalia shell and a live theme engine
@@ -42,7 +42,7 @@ nh home switch --update                              # update everything (flake.
 ```
 install            Ubuntu entry point (all layers)
 nix/               the flake: hosts, homes, modules, themes, secrets   -> nix/README.md
-ansible/ubuntu.yml the apt packages Nix cannot provide on Ubuntu
+apt/               the apt packages Nix cannot provide on Ubuntu (plain lists)
 scripts/           Nix bootstrap, snapshot, optional cleanup           -> scripts/README.md
 tests/ubuntu-vm/   fresh Ubuntu VM: create it, run ./install, verify
 tests/scripts/     tests for the scripts: tests/scripts/run.sh

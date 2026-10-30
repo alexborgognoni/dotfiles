@@ -8,7 +8,7 @@ Who owns what:
 
 | Layer | Tool | Where |
 |---|---|---|
-| only what Nix can't provide here: Docker, libvirt/QEMU/OVMF, the zsh binary, Zscaler's Qt 6 libraries (and their Wayland plugin), Edge (corporate); groups, login shell | Ansible (slim, run from a Nix-built copy) | `ansible/ubuntu.yml` |
+| only what Nix can't provide here: Docker, libvirt/QEMU/OVMF, the zsh binary, Zscaler's Qt 6 libraries (and their Wayland plugin), Edge (corporate); groups, login shell | a short script with plain lists | `scripts/apt-layer.sh`, `apt/` |
 | `/etc` and system services: Nix daemon, keyd, GPU drivers for Nix apps, GDM Wayland + "Hyprland (Nix)" session, portal, lock screen, Bluetooth/IPv4/inotify/uinput tweaks | system-manager | `nix/systems/work-laptop.nix`, `nix/modules/system-manager` |
 | everything else: shell, tools, apps (Chrome, VS Code, ...), Neovim (AstroNvim), PipeWire, identities, GNOME basics (clock, input sources, touchpad), Hyprland + Noctalia, session apps, monitor layouts and scales, themes | Home Manager | `nix/homes/work-laptop.nix`, `nix/modules/home` |
 
@@ -43,8 +43,9 @@ DOTFILES_BRANCH=nixos ~/dotfiles/install
 1. updates `~/dotfiles`
 2. sops admin key (existing file, `$SOPS_AGE_KEY`, Bitwarden, or pasted)
 3. Nix with the official installer, set up for a corporate TLS proxy (`scripts/bootstrap-nix.sh`)
-4. `ansible/ubuntu.yml`: Docker, libvirt/QEMU/OVMF, zsh, Zscaler's Qt 6
-   libraries, Edge; docker/libvirt groups; zsh as login shell
+4. `scripts/apt-layer.sh` (lists in `apt/`): Docker, libvirt/QEMU/OVMF, zsh,
+   Zscaler's Qt 6 libraries, Edge; docker/libvirt groups; zsh as login shell.
+   `scripts/apt-layer.sh --check` shows what is pending without root
 5. system-manager: takes over `/etc/nix/nix.conf` (the installer's file is
    kept as a backup), keyd, `/run/opengl-driver`, the "Hyprland (Nix)" login
    session, portal and lock-screen helper
@@ -81,7 +82,7 @@ Then log out and back in.
 ```
 
 Removes what is installed outside Nix and not part of the original Ubuntu
-installation, `ansible/ubuntu.yml` or the protect list: apt packages installed
+installation, `apt/` or the protect list: apt packages installed
 by hand (CLI tools, apps, build libraries, databases, VirtualBox) and their
 now unused dependencies and repositories, snaps, Flatpaks, pip/npm/cargo/mise
 installs in your home, hand installs in `/usr/local` and `/opt`. Packages from
@@ -200,7 +201,7 @@ PipeWire is the default; PulseAudio stays installed. To switch back, set
 - Monitor layouts (kanshi): laptop alone, home (Lenovo above), desk (MSI
   rotated left, ROG, laptop); the MSI rotation direction may need flipping.
 - Zscaler: the tray is a Qt 6 WebEngine app linked against the system Qt
-  (`ansible/ubuntu.yml`: the `libqt6*` packages, which autoremove once took
+  (`apt/packages.list`: the `libqt6*` packages, which autoremove once took
   away; `qt6-wayland` makes its window native Wayland instead of a blurry
   XWayland one). Zscaler's own menu entry took itself for an already running
   tray and aborted; "Zscaler Client Connector" from
@@ -221,5 +222,5 @@ sudo system-manager deactivate                 # system level (restores nix.conf
 ```
 
 Nix stays installed (uninstall: `sudo /nix/nix-installer uninstall`). apt
-packages added by Ansible stay; the login shell goes back with
+packages added by `apt-layer.sh` stay; the login shell goes back with
 `chsh -s /bin/bash`. The snapshot in `~/Backups` has the old files.

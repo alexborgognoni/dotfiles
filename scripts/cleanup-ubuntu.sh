@@ -2,7 +2,7 @@
 # After the migration: remove everything installed outside Nix that Nix now
 # provides, so the machine is "fresh Ubuntu + Nix". What stays is declared:
 #   - packages of the original Ubuntu installation (/var/log/installer)
-#   - ansible/ubuntu.yml (root daemons and the login shell)
+#   - apt/ (packages.list, vendor-debs.list: root daemons and the login shell)
 #   - scripts/cleanup.d/protect-packages.list (corporate software, drivers,
 #     system parts), and anything installed from outside Ubuntu's archive
 # Everything removed is in the snapshot (scripts/snapshot-system.sh), which
@@ -39,10 +39,10 @@ fi
 [ -s /var/log/installer/initial-status.gz ] ||
   die "no /var/log/installer/initial-status.gz: cannot tell which packages came with Ubuntu"
 initial="$(zcat /var/log/installer/initial-status.gz | awk '/^Package:/{print $2}' | sort -u)"
-declared="$(python3 -c "
-import yaml,sys
-play=yaml.safe_load(open('$dotfiles/ansible/ubuntu.yml'))[0]['vars']
-print('\n'.join(play['apt_packages'] + list(play.get('vendor_debs',{}))))" | sort -u)"
+declared="$({
+  apt_entries packages.list
+  apt_entries vendor-debs.list | awk '{ print $1 }'
+} | sort -u)"
 plan_dir="$(mktemp -d)"
 apt-mark showmanual >"$plan_dir/manual"
 printf '%s\n' "$initial" >"$plan_dir/initial"

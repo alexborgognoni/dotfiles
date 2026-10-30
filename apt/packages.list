@@ -1,0 +1,43 @@
+# apt packages of an Ubuntu machine: only what Nix cannot provide there (root
+# daemons tied to the distribution, the login shell). Everything else is Nix.
+# One name per line, "#" comments. scripts/apt-layer.sh installs them;
+# ~/.config/dotfiles/apt/packages.list adds machine-specific ones.
+# Corporate and OS packages are never touched.
+
+# Login shell (its configuration comes from Home Manager)
+zsh
+
+# Container engine (root daemon; the repository is apt/repos/docker.list)
+docker-ce
+docker-ce-cli
+containerd.io
+docker-buildx-plugin
+docker-compose-plugin
+
+# VM host: libvirt daemon with Ubuntu's QEMU/OVMF (AppArmor profiles expect
+# these); virt-manager, virt-install etc. come from Nix
+libvirt-daemon-system
+qemu-system-x86
+ovmf
+
+# Zscaler's tray links against the system Qt 6 (WebEngine included) but is not
+# an apt package, so autoremove does not see the dependency
+libqt6core6
+libqt6gui6
+libqt6widgets6
+libqt6network6
+libqt6sql6
+libqt6sql6-sqlite
+libqt6dbus6
+libqt6webenginecore6
+libqt6webenginecore6-bin
+libqt6webenginewidgets6
+libqt6webengine6-data
+libqt6opengl6
+libqt6positioning6
+libqt6printsupport6
+libqt6webchannel6
+qt6-qpa-plugins
+# Qt's Wayland platform: without it the tray's window runs through XWayland and
+# is upscaled (blurry) at a fractional scale
+qt6-wayland

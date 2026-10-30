@@ -30,7 +30,7 @@ vendors() { awk '$1 == "vendor" { print $2 }' <<<"$1" | paste -sd,; }
 names old-tool declared-tool base-pkg nvidia-driver-595-open acme-tool acme-agent postgresql-14 \
   cuda-toolkit-12 microsoft-edge-stable docker-ce some-ppa-tool local-deb >"$tmp/manual"
 names base-pkg >"$tmp/initial"                 # came with Ubuntu
-names declared-tool docker-ce >"$tmp/declared" # ansible/ubuntu.yml
+names declared-tool docker-ce >"$tmp/declared" # apt/packages.list
 # everything installed, including parts that came in as dependencies
 {
   cat "$tmp/manual"

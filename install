@@ -11,7 +11,7 @@
 #   2. the sops admin key                            (~/.config/sops/age/keys.txt)
 #   3. Nix                                           (scripts/bootstrap-nix.sh)
 #      + snapshot of the current system, once         (scripts/snapshot-system.sh)
-#   4. apt packages, groups, login shell             (ansible/ubuntu.yml)
+#   4. apt packages, groups, login shell             (scripts/apt-layer.sh, data in apt/)
 #   5. root-level config: Nix, keyd, GPU, session    (system-manager: nix/systems/<machine>.nix)
 #   6. user-level config and tools                   (Home Manager: nix/homes/<machine>.nix;
 #                                                     files in the way are kept as *.hm-backup)
@@ -23,7 +23,6 @@ dir="${DOTFILES_DIR:-$HOME/dotfiles}"
 machine="${1:-${DOTFILES_MACHINE:-work-laptop}}"
 home_config="$(id -un | tr '[:upper:]' '[:lower:]')@$machine"
 keyfile="$HOME/.config/sops/age/keys.txt"
-state="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
 
 log() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 die() {
@@ -81,12 +80,8 @@ if ! ls "$HOME"/Backups/system-snapshot-*.tar.zst.age >/dev/null 2>&1; then
   "$dir/scripts/snapshot-system.sh"
 fi
 
-log "4/6 apt packages (Ansible)"
-mkdir -p "$state"
-nixcmd build -o "$state/ansible" "$dir/nix#ansible"
-# Nix programs use neither Ubuntu's locales (C.UTF-8 is built in) nor its
-# CA bundle (corporate root CA)
-sudo LC_ALL=C.UTF-8 LANG=C.UTF-8 SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt "$state/ansible/bin/ansible-playbook" "$dir/ansible/ubuntu.yml"
+log "4/6 apt packages, groups, login shell"
+sudo "$dir/scripts/apt-layer.sh"
 
 log "5/6 System configuration (system-manager)"
 nixcmd run "$dir/nix#system-manager" -- switch --flake "$dir/nix#$machine" --sudo

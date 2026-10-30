@@ -53,7 +53,7 @@ for md in README.md scripts/README.md nix/README.md docs/*.md; do
 done
 
 # --- nothing points at what was removed ---------------------------------------
-legacy='scripts/(install-legacy|migrate-to-home-manager|rollback-to-chezmoi|dump-packages|dump-gnome-settings|test-docker|test-profile-switching|test-ubuntu-hm)|ansible/(roles|playbook|group_vars|inventory)|chezmoi/|docs/(DESIGN|PROFILES|TESTING|SECRETS|UBUNTU-MIGRATION)'
+legacy='scripts/(install-legacy|migrate-to-home-manager|rollback-to-chezmoi|dump-packages|dump-gnome-settings|test-docker|test-profile-switching|test-ubuntu-hm)|ansible/|chezmoi/|docs/(DESIGN|PROFILES|TESTING|SECRETS|UBUNTU-MIGRATION)'
 hits="$(grep -rInE "$legacy" --exclude-dir=.git --exclude-dir=result . | grep -vE '^\./docs/NIX-PLAN\.md:|^\./tests/scripts/test-repo\.sh:' || true)"
 assert_eq "$hits" "" "no reference to a removed script, role or doc"
 

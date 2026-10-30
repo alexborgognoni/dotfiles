@@ -6,6 +6,7 @@ itself) is Nix: see the [root README](../README.md).
 | Script | Run by | What it does |
 |---|---|---|
 | `bootstrap-nix.sh` | `install` | Installs Nix with the official installer, set up for a corporate TLS proxy (root CA, daemon drop-in). Idempotent. |
+| `apt-layer.sh` | `install` | The apt packages Nix cannot provide (Docker, libvirt/QEMU, zsh, Zscaler's Qt libraries, Edge), the docker/libvirt groups and zsh as login shell. Data in `../apt/` (`packages.list`, `repos/`, `keys/`, `vendor-debs.list`); `~/.config/dotfiles/apt/` adds entries for one machine. Idempotent; `--check` shows what is pending (exit 1) without root or network. |
 | `snapshot-system.sh` | `install`, once | One archive in `~/Backups`, encrypted to the sops admin key: `~/.config`, shell dotfiles, `/etc`, lists of everything installed. The undo for the cleanup. |
 | `cleanup-ubuntu.sh` | you, optionally, after the install works | Removes what Nix now provides (apt packages installed by hand, snaps, Flatpaks, pip/npm/cargo tools, hand installs) so the machine is "fresh Ubuntu + Nix". Dry run by default. |
 | `lib/common.sh` | all of them | `log`, `die`, the repository root, the list loading and the apt origin check. |
@@ -22,7 +23,7 @@ What it removes is decided in this order for apt packages:
 1. **drop list** (`cleanup.d/drop-packages.list`): removed, even from a vendor repository
 2. **protect list** (`cleanup.d/protect-packages.list`): kept
 3. **installed from outside Ubuntu's archive** (a vendor repository or a local `.deb`): kept. That is how corporate agents look, so unknown ones are safe by default. The dry run lists them.
-4. **in the original installation** (`/var/log/installer/initial-status.gz`) or **declared** in `../ansible/ubuntu.yml`: kept
+4. **in the original installation** (`/var/log/installer/initial-status.gz`) or **declared** in `../apt/` (`packages.list`, `vendor-debs.list`): kept
 5. everything else that was installed by hand: removed, together with dependencies nothing else needs
 
 The data lives in `cleanup.d/*.list`: one entry per line, `#` comments, `*`
@@ -52,11 +53,12 @@ tests/scripts/run.sh            # all
 tests/scripts/run.sh apt-plan   # files matching a pattern
 ```
 
-Hermetic (a stubbed `apt-cache`, temporary lists), except
-`test-cleanup-smoke.sh`, which runs the real dry run (read-only) and skips
-itself where it cannot. They cover the list parsing, the apt decision and the
-vendor-origin check, the shipped lists (nothing dangerous, no clash with
-`ansible/ubuntu.yml`), the repository (Markdown links, no references to
+Hermetic (stubbed `apt-cache`, `apt-get`, ..., temporary lists and a fake
+root), except `test-cleanup-smoke.sh`, which runs the real dry run (read-only)
+and skips itself where it cannot. They cover the list parsing, the apt decision
+and the vendor-origin check, `apt-layer.sh` (fresh machine, second run,
+`--check`, per-user lists, held packages, refusals), the shipped lists (nothing
+dangerous, no clash with `apt/`), the repository (Markdown links, no references to
 removed files), secrets hygiene (`test-secrets.sh`: sops files encrypted, the right
 recipients, no keys in git) and the formatters and linters (`test-lint.sh`, needs
 Nix). Run them after editing a list.

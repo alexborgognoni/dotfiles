@@ -8,7 +8,7 @@ One flake for every machine:
   Ubuntu for the OS, drivers and corporate software. Standalone Home Manager
   owns the user level (including GNOME settings and an extra "Hyprland (Nix)"
   session), [system-manager](https://github.com/numtide/system-manager) the
-  root level, and a slim `../ansible/ubuntu.yml` the apt packages. One
+  root level, and a short script with plain lists (`../apt/`) the apt packages. One
   command sets it all up: `../install` (see
   [../docs/UBUNTU.md](../docs/UBUNTU.md)).
 
@@ -214,7 +214,7 @@ personal machine never gets it and a coworker can swap it for their own:
 
 Machine-specific values of the laptop (Docker's network, NTP servers) are in
 `systems/work-laptop.nix` and `homes/work-laptop.nix`. The apt side
-(Zscaler's Qt libraries, Edge) is `../ansible/ubuntu.yml`.
+(Zscaler's Qt libraries, Edge) is `../apt/packages.list`.
 
 ## Checks
 
