@@ -272,6 +272,16 @@ in
 
     stylix.targets.hyprland.enable = false;
 
+    # The Hyprland Settings panel writes this file (state, not config). It must
+    # exist before the config requires it, or Hyprland never watches it.
+    home.activation.hyprlandSettingsFile = lib.mkIf (lib.elem "hyprland-settings" plugins) (
+      lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        if [ ! -e "${config.xdg.configHome}/hypr/hyprland-settings.lua" ]; then
+          run touch "${config.xdg.configHome}/hypr/hyprland-settings.lua"
+        fi
+      ''
+    );
+
     # A switch makes Noctalia reload its config, which brings back both bars
     home.activation.monitorRoles = lib.mkIf (config.my.desktop.mainMonitors != [ ]) (
       lib.hm.dag.entryAfter [ "linkGeneration" ] ''
@@ -734,8 +744,10 @@ in
           -- Written by the Noctalia "Hyprland Settings" panel (display tweaks,
           -- input, look): loaded last, so a kept change wins over the settings
           -- above until kanshi re-applies a profile (login, plug, unplug). The
-          -- file is created by the panel; no file, no error.
-          pcall(require, "hyprland-settings")
+          -- file is created at switch time (home.activation) and rewritten by
+          -- the panel; written this way because the panel looks for exactly
+          -- this line to see that it is connected.
+          pcall(function() require("hyprland-settings") end)
         '';
     };
   };
