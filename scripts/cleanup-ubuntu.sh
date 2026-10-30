@@ -136,6 +136,19 @@ flatpaks="$(flatpak list --app --columns=application 2>/dev/null || true)"
 log "flatpaks to remove (then Flatpak itself goes with apt)"
 printf '%s\n' "$flatpaks" | sed '/^$/d; s/^/    /'
 
+# --- 3b. Homebrew -------------------------------------------------------------
+# The prefix is self-contained: what is in it is listed, and all of it goes
+brew_prefix=""
+for candidate in /home/linuxbrew/.linuxbrew "$HOME/.linuxbrew"; do
+  [ -x "$candidate/bin/brew" ] && brew_prefix="$candidate" && break
+done
+log "Homebrew packages to remove (Nix provides them; the whole installation goes)"
+if [ -n "$brew_prefix" ]; then
+  item "$brew_prefix"
+  brew_packages="$(ls "$brew_prefix/Cellar" "$brew_prefix/Caskroom" 2>/dev/null | sed '/^$/d; /:$/d' | sort -u | paste -sd' ')"
+  [ -z "$brew_packages" ] || printf '    (%s)\n' "$brew_packages"
+fi
+
 # --- 4. home: old tools and leftovers -----------------------------------------
 home_remove=()
 while IFS= read -r entry; do
@@ -187,6 +200,13 @@ fi
 log "Removing flatpaks and snaps"
 for a in $flatpaks; do flatpak uninstall -y --delete-data "$a" || true; done
 for s in $snaps_remove; do sudo snap remove --purge "$s" || true; done
+
+if [ -n "$brew_prefix" ]; then
+  log "Removing Homebrew"
+  rm -rf "$brew_prefix" 2>/dev/null || sudo rm -rf "$brew_prefix"
+  # the shared prefix's parent (/home/linuxbrew), owned by root, when empty
+  [ "$(dirname "$brew_prefix")" != /home/linuxbrew ] || sudo rmdir /home/linuxbrew 2>/dev/null || true
+fi
 
 log "Removing apt packages"
 if [ -n "$apt_remove" ]; then

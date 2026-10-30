@@ -45,6 +45,7 @@ DOTFILES_BRANCH=nixos ~/dotfiles/install
 3. Nix with the official installer, set up for a corporate TLS proxy (`scripts/bootstrap-nix.sh`)
 4. `scripts/apt-layer.sh` (lists in `apt/`): Docker, libvirt/QEMU/OVMF, zsh,
    Zscaler's Qt 6 libraries, Edge; docker/libvirt groups; zsh as login shell.
+   It also purges snapd (so: no snaps; `apt/purge.list`) and pins it out.
    `scripts/apt-layer.sh --check` shows what is pending without root
 5. system-manager: takes over `/etc/nix/nix.conf` (the installer's file is
    kept as a backup), keyd, `/run/opengl-driver`, the "Hyprland (Nix)" login
@@ -84,7 +85,7 @@ Then log out and back in.
 Removes what is installed outside Nix and not part of the original Ubuntu
 installation, `apt/` or the protect list: apt packages installed
 by hand (CLI tools, apps, build libraries, databases, VirtualBox) and their
-now unused dependencies and repositories, snaps, Flatpaks, pip/npm/cargo/mise
+now unused dependencies and repositories, snaps, Flatpaks, Homebrew, pip/npm/cargo/mise
 installs in your home, hand installs in `/usr/local` and `/opt`. Packages from
 vendor repositories (corporate agents) are kept automatically. Requires the
 snapshot. What stays and what goes is plain-text lists you can extend, see

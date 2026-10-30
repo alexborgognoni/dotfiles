@@ -6,9 +6,9 @@ itself) is Nix: see the [root README](../README.md).
 | Script | Run by | What it does |
 |---|---|---|
 | `bootstrap-nix.sh` | `install` | Installs Nix with the official installer, set up for a corporate TLS proxy (root CA, daemon drop-in). Idempotent. |
-| `apt-layer.sh` | `install` | The apt packages Nix cannot provide (Docker, libvirt/QEMU, zsh, Zscaler's Qt libraries, Edge), the docker/libvirt groups and zsh as login shell. Data in `../apt/` (`packages.list`, `repos/`, `keys/`, `vendor-debs.list`); `~/.config/dotfiles/apt/` adds entries for one machine. Idempotent; `--check` shows what is pending (exit 1) without root or network. |
+| `apt-layer.sh` | `install` | The apt packages Nix cannot provide (Docker, libvirt/QEMU, zsh, Zscaler's Qt libraries, Edge), the docker/libvirt groups and zsh as login shell. Data in `../apt/` (`packages.list`, `repos/`, `keys/`, `vendor-debs.list`, `purge.list`: removed and pinned out, snapd by default, so no snaps); `~/.config/dotfiles/apt/` adds entries for one machine. Idempotent; `--check` shows what is pending (exit 1) without root or network. |
 | `snapshot-system.sh` | `install`, once | One archive in `~/Backups`, encrypted to the sops admin key: `~/.config`, shell dotfiles, `/etc`, lists of everything installed. The undo for the cleanup. |
-| `cleanup-ubuntu.sh` | you, optionally, after the install works | Removes what Nix now provides (apt packages installed by hand, snaps, Flatpaks, pip/npm/cargo tools, hand installs) so the machine is "fresh Ubuntu + Nix". Dry run by default. |
+| `cleanup-ubuntu.sh` | you, optionally, after the install works | Removes what Nix now provides (apt packages installed by hand, snaps, Flatpaks, Homebrew, pip/npm/cargo tools, hand installs) so the machine is "fresh Ubuntu + Nix". Dry run by default. |
 | `lib/common.sh` | all of them | `log`, `die`, the repository root, the list loading and the apt origin check. |
 
 ## The cleanup, and how to make it safe on another machine
@@ -33,7 +33,7 @@ is a wildcard.
 |---|---|
 | `protect-packages.list` | package names never removed (kernels, drivers, firmware, corporate agents) |
 | `drop-packages.list` | tool families removed completely (databases, VirtualBox, CUDA) |
-| `keep-snaps.list` | snaps that stay (the rest goes) |
+| `keep-snaps.list` | snaps that stay (empty: none; `apt/purge.list` removes snapd) |
 | `home-leftovers.list` | old tools and leftovers under `$HOME` |
 | `system-leftovers.list` | hand installs outside apt (`/usr/local`, `/opt`) |
 

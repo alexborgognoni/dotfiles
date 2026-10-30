@@ -5,6 +5,7 @@
 #   repos/<name>.list  third-party repository (@RELEASE@ = the Ubuntu release);
 #                      its key is keys/<name>.asc, installed in /etc/apt/keyrings
 #   vendor-debs.list   "<package> <url>": installed from a .deb when missing
+#   purge.list         apt packages removed and kept off (pinned out)
 # ~/.config/dotfiles/apt/<same name> adds entries for one machine. Idempotent:
 # a machine that is up to date needs no network and changes nothing.
 #
@@ -91,6 +92,36 @@ while IFS= read -r package; do
 done < <(apt_entries packages.list)
 if [ "${#missing[@]}" -gt 0 ]; then
   act "install ${#missing[@]} package(s): ${missing[*]}" bash -c 'apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y "$@"' _ "${missing[@]}"
+fi
+
+# --- packages to keep off ----------------------------------------------------------
+# Purged when installed, and pinned out so that nothing pulls them back in
+declared="$(apt_entries packages.list)"
+purge_list="$(apt_entries purge.list)"
+while IFS= read -r package; do
+  [ -n "$package" ] || continue
+  ! grep -qxF "$package" <<<"$declared" || die "$package is in both packages.list and purge.list"
+done <<<"$purge_list"
+unwanted=()
+while IFS= read -r package; do
+  [ -n "$package" ] || continue
+  ! installed "$package" || unwanted+=("$package")
+done <<<"$purge_list"
+if [ "${#unwanted[@]}" -gt 0 ]; then
+  act "purge ${#unwanted[@]} package(s): ${unwanted[*]}" env DEBIAN_FRONTEND=noninteractive apt-get purge -y "${unwanted[@]}"
+fi
+pin_file="$root/etc/apt/preferences.d/dotfiles-purged.pref"
+pins=""
+while IFS= read -r package; do
+  [ -n "$package" ] || continue
+  pins+="Package: $package"$'\n'"Pin: release *"$'\n'"Pin-Priority: -10"$'\n\n'
+done <<<"$purge_list"
+pins="${pins%$'\n\n'}"
+if [ -n "$pins" ]; then
+  [ "$(cat "$pin_file" 2>/dev/null)" = "$pins" ] ||
+    act "keep the purged packages off ($pin_file)" write_file "$pins" "$pin_file"
+elif [ -e "$pin_file" ]; then
+  act "remove the pins of purged packages ($pin_file)" rm -f "$pin_file"
 fi
 
 # --- vendor packages ---------------------------------------------------------------------

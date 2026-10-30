@@ -40,10 +40,10 @@ clash="$(printf '%s\n' "$declared" | grep -E "$drop" | paste -sd, || true)"
 assert_eq "$clash" "" "no package declared in apt/ is in the drop list"
 assert_match "$(printf '%s\n' "$declared" | wc -l | tr -d ' ')" '^[1-9]' "apt/ declares packages"
 
-# snaps
+# snaps: none stays, and the apt layer removes snapd (with it every snap)
 snaps="$(list_regex keep-snaps.list)"
-for s in snapd core22 core24 bare snap-store gnome-42-2204 gtk-common-themes mesa-2404 cups; do assert_match "$s" "$snaps" "snap kept: $s"; done
-for s in firefox chromium teams-for-linux code; do assert_nomatch "$s" "$snaps" "snap removed: $s"; done
+for s in snapd core22 core24 bare snap-store cups firefox chromium teams-for-linux code; do assert_nomatch "$s" "$snaps" "snap removed: $s"; done
+assert_match "$(apt_entries purge.list | paste -sd' ')" '(^| )snapd( |$)' "apt/purge.list removes snapd"
 
 # the home list: relative, inside $HOME, never a whole personal directory
 # entries contain "*": read them as lines, never let the shell expand them

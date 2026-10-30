@@ -15,7 +15,7 @@ rc=0
 out="$(env -u LD_LIBRARY_PATH timeout 300 "$repo/scripts/cleanup-ubuntu.sh" 2>&1)" || rc=$?
 out="$(printf '%s' "$out" | sed 's/\x1b\[[0-9;]*m//g')"
 assert_eq "$rc" "0" "the dry run exits cleanly"
-for section in "apt: packages to remove" "apt: repositories to remove" "snaps to remove" "home: old tools and leftovers" "system: hand installs"; do
+for section in "apt: packages to remove" "apt: repositories to remove" "snaps to remove" "Homebrew packages to remove" "home: old tools and leftovers" "system: hand installs"; do
   assert_match "$out" "$section" "section: $section"
 done
 assert_nomatch "$out" "unbound variable|command not found|No such file" "no shell errors in the output"

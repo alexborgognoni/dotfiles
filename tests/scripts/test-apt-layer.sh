@@ -21,6 +21,9 @@ if [ "$1" = install ]; then
   for a in "${@:3}"; do
     case "$a" in -*) ;; *.deb) b="$(basename "$a" .deb)"; echo "$b install ok installed" >>"$STUB_STATE/installed" ;; *) echo "$a install ok installed" >>"$STUB_STATE/installed" ;; esac
   done
+fi
+if [ "$1" = purge ]; then
+  for a in "${@:3}"; do sed -i "/^$a /d" "$STUB_STATE/installed"; done
 fi'
 stub curl 'echo "curl $*" >>"$STUB_STATE/log"; while [ $# -gt 0 ]; do [ "$1" = -o ] && : >"$2"; shift; done'
 stub usermod 'echo "usermod $*" >>"$STUB_STATE/log"'
@@ -92,6 +95,34 @@ run
 STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run --check
 assert_eq "$rc" "0" "--check on an up-to-date machine: exits 0"
 
+# --- packages to keep off: purged when installed, pinned out ----------------------------------
+pin="$tmp/root/etc/apt/preferences.d/dotfiles-purged.pref"
+reset
+run
+assert_match "$(cat "$pin")" 'Package: snapd' "purge.list: snapd is pinned out"
+assert_match "$(cat "$pin")" 'Pin-Priority: -10' "...with a negative priority (apt never installs it)"
+assert_nomatch "$log" 'apt-get purge' "nothing installed, nothing to purge"
+echo "snapd install ok installed" >>"$tmp/state/installed"
+: >"$tmp/state/log"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run --check
+assert_match "$out" 'would: purge 1 package.*snapd' "--check: an installed purge-list package is reported"
+assert_eq "$(wc -c <"$tmp/state/log" | tr -d ' ')" "0" "--check: nothing purged"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run
+assert_match "$log" 'apt-get purge -y snapd$' "an installed purge-list package is purged"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run
+assert_match "$out" 'nothing to do' "purged and pinned: the next run has nothing to do"
+printf 'Package: snapd\nPin: release a=old\n' >"$pin"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run
+assert_match "$out" 'keep the purged packages off' "a pin file that differs is rewritten"
+mkdir -p "$tmp/config/dotfiles/apt"
+printf 'htop\n' >"$tmp/config/dotfiles/apt/purge.list"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run
+assert_match "$(cat "$pin")" 'Package: htop' "the per-user purge.list adds a package to the pins"
+printf 'zsh\n' >"$tmp/config/dotfiles/apt/purge.list"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run
+assert_match "$out" 'zsh is in both packages.list and purge.list' "a package both wanted and unwanted is refused"
+rm -rf "$tmp/config/dotfiles"
+
 # --- an entry for one machine only -----------------------------------------------------------
 : >"$tmp/state/log"
 mkdir -p "$tmp/config/dotfiles/apt"
@@ -137,6 +168,7 @@ packages="$(
 )"
 assert_eq "$(printf '%s\n' "$packages" | sort | uniq -d | paste -sd,)" "" "apt/packages.list has no duplicates"
 assert_match "$(printf '%s\n' "$packages" | grep -c .)" '^[1-9]' "apt/packages.list declares packages"
+assert_eq "$(comm -12 <(printf '%s\n' "$packages" | sort) <(sed -E 's/[[:space:]]*#.*$//; /^[[:space:]]*$/d' "$repo/apt/purge.list" | sort) | paste -sd,)" "" "no package is in both packages.list and purge.list"
 while read -r package url; do
   assert_match "$url" '^https://' "vendor deb $package: an https URL"
 done < <(sed -E 's/[[:space:]]*#.*$//; /^[[:space:]]*$/d' "$repo/apt/vendor-debs.list")

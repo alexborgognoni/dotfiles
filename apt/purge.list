@@ -1,0 +1,7 @@
+# apt packages the layer removes and keeps off the machine: purged when
+# installed, and pinned out (priority -10) so apt never installs them again.
+# One name per line, "#" comments. ~/.config/dotfiles/apt/purge.list adds more.
+
+# Snap: with snapd go the Ubuntu store, the snap runtimes and every snap
+# (`snap list` is empty); apps come from Nix. Remove this line to keep snaps.
+snapd

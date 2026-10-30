@@ -32,6 +32,7 @@
 .local/share/chezmoi
 .config/teams-for-linux
 .brewenv_cache
+.cache/Homebrew
 .zinit
 .local/share/zinit
 .tmux/plugins
