@@ -108,6 +108,8 @@ lib.mapAttrs' (
     };
 
     testScript = ''
+      import re
+
       def user(cmd):
           status, out = machine.execute(f"su - alex -c {repr(cmd)} 2>/tmp/stderr")
           if status != 0:
@@ -165,7 +167,8 @@ lib.mapAttrs' (
           user("zsh -i -c 'whence fzf-tab-complete >/dev/null && alias ls | grep -q eza'")
 
       with subtest("neovim starts without errors, including the dashboard"):
-          out = user("${nvimProbe}")
+          # (Neovim sets terminal palette entries at startup: strip the escapes)
+          out = re.sub(r"\x1b\][^\x07]*\x07", "", user("${nvimProbe}"))
           assert out.startswith("theme-dracula"), out
           assert "Error" not in out, out
 
@@ -173,7 +176,7 @@ lib.mapAttrs' (
           commands = [
               "google-chrome-stable", "chromium", "microsoft-edge", "teams-for-linux", "code",
               "neovide", "obsidian", "vlc", "obs", "audacity", "ghb", "inkscape", "foliate",
-              "readest", "openwhispr", "claude", "claude-vertex", "claude-copilot",
+              "readest", "openwhispr", "claude",
               "codex", "copilot", "opencode", "herdr", "forge", "github-mcp-server",
               "mcp-language-server", "node", "pnpm", "bun", "tsc", "typescript-language-server",
               "rustup", "go", "uv", "poetry", "aws", "az", "func", "azcopy", "cf", "terraform",
