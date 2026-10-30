@@ -2,7 +2,7 @@
 # optional work identity (my.identity.work, set by corporate/identity.nix). The
 # private keys come from sops secrets (secrets/personal.yaml, work.yaml),
 # decrypted by NixOS (modules/nixos/core/secrets.nix) or, standalone, by Home
-# Manager (standalone.nix); either way they arrive as my.identity.files.
+# Manager (standalone/secrets.nix); either way they arrive as my.identity.files.
 #   without a work identity: ~/.ssh/id_ed25519 = personal key
 #   with one:                ~/.ssh/id_ed25519 = work key,
 #                            ~/.ssh/id_ed25519_personal = personal key

@@ -5,6 +5,17 @@
 { config, lib, ... }:
 {
   config = lib.mkIf config.my.corporate.enable {
+    # The work keys, decrypted like the personal ones (standalone: sops-nix of
+    # Home Manager; on NixOS the secrets module hands them over)
+    sops.secrets = lib.mkIf config.my.standalone {
+      ssh-work.sopsFile = ../../../secrets/work.yaml;
+      gpg-work.sopsFile = ../../../secrets/work.yaml;
+    };
+    my.identity.files = lib.mkIf config.my.standalone {
+      sshWork = config.sops.secrets.ssh-work.path;
+      gpgWork = config.sops.secrets.gpg-work.path;
+    };
+
     my.identity.work = {
       email = "alex.borgognoni@deutsche-boerse.com";
       gpgKey = "E69B33C4684313461110E75783E2B86EB1BD39F2";

@@ -11,7 +11,7 @@
   `theme` command as `.sh`/`.py` files; `themes/`: defaults, accents,
   wallpapers, pack generator, the catalogue of themes).
   Identity too (`modules/home/identity/`: git, ssh, gpg; the work identity is
-  `corporate/identity.nix`). Still to do: `standalone.nix`.
+  `corporate/identity.nix`). `standalone/` too (integration, GPU, audio, secrets).
 - **Ansible**: it only applies a package list, repositories, groups and the
   login shell. Decide whether a plain list and a short script replace it
   (one dependency less, less to explain to a coworker).

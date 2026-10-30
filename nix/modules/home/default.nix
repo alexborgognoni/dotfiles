@@ -19,7 +19,7 @@
     ./browser.nix
     ./fonts.nix
     ./packages.nix
-    ./standalone.nix
+    ./standalone
     ./corporate
     ./apps
     ./gnome
