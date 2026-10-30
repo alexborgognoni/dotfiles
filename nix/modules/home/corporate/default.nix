@@ -5,6 +5,7 @@
 #   entra-sso.nix       Entra ID single sign-on in Chrome
 #   artifactory.nix     pip through the company's Artifactory mirror
 #   network-rescue.nix  fix-zscaler, net-diag, net-rescue (scripts/)
+#   identity.nix        the work identity (git email, keys, GitHub Enterprise)
 #   claude.nix          Claude Code against the company's Vertex AI / Copilot
 { config, lib, ... }:
 {
@@ -12,6 +13,7 @@
     ./artifactory.nix
     ./claude.nix
     ./entra-sso.nix
+    ./identity.nix
     ./network-rescue.nix
     ./zscaler.nix
   ];

@@ -10,7 +10,8 @@
   The theme engine too (`modules/home/theme/`: options and activation, the
   `theme` command as `.sh`/`.py` files; `themes/`: defaults, accents,
   wallpapers, pack generator, the catalogue of themes).
-  Still to do: `identity.nix`, `standalone.nix`.
+  Identity too (`modules/home/identity/`: git, ssh, gpg; the work identity is
+  `corporate/identity.nix`). Still to do: `standalone.nix`.
 - **Ansible**: it only applies a package list, repositories, groups and the
   login shell. Decide whether a plain list and a short script replace it
   (one dependency less, less to explain to a coworker).

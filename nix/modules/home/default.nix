@@ -11,7 +11,7 @@
 {
   imports = [
     ./theme
-    ./identity.nix
+    ./identity
     ./shell
     ./terminal
     ./editor

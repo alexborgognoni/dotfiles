@@ -50,7 +50,7 @@ in
         secrets = {
           "${user}-password".neededForUsers = true;
 
-          # Identity keys, readable only by the user (see modules/home/identity.nix)
+          # Identity keys, readable only by the user (see modules/home/identity/)
           ssh-personal = identitySecret ../../../secrets/personal.yaml;
           gpg-personal = identitySecret ../../../secrets/personal.yaml;
         }

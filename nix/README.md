@@ -202,7 +202,7 @@ personal machine never gets it and a coworker can swap it for their own:
 
 | Layer | Module | Switched on by | Contents |
 |---|---|---|---|
-| user (Home Manager) | `modules/home/corporate/` | `my.corporate.enable`, default: `my.profile == "work"` | Zscaler tray (unit, launcher, `zsa://` links), Entra ID SSO for Chrome, pip through Artifactory, `fix-zscaler`/`net-diag`/`net-rescue`, Claude Code against the company's Vertex AI and Copilot |
+| user (Home Manager) | `modules/home/corporate/` | `my.corporate.enable`, default: `my.profile == "work"` | Zscaler tray (unit, launcher, `zsa://` links), Entra ID SSO for Chrome, the work identity (git email, GPG/SSH keys, GitHub Enterprise: `my.identity.work`), pip through Artifactory, `fix-zscaler`/`net-diag`/`net-rescue`, Claude Code against the company's Vertex AI and Copilot |
 | root (system-manager) | `modules/system-manager/corporate.nix` | `my.corporate.enable = true` in `systems/<machine>.nix` | corporate root CA for the Nix daemon and for Chrome, Alt+hjkl as arrow keys (keyd) |
 | NixOS | `modules/nixos/core/corporate-ca.nix` | `my.corporateCA = [ ./root.crt ]` | extra root CAs, also in the build sandbox |
 
@@ -293,8 +293,8 @@ only offers those.
   with their tools. Panel placement keys are `<panel id>_placement` and so on.
 - kitty's shell integration has no `sudo` wrapper: it runs `sudo TERMINFO=...`,
   which the sudoers allow-list refuses.
-- The `work` profile sets the work git identity (with personal identity under
-  `~/personal` and `~/dotfiles`), the work GitHub Enterprise SSH host, and CA
-  variables for Node/Python.
+- The `work` profile turns on the corporate module, which sets the work git
+  identity (with personal identity under `~/personal` and `~/dotfiles`) and the
+  work GitHub Enterprise SSH host (`modules/home/corporate/identity.nix`).
 - `my.corporateCA` also passes the CA into the Nix build sandbox, so source
   fetches work behind Zscaler.
