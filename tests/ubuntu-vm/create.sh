@@ -67,6 +67,31 @@ runcmd:
   # With the HWE kernel the boot framebuffer makes the virtio GPU card1, and
   # GDM mistakes that for GPU passthrough and disables Wayland sessions
   - ln -sf /dev/null /etc/udev/rules.d/61-gdm.rules
+EOF
+  # Desktop networking: NetworkManager, as on a desktop install (desktop shells
+  # like Noctalia cannot see systemd-networkd). It is only installed by the
+  # packages above, so the first boot has to use the image's own networking
+  # (network-config below) and the switch happens last, before the reboot.
+  cat <<EOF
+  - |
+    echo 'network: {config: disabled}' > /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    rm -f /etc/netplan/50-cloud-init.yaml
+    cat > /etc/netplan/01-network-manager-all.yaml <<NETPLAN
+    network:
+      version: 2
+      renderer: NetworkManager
+      ethernets:
+        lan:
+          match: {macaddress: "$lan_mac"}
+          dhcp4: true
+          dhcp4-overrides: {use-routes: false, use-dns: false}
+        wan:
+          match: {macaddress: "$wan_mac"}
+          dhcp4: true
+    NETPLAN
+    chmod 600 /etc/netplan/01-network-manager-all.yaml
+EOF
+  cat <<'EOF'
 power_state:
   mode: reboot
   condition: true
@@ -75,9 +100,8 @@ EOF
 
 cat >"$work/network-config" <<EOF
 version: 2
-# NetworkManager, as on a desktop install (the cloud image defaults to
-# systemd-networkd, which desktop shells like Noctalia cannot see)
-renderer: NetworkManager
+# First boot only: the image's systemd-networkd, so that the packages can be
+# installed (user-data switches to NetworkManager at the end)
 ethernets:
   lan:
     match: {macaddress: "$lan_mac"}
