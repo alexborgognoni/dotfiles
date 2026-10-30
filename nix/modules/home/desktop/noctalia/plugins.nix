@@ -30,7 +30,7 @@ let
     )}
     ${lib.concatStrings (
       lib.mapAttrsToList (
-        name: p:
+        _: p:
         lib.optionalString (p ? patch) ''
           (cd $out && ${p.patch})
         ''

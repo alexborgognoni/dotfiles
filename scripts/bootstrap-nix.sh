@@ -37,8 +37,8 @@ dropin=/etc/systemd/system/nix-daemon.service.d/corporate-ca.conf
 if [ ! -e "$dropin" ]; then
   log "Configuring the nix-daemon environment"
   sudo mkdir -p "$(dirname "$dropin")"
-  printf '[Service]\nEnvironment=NIX_SSL_CERT_FILE=%s\nEnvironment=NIX_GIT_SSL_CAINFO=%s\n' "$ca" "$ca" \
-    | sudo tee "$dropin" >/dev/null
+  printf '[Service]\nEnvironment=NIX_SSL_CERT_FILE=%s\nEnvironment=NIX_GIT_SSL_CAINFO=%s\n' "$ca" "$ca" |
+    sudo tee "$dropin" >/dev/null
   sudo systemctl daemon-reload
   sudo systemctl restart nix-daemon
 fi

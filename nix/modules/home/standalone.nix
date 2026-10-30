@@ -91,9 +91,10 @@ in
     # exists as a snap); "Yes" hangs and the notification cannot be closed.
     # Nothing used here is a snap that needs them.
     home.file.".config/systemd/user/snap.snapd-desktop-integration.snapd-desktop-integration.service" =
-      lib.mkIf cfg.features.gui.enable {
-        source = config.lib.file.mkOutOfStoreSymlink "/dev/null";
-      };
+      lib.mkIf cfg.features.gui.enable
+        {
+          source = config.lib.file.mkOutOfStoreSymlink "/dev/null";
+        };
 
     xdg.configFile = lib.mkIf (cfg.audio.server == "pipewire") (
       let

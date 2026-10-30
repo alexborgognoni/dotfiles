@@ -73,6 +73,8 @@ nh home switch            # Ubuntu laptop: apply the Home Manager config
 nh os|home switch --update   # update flake.lock first
 nh clean all              # garbage-collect old generations
 nix flake check           # all checks (needs ~16 GB RAM; see Checks)
+nix fmt                   # format the whole repository (from nix/)
+nix run path:nix#lint     # format check + linters (from anywhere in the repo)
 ```
 
 Without `nh`: `sudo nixos-rebuild switch --flake ~/dotfiles/nix#<host>` or
@@ -213,6 +215,8 @@ Machine-specific values of the laptop (Docker's network, NTP servers) are in
 - `theme-packs`: every theme x accent pack is complete and consistent
 - `home-alex-work-laptop`: the standalone Home Manager configuration builds
 - `system-work-laptop`: the system-manager configuration builds
+- `lint-nix`: nixfmt, statix and deadnix on the flake (the repo-wide `lint`
+  also covers shell and Lua)
 - `vm`: boots the desktop configuration in a VM and tests theme switching,
   accents (validation and per-theme memory), persistence across re-activation,
   preview, zsh, Neovim, tmux, that every application/tool is installed and
@@ -221,6 +225,24 @@ Machine-specific values of the laptop (Docker's network, NTP servers) are in
 `nix flake check` evaluates everything in one process (~20 GB peak); with
 less RAM build the checks one by one:
 `nix build .#checks.x86_64-linux.<name>`.
+
+## Formatting and linting
+
+`tooling.nix` defines both, from the flake's pinned nixpkgs:
+
+| What | Tool | Where it runs |
+|---|---|---|
+| Nix formatting | nixfmt | `nix fmt` |
+| shell formatting (2 spaces) | shfmt | `nix fmt` |
+| Lua formatting | stylua, with AstroNvim's `.stylua.toml` | `nix fmt` |
+| Nix lint | statix (`statix.toml` turns off "repeated keys"), deadnix | `lint`, `lint-nix` |
+| shell lint | shellcheck (warnings and up, all scripts incl. the Nix-embedded `.sh` files) | `lint` |
+| Lua lint | selene (AstroNvim's `selene.toml`) | `lint` |
+
+`nix fmt` rewrites files; `nix run path:nix#lint` never does (it formats a copy
+and shows the diff) and exits non-zero on any finding, so it can sit in a
+pre-commit hook or CI. Generated files (`hosts/vm/hardware-configuration.nix`)
+are skipped. `.editorconfig` tells editors the same indentation.
 
 `../tests/ubuntu-vm/create.sh` creates a fresh Ubuntu 22.04 GNOME VM (HWE
 kernel, NetworkManager, like the laptop) for testing `../install` end to end;

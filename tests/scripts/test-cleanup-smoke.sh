@@ -4,9 +4,10 @@
 # shellcheck source=framework.sh
 . "$(dirname "$0")/framework.sh"
 
-if ! command -v apt-mark > /dev/null || [ ! -s /var/log/installer/initial-status.gz ]; then
+if ! command -v apt-mark >/dev/null || [ ! -s /var/log/installer/initial-status.gz ]; then
   echo "  skip: not an Ubuntu installation with /var/log/installer/initial-status.gz"
-  finish; exit 0
+  finish
+  exit 0
 fi
 
 rc=0

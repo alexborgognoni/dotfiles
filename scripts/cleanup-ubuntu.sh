@@ -36,18 +36,18 @@ if ! ls "$HOME"/Backups/system-snapshot-*.tar.zst.age >/dev/null 2>&1; then
 fi
 
 # --- 1. apt ------------------------------------------------------------------
-[ -s /var/log/installer/initial-status.gz ] \
-  || die "no /var/log/installer/initial-status.gz: cannot tell which packages came with Ubuntu"
+[ -s /var/log/installer/initial-status.gz ] ||
+  die "no /var/log/installer/initial-status.gz: cannot tell which packages came with Ubuntu"
 initial="$(zcat /var/log/installer/initial-status.gz | awk '/^Package:/{print $2}' | sort -u)"
 declared="$(python3 -c "
 import yaml,sys
 play=yaml.safe_load(open('$dotfiles/ansible/ubuntu.yml'))[0]['vars']
 print('\n'.join(play['apt_packages'] + list(play.get('vendor_debs',{}))))" | sort -u)"
 plan_dir="$(mktemp -d)"
-apt-mark showmanual > "$plan_dir/manual"
-printf '%s\n' "$initial" > "$plan_dir/initial"
-printf '%s\n' "$declared" > "$plan_dir/declared"
-dpkg-query -W -f '${Package}\n' > "$plan_dir/installed"
+apt-mark showmanual >"$plan_dir/manual"
+printf '%s\n' "$initial" >"$plan_dir/initial"
+printf '%s\n' "$declared" >"$plan_dir/declared"
+dpkg-query -W -f '${Package}\n' >"$plan_dir/installed"
 plan="$(apt_plan "$plan_dir/manual" "$plan_dir/initial" "$plan_dir/declared" "$plan_dir/installed")"
 rm -rf "$plan_dir"
 apt_remove="$(awk '$1 == "remove" { print $2 }' <<<"$plan")"
@@ -68,7 +68,7 @@ states="$(mktemp)"
 cp /var/lib/apt/extended_states "$states" 2>/dev/null || true
 for pkg in $apt_remove; do
   arch="$(dpkg-query -W -f '${Architecture}' "$pkg" 2>/dev/null || echo amd64)"
-  printf 'Package: %s\nArchitecture: %s\nAuto-Installed: 1\n\n' "$pkg" "$arch" >> "$states"
+  printf 'Package: %s\nArchitecture: %s\nAuto-Installed: 1\n\n' "$pkg" "$arch" >>"$states"
 done
 apt_purged="$(apt-get -s -o Dir::State::extended_states="$states" autoremove --purge 2>/dev/null | awk '/^Purg /{print $2}' | sort -u)"
 rm -f "$states"
@@ -108,7 +108,11 @@ repos_remove=()
 repos_kept=()
 for f in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
   [ -e "$f" ] || continue
-  case "$f" in *graphics-drivers*|*nvidia*|*cuda*) repos_kept+=("$f (drivers)"); continue ;; esac
+  case "$f" in *graphics-drivers* | *nvidia* | *cuda*)
+    repos_kept+=("$f (drivers)")
+    continue
+    ;;
+  esac
   owner="$(dpkg -S "$f" 2>/dev/null | cut -d: -f1 || true)"
   if [ -n "$owner" ]; then
     printf '%s\n' "$apt_purged" | grep -qx "$owner" && repos_remove+=("$f (with $owner)")
@@ -164,13 +168,19 @@ done < <(list_entries system-leftovers.list)
 while IFS= read -r l; do sys_remove+=("$l"); done < <(find /usr/bin /usr/local/bin -maxdepth 1 -xtype l 2>/dev/null)
 log "system: hand installs and dead links (${#sys_remove[@]})"
 for p in "${sys_remove[@]}"; do item "$p"; done
-grep -q '^WLR_NO_HARDWARE_CURSORS=' /etc/environment && { log "/etc/environment"; item "remove WLR_NO_HARDWARE_CURSORS (ignored by Hyprland)"; }
+grep -q '^WLR_NO_HARDWARE_CURSORS=' /etc/environment && {
+  log "/etc/environment"
+  item "remove WLR_NO_HARDWARE_CURSORS (ignored by Hyprland)"
+}
 
-$apply || { printf '\nDry run. Apply with: %s --apply\n' "$0"; exit 0; }
+$apply || {
+  printf '\nDry run. Apply with: %s --apply\n' "$0"
+  exit 0
+}
 
 if ! $assume_yes; then
   printf '\nRemove all of the above? Type "yes": '
-  read -r answer < /dev/tty
+  read -r answer </dev/tty
   [ "$answer" = "yes" ] || die "aborted"
 fi
 
@@ -196,7 +206,10 @@ done
 if ! getent hosts archive.ubuntu.com >/dev/null; then
   log "Name resolution failed; restarting NetworkManager to re-sync DNS"
   sudo systemctl restart NetworkManager
-  for _ in $(seq 1 15); do getent hosts archive.ubuntu.com >/dev/null && break; sleep 2; done
+  for _ in $(seq 1 15); do
+    getent hosts archive.ubuntu.com >/dev/null && break
+    sleep 2
+  done
   getent hosts archive.ubuntu.com >/dev/null || echo "warning: DNS still failing; check the network" >&2
 fi
 sudo apt-get update -qq
@@ -217,7 +230,7 @@ sudo systemctl restart system-manager.target 2>/dev/null || true
 log "Cleaning up home"
 # Never touch Home Manager's own files (links into the Nix store): inside a
 # listed directory only the other entries go, the directory if then empty.
-from_nix() { case "$(readlink -f "$1")" in /nix/store/*) true ;; *) false ;; esac; }
+from_nix() { case "$(readlink -f "$1")" in /nix/store/*) true ;; *) false ;; esac }
 for p in "${home_remove[@]}"; do
   target="${HOME:?}/$p"
   from_nix "$target" && continue

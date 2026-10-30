@@ -9,7 +9,7 @@
 . "$(dirname "$0")/stubs.sh"
 
 install_apt_cache_stub "$tmp"
-cat > "$tmp/origins" <<'ORIGINS'
+cat >"$tmp/origins" <<'ORIGINS'
 nvidia-driver-595-open vendor
 acme-tool vendor
 acme-agent vendor
@@ -20,7 +20,7 @@ docker-ce docker
 some-ppa-tool ppa
 local-deb local
 ORIGINS
-export XDG_CONFIG_HOME="$tmp/config"            # no per-user lists yet
+export XDG_CONFIG_HOME="$tmp/config" # no per-user lists yet
 
 names() { printf '%s\n' "$@" | sort -u; }
 removes() { awk '$1 == "remove" { print $2 }' <<<"$1" | paste -sd,; }
@@ -28,11 +28,14 @@ vendors() { awk '$1 == "vendor" { print $2 }' <<<"$1" | paste -sd,; }
 
 # installed by hand
 names old-tool declared-tool base-pkg nvidia-driver-595-open acme-tool acme-agent postgresql-14 \
-  cuda-toolkit-12 microsoft-edge-stable docker-ce some-ppa-tool local-deb > "$tmp/manual"
-names base-pkg > "$tmp/initial"                       # came with Ubuntu
-names declared-tool docker-ce > "$tmp/declared"       # ansible/ubuntu.yml
+  cuda-toolkit-12 microsoft-edge-stable docker-ce some-ppa-tool local-deb >"$tmp/manual"
+names base-pkg >"$tmp/initial"                 # came with Ubuntu
+names declared-tool docker-ce >"$tmp/declared" # ansible/ubuntu.yml
 # everything installed, including parts that came in as dependencies
-{ cat "$tmp/manual"; names postgresql-common zsh; } | sort -u > "$tmp/installed"
+{
+  cat "$tmp/manual"
+  names postgresql-common zsh
+} | sort -u >"$tmp/installed"
 
 plan="$(apt_plan "$tmp/manual" "$tmp/initial" "$tmp/declared" "$tmp/installed")"
 assert_eq "$(removes "$plan")" "cuda-toolkit-12,old-tool,postgresql-14,postgresql-common" \
@@ -46,8 +49,8 @@ done
 
 # a coworker protects their agent and drops a vendor tool, outside the repo
 mkdir -p "$tmp/config/dotfiles/cleanup.d"
-printf 'acme-agent\n' > "$tmp/config/dotfiles/cleanup.d/protect-packages.list"
-printf 'acme-tool\n' > "$tmp/config/dotfiles/cleanup.d/drop-packages.list"
+printf 'acme-agent\n' >"$tmp/config/dotfiles/cleanup.d/protect-packages.list"
+printf 'acme-tool\n' >"$tmp/config/dotfiles/cleanup.d/drop-packages.list"
 plan="$(apt_plan "$tmp/manual" "$tmp/initial" "$tmp/declared" "$tmp/installed")"
 assert_eq "$(removes "$plan")" "acme-tool,cuda-toolkit-12,old-tool,postgresql-14,postgresql-common" \
   "the per-user drop list removes a vendor package"
@@ -58,11 +61,11 @@ rm -rf "$tmp/config"
 
 # nothing installed by hand: only dropped families remain, and apt-cache is not
 # asked about "all packages"
-: > "$tmp/manual"
-: > "$tmp/apt-cache-calls"
+: >"$tmp/manual"
+: >"$tmp/apt-cache-calls"
 plan="$(apt_plan "$tmp/manual" "$tmp/initial" "$tmp/declared" "$tmp/installed")"
 assert_eq "$(removes "$plan")" "cuda-toolkit-12,postgresql-14,postgresql-common" "only the dropped families (still installed) go when nothing was installed by hand"
 assert_eq "$(vendors "$plan")" "" "no vendor packages reported"
-assert_eq "$(wc -l < "$tmp/apt-cache-calls" | tr -d ' ')" "0" "apt-cache is not called without packages"
+assert_eq "$(wc -l <"$tmp/apt-cache-calls" | tr -d ' ')" "0" "apt-cache is not called without packages"
 
 finish

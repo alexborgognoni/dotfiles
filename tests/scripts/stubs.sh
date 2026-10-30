@@ -6,7 +6,7 @@ install_apt_cache_stub() {
   mkdir -p "$1/bin"
   export ORIGINS="$1/origins"
   export CALLLOG="$1/apt-cache-calls"
-  cat > "$1/bin/apt-cache" <<'STUB'
+  cat >"$1/bin/apt-cache" <<'STUB'
 #!/usr/bin/env bash
 [ "$1" = policy ] || exit 1
 shift

@@ -53,7 +53,10 @@ EOF
     [ -f "$crt" ] || continue
     echo "    - |"
     # (the echo adds a final newline some certificate files lack)
-    { cat "$crt"; echo; } | sed -e '/^$/d' -e 's/^/      /'
+    {
+      cat "$crt"
+      echo
+    } | sed -e '/^$/d' -e 's/^/      /'
   done
   cat <<'EOF'
 package_update: true
@@ -68,9 +71,9 @@ power_state:
   mode: reboot
   condition: true
 EOF
-} > "$work/user-data"
+} >"$work/user-data"
 
-cat > "$work/network-config" <<EOF
+cat >"$work/network-config" <<EOF
 version: 2
 # NetworkManager, as on a desktop install (the cloud image defaults to
 # systemd-networkd, which desktop shells like Noctalia cannot see)
@@ -84,7 +87,7 @@ ethernets:
     match: {macaddress: "$wan_mac"}
     dhcp4: true
 EOF
-printf 'instance-id: %s-%s\nlocal-hostname: ubuntu-test\n' "$name" "$(date +%s)" > "$work/meta-data"
+printf 'instance-id: %s-%s\nlocal-hostname: ubuntu-test\n' "$name" "$(date +%s)" >"$work/meta-data"
 
 cloud-localds -N "$work/network-config" "$seed" "$work/user-data" "$work/meta-data"
 

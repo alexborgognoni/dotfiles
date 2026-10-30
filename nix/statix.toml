@@ -1,0 +1,3 @@
+# Dotted attribute paths (environment.etc."a" = ...; environment.etc."b" = ...)
+# are the normal module style; grouping them would be less readable.
+disabled = [ "repeated_keys" ]

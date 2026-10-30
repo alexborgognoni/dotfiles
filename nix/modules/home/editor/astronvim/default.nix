@@ -28,17 +28,18 @@ let
   plugins = {
     AstroNvim = pkgs.runCommand "astronvim" { } "cp -r ${inputs.astronvim} $out";
     "lazy.nvim" = vp.lazy-nvim;
-    astrocore = vp.astrocore;
-    astrolsp = vp.astrolsp;
-    astrotheme = vp.astrotheme;
-    astroui = vp.astroui;
+    inherit (vp)
+      astrocore
+      astrolsp
+      astrotheme
+      astroui
+      ;
     LuaSnip = vp.luasnip;
     "aerial.nvim" = vp.aerial-nvim;
     "better-escape.nvim" = vp.better-escape-nvim;
     "blink.cmp" = vp.blink-cmp;
     "blink.compat" = vp.blink-compat;
-    cmp-dap = vp.cmp-dap;
-    friendly-snippets = vp.friendly-snippets;
+    inherit (vp) cmp-dap friendly-snippets;
     "gitsigns.nvim" = vp.gitsigns-nvim;
     "guess-indent.nvim" = vp.guess-indent-nvim;
     "heirline.nvim" = vp.heirline-nvim;
@@ -47,16 +48,16 @@ let
     "neo-tree.nvim" = vp.neo-tree-nvim;
     "none-ls.nvim" = vp.none-ls-nvim;
     "nui.nvim" = vp.nui-nvim;
-    nvim-autopairs = vp.nvim-autopairs;
-    nvim-dap = vp.nvim-dap;
-    nvim-dap-ui = vp.nvim-dap-ui;
-    nvim-highlight-colors = vp.nvim-highlight-colors;
-    nvim-lspconfig = vp.nvim-lspconfig;
-    nvim-nio = vp.nvim-nio;
+    inherit (vp)
+      nvim-autopairs
+      nvim-dap
+      nvim-dap-ui
+      nvim-highlight-colors
+      nvim-lspconfig
+      nvim-nio
+      ;
     nvim-treesitter = treesitter;
-    nvim-treesitter-textobjects = vp.nvim-treesitter-textobjects;
-    nvim-ts-autotag = vp.nvim-ts-autotag;
-    nvim-window-picker = vp.nvim-window-picker;
+    inherit (vp) nvim-treesitter-textobjects nvim-ts-autotag nvim-window-picker;
     "plenary.nvim" = vp.plenary-nvim;
     "resession.nvim" = vp.resession-nvim;
     "smart-splits.nvim" = vp.smart-splits-nvim;
@@ -67,10 +68,9 @@ let
     # your plugins (config/lua/plugins/user.lua)
     nvim = vp.catppuccin-nvim;
     "noice.nvim" = vp.noice-nvim;
-    nvim-notify = vp.nvim-notify;
+    inherit (vp) nvim-notify;
     "markdown-preview.nvim" = vp.markdown-preview-nvim;
-    auto-session = vp.auto-session;
-    vim-tmux-navigator = vp.vim-tmux-navigator;
+    inherit (vp) auto-session vim-tmux-navigator;
     # live theme (config/colors/theme.lua)
     "mini.base16" = vp.mini-base16;
   };

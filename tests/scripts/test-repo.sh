@@ -15,8 +15,9 @@ done
 
 # --- shellcheck (warnings and above): from PATH, else through Nix, else skipped
 sc=()
-if command -v shellcheck > /dev/null; then sc=(shellcheck)
-elif command -v nix > /dev/null; then sc=(nix --extra-experimental-features "nix-command flakes" shell nixpkgs#shellcheck -c shellcheck); fi
+if command -v shellcheck >/dev/null; then
+  sc=(shellcheck)
+elif command -v nix >/dev/null; then sc=(nix --extra-experimental-features "nix-command flakes" shell nixpkgs#shellcheck -c shellcheck); fi
 if [ "${#sc[@]}" -gt 0 ]; then
   # shellcheck disable=SC2086
   out="$("${sc[@]}" --severity=warning $shell_files 2>&1)" && ok || fail "shellcheck: $(printf '%s' "$out" | grep -E '^In |SC[0-9]+' | head -6 | paste -sd' ')"
@@ -28,7 +29,10 @@ fi
 # (shellcheck cannot see this: it only knows the variable is set somewhere)
 for f in scripts/bootstrap-nix.sh scripts/snapshot-system.sh scripts/cleanup-ubuntu.sh; do
   src="$(grep -nE '^\. .*lib/common\.sh' "$f" | head -1 | cut -d: -f1)"
-  if [ -z "$src" ]; then fail "$f does not source lib/common.sh"; continue; fi
+  if [ -z "$src" ]; then
+    fail "$f does not source lib/common.sh"
+    continue
+  fi
   first="$(awk '/^[[:space:]]*#/ { next } /\$dotfiles|\$\{dotfiles|(^|[^A-Za-z_])(log|die|item|warn|list_regex|list_entries|origin_foreign|apt_plan) / { print NR; exit }' "$f")"
   if [ -z "$first" ] || [ "$src" -lt "$first" ]; then ok; else fail "$f uses the shared library (line $first) before sourcing it (line $src)"; fi
 done

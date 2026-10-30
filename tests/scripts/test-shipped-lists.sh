@@ -6,7 +6,7 @@
 # shellcheck source=../../scripts/lib/common.sh
 . "$repo/scripts/lib/common.sh"
 
-export XDG_CONFIG_HOME="$tmp/none"              # only the shipped lists
+export XDG_CONFIG_HOME="$tmp/none" # only the shipped lists
 lists="protect-packages.list drop-packages.list keep-snaps.list home-leftovers.list system-leftovers.list"
 
 for l in $lists; do
@@ -14,15 +14,16 @@ for l in $lists; do
   entries="$(list_entries "$l")"
   assert_eq "$(printf '%s\n' "$entries" | sort | uniq -d | paste -sd,)" "" "$l has no duplicate entries"
   assert_eq "$(printf '%s\n' "$entries" | grep -c '[[:space:]]' || true)" "0" "$l: no entry contains whitespace"
-  rc=0; echo x | grep -E "$(list_regex "$l")" > /dev/null 2>&1 || rc=$?
+  rc=0
+  echo x | grep -E "$(list_regex "$l")" >/dev/null 2>&1 || rc=$?
   [ "$rc" -le 1 ] && ok || fail "$l does not compile to a valid regex"
 done
 
 # the protect list covers what must never go
 protect="$(list_regex protect-packages.list)"
 for p in linux-image-generic linux-modules-nvidia-595-open-generic nvidia-driver-595-open libnvidia-compute-595 \
-         firmware-sof-signed oem-sutton-balin-meta ubuntu-desktop zscaler-client falcon-sensor intune-portal \
-         microsoft-edge-stable packages-microsoft-prod icaclient ud-agent cisco-secure-client; do
+  firmware-sof-signed oem-sutton-balin-meta ubuntu-desktop zscaler-client falcon-sensor intune-portal \
+  microsoft-edge-stable packages-microsoft-prod icaclient ud-agent cisco-secure-client; do
   assert_match "$p" "$protect" "protected: $p"
 done
 for p in postgresql-14 vim google-chrome-stable; do

@@ -76,10 +76,10 @@ echo "--- ip6tables FILTER ---"
 sudo ip6tables -L -n -v --line-numbers 2>&1
 echo "--- complete firewall saves (all tables, including legacy backend) ---"
 for backend in iptables ip6tables iptables-legacy ip6tables-legacy; do
-    if command -v "${backend}-save" >/dev/null; then
-        echo "--- ${backend}-save ---"
-        sudo "${backend}-save" -c 2>&1
-    fi
+  if command -v "${backend}-save" >/dev/null; then
+    echo "--- ${backend}-save ---"
+    sudo "${backend}-save" -c 2>&1
+  fi
 done
 echo "--- reverse-path filtering ---"
 sysctl net.ipv4.conf.all.rp_filter net.ipv4.conf.default.rp_filter
@@ -95,7 +95,7 @@ resolvectl status 2>&1
 echo
 echo "==================== SERVICE JOURNAL (last 15 min) ===================="
 sudo journalctl -b --since "15 min ago" --no-pager -n 1500 \
-    -u zsaservice -u zstunnel -u docker -u NetworkManager -u systemd-resolved 2>&1
+  -u zsaservice -u zstunnel -u docker -u NetworkManager -u systemd-resolved 2>&1
 echo "--- kernel journal (last 15 min) ---"
 sudo journalctl -b -k --since "15 min ago" --no-pager -n 1000 2>&1
 echo "--- service state ---"

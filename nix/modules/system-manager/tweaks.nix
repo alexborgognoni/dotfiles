@@ -1,5 +1,5 @@
 # Small system tweaks of the laptop, ported from its hand-edited /etc.
-{ config, lib, ... }:
+{ config, ... }:
 {
   config = {
     # Present as an Apple device to AirPods (LibrePods); Bluetooth on at boot

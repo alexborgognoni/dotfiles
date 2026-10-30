@@ -67,7 +67,7 @@ layout="$(jq -r --arg main "$main" '.[] | "\(.name) \(if .name == $main then "ma
 if ! $force && [ -r "$state/monitor-roles" ] && [ "$(cat "$state/monitor-roles")" = "$layout" ]; then
   exit 0
 fi
-printf '%s\n' "$layout" > "$state/monitor-roles"
+printf '%s\n' "$layout" >"$state/monitor-roles"
 rm -f "$state/bars-hidden"
 while read -r name role; do
   if [ "$role" = main ]; then show=main hide=basic; else show=basic hide=main; fi

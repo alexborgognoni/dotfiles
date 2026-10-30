@@ -90,7 +90,7 @@ in
           };
 
           decoration = {
-            rounding = deco.rounding;
+            inherit (deco) rounding;
             rounding_power = 2;
             shadow = {
               enabled = deco.shadow;

@@ -8,7 +8,10 @@ failed=0
 suite="$(basename "${0%.sh}")"
 
 ok() { passed=$((passed + 1)); }
-fail() { failed=$((failed + 1)); printf '  FAIL [%s] %s\n' "$suite" "$*"; }
+fail() {
+  failed=$((failed + 1))
+  printf '  FAIL [%s] %s\n' "$suite" "$*"
+}
 
 # assert_eq <actual> <expected> <what>
 assert_eq() { if [ "$1" = "$2" ]; then ok; else fail "$3: expected [$2], got [$1]"; fi; }

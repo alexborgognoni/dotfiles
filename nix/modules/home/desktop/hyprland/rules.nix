@@ -62,7 +62,7 @@ in
         match.namespace = "^noctalia-(bar-.+|notification|dock|panel|attached-panel|osd|window-switcher)$";
         no_anim = true;
         ignore_alpha = 0.5;
-        blur = deco.blur;
+        inherit (deco) blur;
         blur_popups = deco.blur;
       };
     };

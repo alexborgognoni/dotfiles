@@ -37,25 +37,25 @@ mkdir -p "$work/lists" "$out"
 
 log "Package and install lists"
 L="$work/lists"
-apt-mark showmanual > "$L/apt-manual.txt"
-dpkg-query -W -f '${Package}\t${Version}\n' > "$L/apt-all.txt"
+apt-mark showmanual >"$L/apt-manual.txt"
+dpkg-query -W -f '${Package}\t${Version}\n' >"$L/apt-all.txt"
 cp -r /etc/apt "$L/etc-apt" 2>/dev/null || true
-snap list > "$L/snap.txt" 2>&1 || true
-flatpak list --app > "$L/flatpak.txt" 2>&1 || true
-python3 -m pip list --user --format=freeze > "$L/pip-user.txt" 2>&1 || true
-{ for d in "$HOME"/.nvm/versions/node/*/lib/node_modules; do [ -d "$d" ] && echo "== $d" && ls "$d"; done; } > "$L/npm-global.txt" 2>&1 || true
-ls -la "$HOME/.cargo/bin" > "$L/cargo-bin.txt" 2>&1 || true
-ls "$HOME/.local/share/mise/installs" > "$L/mise.txt" 2>&1 || true
-ls -la "$HOME/.bun/install/global/node_modules" > "$L/bun-global.txt" 2>&1 || true
-ls -la /opt /usr/local/bin /usr/local/lib/systemd/system > "$L/opt-usr-local.txt" 2>&1 || true
-systemctl list-unit-files --state=enabled > "$L/systemd-enabled.txt" 2>&1 || true
-systemctl --user list-unit-files --state=enabled > "$L/systemd-user-enabled.txt" 2>&1 || true
+snap list >"$L/snap.txt" 2>&1 || true
+flatpak list --app >"$L/flatpak.txt" 2>&1 || true
+python3 -m pip list --user --format=freeze >"$L/pip-user.txt" 2>&1 || true
+{ for d in "$HOME"/.nvm/versions/node/*/lib/node_modules; do [ -d "$d" ] && echo "== $d" && ls "$d"; done; } >"$L/npm-global.txt" 2>&1 || true
+ls -la "$HOME/.cargo/bin" >"$L/cargo-bin.txt" 2>&1 || true
+ls "$HOME/.local/share/mise/installs" >"$L/mise.txt" 2>&1 || true
+ls -la "$HOME/.bun/install/global/node_modules" >"$L/bun-global.txt" 2>&1 || true
+ls -la /opt /usr/local/bin /usr/local/lib/systemd/system >"$L/opt-usr-local.txt" 2>&1 || true
+systemctl list-unit-files --state=enabled >"$L/systemd-enabled.txt" 2>&1 || true
+systemctl --user list-unit-files --state=enabled >"$L/systemd-user-enabled.txt" 2>&1 || true
 
 log "Home files"
 paths=()
 for p in .config .local/bin .local/share/applications .local/share/fonts .local/share/themes \
-         .local/share/icons .icons .themes snap .var .zsh_history .zshrc .zshenv .zprofile .zsh \
-         .bashrc .bash_history .profile .gitconfig .gitconfig-personal .ssh/config .Xmodmap .env.sh; do
+  .local/share/icons .icons .themes snap .var .zsh_history .zshrc .zshenv .zprofile .zsh \
+  .bashrc .bash_history .profile .gitconfig .gitconfig-personal .ssh/config .Xmodmap .env.sh; do
   [ -e "$HOME/$p" ] && paths+=("$p")
 done
 tar -C "$HOME" -cf "$work/home.tar" \
@@ -70,9 +70,9 @@ sudo tar -C / -cf "$work/etc.tar" etc 2>/dev/null || sudo tar -C / --ignore-fail
 sudo chown "$(id -u):$(id -g)" "$work/etc.tar"
 
 log "Encrypting to the sops admin key"
-tar -C "$work" -cf - lists home.tar etc.tar \
-  | nixtool zstd zstd -q -T0 -19 \
-  | nixtool age age -r "$recipient" > "$archive"
+tar -C "$work" -cf - lists home.tar etc.tar |
+  nixtool zstd zstd -q -T0 -19 |
+  nixtool age age -r "$recipient" >"$archive"
 
 log "Snapshot: $archive ($(du -h "$archive" | cut -f1))"
 echo "Copy it off this machine too (e.g. OneDrive)."

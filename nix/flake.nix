@@ -52,7 +52,7 @@
   outputs =
     { self, nixpkgs, ... }@inputs:
     let
-      lib = nixpkgs.lib;
+      inherit (nixpkgs) lib;
 
       mkHost =
         {
@@ -71,6 +71,7 @@
         };
 
       forAllSystems = lib.genAttrs [ "x86_64-linux" ];
+      tooling = system: import ./tooling.nix { pkgs = nixpkgs.legacyPackages.${system}; };
 
       overlay = import ./pkgs { inherit inputs; };
 
@@ -134,7 +135,9 @@
         };
       };
 
-      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
+      # `nix fmt` formats the whole repository (nixfmt, shfmt, stylua);
+      # `nix run path:nix#lint` also lints it (tooling.nix)
+      formatter = forAllSystems (system: (tooling system).formatter);
 
       # Packages defined in this repository (pkgs/).
       packages = forAllSystems (
@@ -151,7 +154,8 @@
           # Pinned CLIs for bootstrapping non-NixOS machines
           home-manager = inputs.home-manager.packages.${system}.home-manager;
           system-manager = inputs.system-manager.packages.${system}.default;
-          ansible = pkgs.ansible;
+          inherit (pkgs) ansible;
+          inherit (tooling system) lint;
         }
       );
 
@@ -160,6 +164,9 @@
         import ./checks {
           inherit self inputs;
           pkgs = nixpkgs.legacyPackages.${system};
+        }
+        // {
+          lint-nix = (tooling system).lintNix self;
         }
       );
     };

@@ -18,11 +18,11 @@ case "${1:-}" in
         rm -f "$hidden"
       else
         action="bar-hide"
-        : > "$hidden"
+        : >"$hidden"
       fi
       while read -r monitor bar; do
         noctalia msg "$action" "$bar" "$monitor"
-      done < "$roles"
+      done <"$roles"
     fi
     ;;
   focused)

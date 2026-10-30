@@ -56,5 +56,5 @@ Hermetic (a stubbed `apt-cache`, temporary lists), except
 `test-cleanup-smoke.sh`, which runs the real dry run (read-only) and skips
 itself where it cannot. They cover the list parsing, the apt decision and the
 vendor-origin check, the shipped lists (nothing dangerous, no clash with
-`ansible/ubuntu.yml`), and the repository (shellcheck, Markdown links, no
-references to removed files). Run them after editing a list.
+`ansible/ubuntu.yml`), the repository (Markdown links, no references to
+removed files) and the formatters and linters (`test-lint.sh`, needs Nix). Run them after editing a list.

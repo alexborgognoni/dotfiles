@@ -58,7 +58,9 @@ return {
       ts.installed(true)
       -- AstroCore's own FileType handler can run before this; enable through
       -- it again (same checks: parser, feature toggles, large files).
-      local function enable(buf) vim.schedule(function() ts.enable(buf) end) end
+      local function enable(buf)
+        vim.schedule(function() ts.enable(buf) end)
+      end
       vim.api.nvim_create_autocmd("FileType", {
         group = vim.api.nvim_create_augroup("nix_treesitter", { clear = true }),
         callback = function(args) enable(args.buf) end,
@@ -95,7 +97,9 @@ return {
             event = "Signal",
             pattern = "SIGUSR1",
             desc = "Reload the live theme",
-            callback = function() vim.schedule(function() vim.cmd.colorscheme "theme" end) end,
+            callback = function()
+              vim.schedule(function() vim.cmd.colorscheme "theme" end)
+            end,
           },
         },
       },

@@ -8,7 +8,10 @@ dotfiles="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 log() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 item() { printf '    %s\n' "$*"; }
 warn() { printf '\033[1;33mwarning:\033[0m %s\n' "$*" >&2; }
-die() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+die() {
+  printf '\033[1;31merror:\033[0m %s\n' "$*" >&2
+  exit 1
+}
 
 # --- cleanup lists ---------------------------------------------------------
 # Plain-text lists in scripts/cleanup.d/, one entry per line, "#" comments.
