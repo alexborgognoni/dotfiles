@@ -53,6 +53,9 @@
       - libqt6printsupport6
       - libqt6webchannel6
       - qt6-qpa-plugins
+      # Qt's Wayland platform: without it the tray's window runs through
+      # XWayland and is upscaled (blurry) at a fractional scale
+      - qt6-wayland
     # Corporate browser (Intune/Entra sign-in); maintains its own apt
     # repository after installing
     vendor_debs:
