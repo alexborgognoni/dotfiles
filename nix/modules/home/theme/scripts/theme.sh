@@ -47,7 +47,11 @@ fi
 if [ -z "${WAYLAND_DISPLAY:-}" ]; then
   for sock in "$XDG_RUNTIME_DIR"/wayland-*; do
     case "$sock" in *.lock) continue ;; esac
-    [ -S "$sock" ] && { WAYLAND_DISPLAY="$(basename "$sock")"; export WAYLAND_DISPLAY; break; }
+    [ -S "$sock" ] && {
+      WAYLAND_DISPLAY="$(basename "$sock")"
+      export WAYLAND_DISPLAY
+      break
+    }
   done
 fi
 
@@ -89,7 +93,9 @@ swatches() {
   theme="$1"
   for a in $(accents "$theme"); do
     hex="$(cut -d' ' -f2 "$state/packs/$theme/$a/accent")"
-    r=$((16#${hex:1:2})); g=$((16#${hex:3:2})); b=$((16#${hex:5:2}))
+    r=$((16#${hex:1:2}))
+    g=$((16#${hex:3:2}))
+    b=$((16#${hex:5:2}))
     printf '\033[38;2;%d;%d;%dm████\033[0m %s\n' "$r" "$g" "$b" "$a"
   done
 }
@@ -125,7 +131,7 @@ accent_cmd() {
         exit 1
       fi
       mkdir -p "$state/accents"
-      echo "$1" > "$state/accents/$theme"
+      echo "$1" >"$state/accents/$theme"
       preview "$theme"
       notify-send -a Theme "Accent" "$theme: $1" || true
       ;;
@@ -134,7 +140,7 @@ accent_cmd() {
 
 apply() {
   exists "$1"
-  echo "$1" > "$state/selected"
+  echo "$1" >"$state/selected"
   preview "$1"
   base="$(cat "$state/base-generation")"
   if [ "$1" = "$default" ]; then
@@ -179,14 +185,23 @@ wallpaper() {
       notify-send -a Theme "Wallpaper" "Rotation $want" || true
       echo "rotation $want"
       ;;
-    *) echo "usage: theme wallpaper [next|previous|random|rotate [on|off|toggle]]" >&2; exit 1 ;;
+    *)
+      echo "usage: theme wallpaper [next|previous|random|rotate [on|off|toggle]]" >&2
+      exit 1
+      ;;
   esac
 }
 
 case "${1:-pick}" in
-  wallpaper) shift; wallpaper "$@" ;;
+  wallpaper)
+    shift
+    wallpaper "$@"
+    ;;
   reload) reload_live ;;
-  accent) shift; accent_cmd "$@" ;;
+  accent)
+    shift
+    accent_cmd "$@"
+    ;;
   list) list ;;
   current) current ;;
   preview) preview "${2:?usage: theme preview <name>}" ;;

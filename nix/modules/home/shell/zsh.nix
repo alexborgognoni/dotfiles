@@ -6,10 +6,6 @@
   pkgs,
   ...
 }:
-let
-  isWork = config.my.profile == "work";
-  caBundle = "/etc/ssl/certs/ca-certificates.crt";
-in
 {
   # Your own scripts and tools installed with cargo / go install
   home.sessionPath = [
@@ -87,12 +83,6 @@ in
       EDITOR = "nvim";
       VISUAL = "nvim";
       GOPATH = "${config.xdg.dataHome}/go";
-    }
-    // lib.optionalAttrs isWork {
-      REQUESTS_CA_BUNDLE = caBundle;
-      NODE_EXTRA_CA_CERTS = caBundle;
-      # (Node 24 refuses --use-system-ca together with --use-openssl-ca)
-      NODE_OPTIONS = "--use-openssl-ca";
     };
 
     initContent = lib.mkMerge [

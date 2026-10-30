@@ -4,7 +4,7 @@
 let
   id = config.my.identity;
   inherit (id) work;
-  files = id.files;
+  inherit (id) files;
   link = config.lib.file.mkOutOfStoreSymlink;
   primary = if work != null then work else id.personal;
 in

@@ -4,6 +4,7 @@
 #   zscaler.nix         Zscaler Client Connector tray: unit, launcher, sign-in links
 #   entra-sso.nix       Entra ID single sign-on in Chrome
 #   artifactory.nix     pip through the company's Artifactory mirror
+#   ca-env.nix          Python and Node trust the corporate root CAs
 #   network-rescue.nix  fix-zscaler, net-diag, net-rescue (scripts/)
 #   identity.nix        the work identity (git email, keys, GitHub Enterprise)
 #   claude.nix          Claude Code against the company's Vertex AI / Copilot
@@ -11,6 +12,7 @@
 {
   imports = [
     ./artifactory.nix
+    ./ca-env.nix
     ./claude.nix
     ./entra-sso.nix
     ./identity.nix

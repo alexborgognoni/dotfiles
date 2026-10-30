@@ -27,7 +27,7 @@ in
     settings = {
       user = {
         inherit (id) name;
-        email = primary.email;
+        inherit (primary) email;
       };
 
       init.defaultBranch = "main";
