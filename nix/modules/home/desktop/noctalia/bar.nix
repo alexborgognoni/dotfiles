@@ -123,6 +123,7 @@ in
             ++ lib.optional (has "gamer-mode") "gamermode"
             ++ lib.optional (has "pomodoro") "pomodoro"
             ++ lib.optional (has "color_picker") "color-picker"
+            ++ lib.optional (has "voxtype") "voxtype"
             ++ [ "clipboard" ];
           }
           {

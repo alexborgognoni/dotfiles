@@ -120,6 +120,9 @@ in
         "${noctalia} panel-toggle kenn/keybind-cheatsheet:cheatsheet"
       )
     ]
+    ++ lib.optionals config.my.desktop.dictation.enable [
+      (exec "Dictation: start or stop" "${mod} + CTRL + V" "voxtype record toggle")
+    ]
     ++ lib.optionals (lib.elem "pomodoro" plugins) [
       (exec "Pomodoro start/pause" "${mod} + CTRL + P"
         "${noctalia} plugin thepunkoff/pomodoro:pomodoro all toggle"

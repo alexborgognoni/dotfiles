@@ -8,5 +8,4 @@ final: _prev: {
   };
 
   forgecode = final.callPackage ./forgecode/package.nix { };
-  openwhispr = final.callPackage ./openwhispr/package.nix { };
 }

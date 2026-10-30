@@ -62,6 +62,7 @@ check "internet through the corporate proxy chain" 'curl -fsS -o /dev/null https
 section "Hyprland session"
 check "Hyprland running" 'hyprctl version >/dev/null'
 check "hyprland-session.target active" 'systemctl --user is-active -q hyprland-session.target'
+check "dictation daemon (Voxtype) running, with the model pinned in the store" 'systemctl --user is-active -q voxtype && grep -q "^model = \"/nix/store/" ~/.config/voxtype/config.toml'
 check "Noctalia running (patched lock service)" 'systemctl --user is-active -q noctalia && grep -q "^noctalia$" <(strings "$(readlink -f /proc/$(systemctl --user show -p MainPID --value noctalia)/exe)")'
 check "Noctalia not bound to GNOME (graphical-session.target)" '! grep -q graphical-session ~/.config/systemd/user/noctalia.service'
 check "portals: ScreenCast, Screenshot, FileChooser, Settings" 'i=$(gdbus introspect --session --dest org.freedesktop.portal.Desktop --object-path /org/freedesktop/portal/desktop); for x in ScreenCast Screenshot FileChooser Settings; do grep -q "interface org.freedesktop.portal.$x" <<<"$i" || { echo "missing $x"; exit 1; }; done'

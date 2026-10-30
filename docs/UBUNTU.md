@@ -140,7 +140,7 @@ warning says how), then run both switches.
   `/nt buy milk` adds to the scratchpad, bare `/nt` lists the notes; plain
   markdown files in `~/Documents/Notes`), Printers (CUPS: appears in the tools
   pill with a queued job or a stopped printer), Gamer Mode (below) and Hyprland
-  Settings (below). Each is pinned to the newest revision the packaged
+  Settings (below) and Voxtype (Voice dictation, below). Each is pinned to the newest revision the packaged
   Noctalia can load, with its tools from Nix. Skipped on purpose: screen
   recorder and OBS Control (open OBS to record), ALS Brightness (no light
   sensor on the P1 Gen 5), Wallpaper Depth, Config Swap (it swaps Noctalia's
@@ -159,6 +159,20 @@ warning says how), then run both switches.
   too). The plugin's own list is not used: it stops system services with
   pkexec and freezes language servers. Names are what `pgrep -x` sees, cut at
   15 characters.
+- **Voice dictation** (`my.desktop.dictation`, `modules/home/desktop/voxtype.nix`):
+  Voxtype with Whisper large-v3-turbo (pinned, in the Nix store), running
+  locally on the NVIDIA GPU through Vulkan (about a second per dictation; the
+  model is loaded per dictation so the GPU can sleep in between). Press
+  **Super+Ctrl+V** to start, again to stop: the text is typed at the cursor
+  (`wtype`), or copied when typing is not possible. The Noctalia "voxtype"
+  widget in the tools pill shows the state and also toggles on click. A toggle
+  rather than hold-to-talk: text typed while the key's modifiers are still held
+  comes out as shortcuts. Why it is built this way: the daemon uses its own
+  ALSA configuration (PipeWire; Nix's ALSA cannot use Ubuntu's `/etc/alsa`) and
+  needs `vulkaninfo` on its PATH to pick the NVIDIA GPU (otherwise it silently
+  runs on the Intel one, six times slower). It replaced OpenWhispr, whose
+  Hyprland hotkeys it registers at runtime and writes into a config that is
+  read-only here.
 - **Typing other layouts' characters** without switching the keyboard: Super+.
   opens the emoji picker, whose "Characters" tab starts with ä ö ü ß é è ê à ç
   î ï ô ù û ÿ œ æ (German and French first, then the other Latin letters and

@@ -151,6 +151,24 @@ in
     widget.color-picker.type = "oldirtty/color_picker:widget";
   };
 
+  # Dictation state in the bar (microphone: idle, recording, transcribing);
+  # click starts or stops a recording, right click stops it. Talks to the
+  # `voxtype` daemon (modules/home/desktop/voxtype.nix). Plugin API 14.
+  voxtype = {
+    src = fetch {
+      repo = "community-plugins";
+      rev = "95595088d9bb36a0216d873592fab08cddee2b75";
+      dir = "voxtype";
+      hash = "sha256-jS8yEtA08iAVB1KAyCMQb1euEuP4DGRkHfu+gnZRHr4=";
+    };
+    id = "gabedunn/voxtype";
+    # idle is a plain microphone (the default, a crossed-out one, reads as muted)
+    widget.voxtype = {
+      type = "gabedunn/voxtype:status";
+      idle_glyph = "microphone-2";
+    };
+  };
+
   # Emoji and symbols with search, categories and "frequently used" (Super+.).
   # v1.2.1 is the newest release plugin API 39 can load. Its dataset only has
   # emoji and symbols: the patch adds the Latin letters of other layouts (ä ö ü

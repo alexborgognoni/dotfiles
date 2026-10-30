@@ -64,7 +64,7 @@ packages/default.nix      package groups: cli, gui, browsers
 themes/                   theme catalogue: catalogue.nix (the themes), defaults,
                           accents, wallpapers, pack.nix (live color files)
 assets/wallpapers/        shared wallpapers (+ themes/<theme>/ for extras)
-pkgs/                     packages not in nixpkgs (forgecode, openwhispr) and
+pkgs/                     packages not in nixpkgs (forgecode) and
                           the `pkgs.unstable` overlay
 secrets/                  sops-encrypted: vm.yaml (host), personal.yaml and
                           work.yaml (SSH/GPG keys)
@@ -312,6 +312,9 @@ only offers those.
   per plugin: `plugin_settings."<id>".<panel id>_placement = "floating"`.
 - `my.desktop.airpods.enable`: AirPods in the bar (Noctalia plugin
   `harveywuk/airpods` and the patched librepods daemon as a user service).
+- `my.desktop.dictation`: voice dictation (Voxtype: `enable`, `languages`,
+  `model`, `gpu`, `onDemandLoading`; user service, config, Super+Ctrl+V and the
+  `voxtype` bar plugin).
 - `my.desktop.noctalia.plugins`: pinned Noctalia plugins (bitwarden,
   file-search, keybind-cheatsheet, nvtop, pomodoro, airpods)
   with their tools. Panel placement keys are `<panel id>_placement` and so on.

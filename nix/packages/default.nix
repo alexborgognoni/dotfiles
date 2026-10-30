@@ -200,10 +200,7 @@ in
     onedrive
   ]);
 
-  gui = [
-    pkgs.openwhispr
-  ]
-  ++ (with u; [
+  gui = with u; [
     neovide
     obsidian
     vlc
@@ -215,7 +212,7 @@ in
     readest
     chromium
     wineWow64Packages.stable
-  ]);
+  ];
 
   browsers = with u; [
     google-chrome

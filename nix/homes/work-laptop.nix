@@ -63,6 +63,15 @@ in
       # AirPods in the bar (Noctalia plugin + patched librepods daemon)
       airpods.enable = true;
 
+      # Voice dictation (Super+Ctrl+V; Voxtype, local Whisper)
+      dictation = {
+        enable = true;
+        # ~6x faster than the Intel graphics on this laptop; loaded per
+        # dictation (about a second) so the NVIDIA GPU can sleep in between
+        gpu = "nvidia";
+        onDemandLoading = true;
+      };
+
       # Noctalia plugins (pinned in modules/home/desktop/noctalia/plugin-catalog.nix)
       noctalia.plugins = [
         "bitwarden"
@@ -75,6 +84,7 @@ in
         "nvtop"
         "pomodoro"
         "printers"
+        "voxtype"
         "hyprland-settings"
       ];
 

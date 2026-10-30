@@ -158,7 +158,7 @@
           };
         in
         {
-          inherit (pkgs) forgecode openwhispr;
+          inherit (pkgs) forgecode;
           # Pinned CLIs for bootstrapping non-NixOS machines
           home-manager = inputs.home-manager.packages.${system}.home-manager;
           system-manager = inputs.system-manager.packages.${system}.default;
