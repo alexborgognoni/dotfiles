@@ -1,5 +1,5 @@
-# Port of chezmoi/dot_zshrc.tmpl with plugins from nixpkgs instead of zinit.
-# Dropped: nvm, pyenv, brew, bun and herd PATH hacks (the tools come from Nix).
+# zsh with plugins from nixpkgs (no zinit). No nvm, pyenv, brew, bun or herd
+# PATH hacks: the tools come from Nix.
 {
   config,
   lib,

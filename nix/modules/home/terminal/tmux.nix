@@ -1,5 +1,4 @@
-# Port of chezmoi/dot_config/tmux/tmux.conf. Plugins come from nixpkgs (no
-# tpm); the catppuccin plugin's palette comes from the live theme pack.
+# tmux. Plugins come from nixpkgs (no tpm); the catppuccin plugin's palette comes from the live theme pack.
 {
   config,
   pkgs,

@@ -1,0 +1,12 @@
+# Snaps of the Ubuntu installation that stay (store, printing, desktop glue).
+# Every other snap is removed (Nix provides the apps).
+bare
+core*
+snapd
+snap-store
+snapd-desktop-integration
+cups
+lxd
+gnome-[0-9-]*
+gtk-common-themes
+mesa-[0-9]*

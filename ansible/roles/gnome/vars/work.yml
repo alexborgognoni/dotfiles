@@ -1,5 +1,0 @@
----
-# Work profile GNOME configuration
-
-# Enable work-specific dconf settings
-gnome_profile_settings: true

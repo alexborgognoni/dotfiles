@@ -1,5 +1,5 @@
-# Neovim: AstroNvim v6 with your own config (./config, formerly
-# chezmoi/dot_config/nvim), every piece of it built by Nix:
+# Neovim: AstroNvim v6 with your own config (./config), every piece of it
+# built by Nix:
 #   - the AstroNvim distribution: flake input `astronvim` (pinned in flake.lock)
 #   - its plugins: nixpkgs vimPlugins, collected in one directory that
 #     lazy.nvim loads as "dev" plugins (it never downloads or updates)

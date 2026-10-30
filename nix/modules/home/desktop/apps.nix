@@ -44,7 +44,7 @@
           "image/png" = "org.gnome.Loupe.desktop";
           "image/jpeg" = "org.gnome.Loupe.desktop";
         }
-        # As on the Ubuntu laptop before (chezmoi mimeapps.list)
+        # As on the Ubuntu laptop before
         // lib.optionalAttrs config.my.standalone {
           "x-scheme-handler/mailto" = browser;
           "x-scheme-handler/postman" = "Postman.desktop";

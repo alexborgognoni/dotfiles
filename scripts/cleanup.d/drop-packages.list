@@ -1,0 +1,10 @@
+# Tool families removed completely, including the parts that were installed as
+# dependencies, even when they come from a vendor repository (servers now run
+# per project, CUDA per project). Overrides the protect list.
+postgresql
+postgresql-[0-9]*
+postgresql-common
+postgresql-client*
+mysql-*
+virtualbox*
+cuda-*

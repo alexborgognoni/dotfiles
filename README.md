@@ -1,127 +1,60 @@
 # Dotfiles
 
-Modern dotfiles for Ubuntu GNOME, managed with **chezmoi** and **Ansible**.
+One [Nix](https://nixos.org) flake for every machine, Nix only (no chezmoi,
+no per-tool installers):
 
-## Features
+- **Ubuntu work laptop**: Ubuntu keeps the OS, drivers and corporate software;
+  Nix (Home Manager + [system-manager](https://github.com/numtide/system-manager))
+  owns everything else, including a Hyprland session next to GNOME. A slim
+  Ansible playbook installs the few apt packages Nix cannot provide.
+- **NixOS** (a VM, later a home PC): the same user-level modules.
 
-- **One-Command Install**: Fresh Ubuntu to fully configured system
-- **Profile System**: Switch between personal and work configurations
-- **Declarative Packages**: Automated package installation (apt, snap, cargo, pip, npm, brew)
-- **GNOME Automation**: Desktop environment configured via dconf
-- **Version Controlled**: All configs tracked and templated
+The desktop is Hyprland with the Noctalia shell and a live theme engine
+(`theme` switches kitty, tmux, Neovim, Hyprland, Noctalia, GTK/Qt at once).
+Shell, Neovim (AstroNvim, plugins built by Nix), git/ssh/gpg identities,
+secrets (sops) and all tools come from the same pinned modules.
 
-## Quick Start
+## Ubuntu: one command
 
-### Prerequisites
+Needs Ubuntu 22.04+, sudo, and the sops admin key (Bitwarden item
+`sops-age-key`, or the `SOPS_AGE_KEY` variable, or pasted when asked).
 
-- Ubuntu 22.04+ with GNOME
-- Internet connection
-- sudo access
-
-### Installation
-
-**One-line install:**
-```bash
-wget -qO- https://raw.githubusercontent.com/alexborgognoni/dotfiles/main/install | bash
-
-# With options:
-wget -qO- ... | PROFILE=work bash                      # Work profile
-wget -qO- ... | SKIP_SECRETS=true bash                 # Skip secrets
-wget -qO- ... | PROFILE=work SKIP_SECRETS=true bash    # Both
+```sh
+curl -fsSL https://raw.githubusercontent.com/alexborgognoni/dotfiles/nixos/install | DOTFILES_BRANCH=nixos bash
+# or from a clone:  ~/dotfiles/install [machine]      (default: work-laptop)
 ```
 
-**Or manually:**
-```bash
-# Clone repository
-git clone https://github.com/alexborgognoni/dotfiles.git ~/dotfiles
-cd ~/dotfiles
+Idempotent; asks for sudo once. It installs Nix, takes a one-time snapshot of
+the current system, installs the apt packages, then applies the system layer
+and the user layer. Log out and back in afterwards. Details, checks and
+rollback: [docs/UBUNTU.md](docs/UBUNTU.md).
 
-# Optional: Login to Bitwarden for secret management
-bw login
-export BW_SESSION=$(bw unlock --raw)
+Everyday:
 
-# Run bootstrap
-./install
+```sh
+nh home switch                                       # user level
+sudo system-manager switch --flake ~/dotfiles/nix#work-laptop   # system level
+nh home switch --update                              # update everything (flake.lock)
 ```
 
-Choose your profile when prompted:
-- **personal**: Personal machine setup
-- **work**: Work machine with corporate settings
+## Layout
 
-### What Gets Configured
-
-- **Shell**: zsh with plugins and custom prompt (starship)
-- **Editor**: Neovim with full configuration
-- **Terminal**: Kitty with custom config
-- **Tools**: tmux, git, gh, bat, fzf, ripgrep, and more
-- **Desktop**: GNOME extensions, themes, keybindings
-- **Packages**: 80+ development tools and applications
-
-### Testing
-
-Run tests before deploying:
-
-```bash
-# Quick test (~5 min) - Docker container
-./scripts/test-docker.sh
-
-# Profile system validation (~2 min)
-./scripts/test-profile-switching.sh
-
-# Complete test - Fresh Ubuntu VM (recommended)
-# See docs/TESTING.md for VM setup
 ```
-
-### Updating Configs
-
-After changing system settings, update the repository:
-
-```bash
-# Update GNOME settings
-./scripts/dump-gnome-settings.sh
-
-# Update package lists
-./scripts/dump-packages.sh
+install            Ubuntu entry point (all layers)
+nix/               the flake: hosts, homes, modules, themes, secrets   -> nix/README.md
+ansible/ubuntu.yml the apt packages Nix cannot provide on Ubuntu
+scripts/           Nix bootstrap, snapshot, optional cleanup           -> scripts/README.md
+tests/ubuntu-vm/   fresh Ubuntu VM: create it, run ./install, verify
+docs/              runbook, plan, roadmap
 ```
 
 ## Documentation
 
-- [**Design & Architecture**](docs/DESIGN.md) - System architecture and decisions
-- [**Profile System**](docs/PROFILES.md) - How work/personal profiles work
-- [**Secret Management**](docs/SECRETS.md) - SSH/GPG keys with Bitwarden
-- [**Testing Guide**](docs/TESTING.md) - Docker and VM testing
-- [**Roadmap**](docs/ROADMAP.md) - Future improvements
+- [nix/README.md](nix/README.md): modules, features, themes, secrets, everyday commands, tests
+- [docs/UBUNTU.md](docs/UBUNTU.md): the Ubuntu runbook and Hyprland session notes
+- [scripts/README.md](scripts/README.md): the scripts, and how to adapt the cleanup (protect lists) to another machine
+- [docs/ROADMAP.md](docs/ROADMAP.md): what is next
+- [docs/NIX-PLAN.md](docs/NIX-PLAN.md): the migration plan (historical record)
 
-## Project Structure
-
-```
-dotfiles/
-├── install              # Bootstrap script
-├── ansible/             # System automation
-│   ├── playbook.yml     # Main playbook
-│   ├── group_vars/      # Profile variables
-│   └── roles/           # base, packages, secrets, gnome
-├── chezmoi/             # Dotfiles source
-│   ├── dot_zshrc.tmpl
-│   ├── dot_gitconfig.tmpl
-│   └── dot_config/      # All .config files
-├── scripts/             # Utility scripts
-└── docs/                # Documentation
-```
-
-## Architecture
-
-- **chezmoi**: Manages dotfiles with Go templating for profile-specific configs
-- **Ansible**: Automates system setup (packages, GNOME, repositories, secrets)
-- **Profile System**: Single codebase for multiple machine types via templates
-
-See [DESIGN.md](docs/DESIGN.md) for detailed architecture decisions.
-
-## Requirements
-
-The bootstrap script will install:
-- Ansible
-- chezmoi
-- git
-
-All other dependencies are installed automatically.
+The earlier chezmoi + Ansible setup is kept at the git tag
+`legacy-chezmoi-ansible`.

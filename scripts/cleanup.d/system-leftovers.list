@@ -1,0 +1,17 @@
+# Hand installs outside apt (absolute paths, "*" matches). Removed with sudo.
+/usr/local/bin/aws
+/usr/local/bin/aws_completer
+/usr/local/aws-cli
+/usr/local/bin/bw
+/usr/local/bin/keyd
+/usr/local/bin/keyd-application-mapper
+/usr/local/lib/systemd/system/keyd.service
+/usr/local/bin/kubectl
+/usr/local/bin/lazygit
+/usr/local/bin/llama-cli
+/usr/local/bin/onedrive
+/usr/local/bin/starship
+/usr/local/bin/tflint
+/usr/local/bin/tmux
+/usr/local/bin/xdotool
+/opt/nvim-linux-x86_64

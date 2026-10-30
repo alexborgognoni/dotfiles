@@ -1,7 +1,11 @@
 # Nix migration plan (spec for sign-off)
 
+> **Historical record.** The migration is complete and chezmoi/Ansible roles are
+> gone (git tag `legacy-chezmoi-ansible`). For the current state see the
+> [README](../README.md), [nix/README.md](../nix/README.md) and [UBUNTU.md](UBUNTU.md).
+
 Status: **approved; phases 0-2 done, phase 3 ready to apply**
-([UBUNTU-MIGRATION.md](UBUNTU-MIGRATION.md))
+([UBUNTU.md](UBUNTU.md))
 Scope: this repository (`~/dotfiles`)
 
 ## 1. Context

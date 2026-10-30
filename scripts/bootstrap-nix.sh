@@ -10,8 +10,7 @@ ca=/etc/ssl/certs/ca-certificates.crt
 user="$(id -un)"
 version=2.35.4
 
-log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
-die() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+. "$(dirname "$0")/lib/common.sh"
 
 [ "$(id -u)" -ne 0 ] || die "run as your user, not root"
 [ -r "$ca" ] || die "missing $ca"

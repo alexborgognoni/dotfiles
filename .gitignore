@@ -8,9 +8,6 @@
 *_rsa.pub
 *.gpg
 
-# chezmoi generated files
-.chezmoi.toml  # Generated from template
-
 # OS-specific
 .DS_Store
 Thumbs.db
@@ -34,6 +31,8 @@ Thumbs.db
 .zsh_history
 
 # Build artifacts
+result
+result-*
 node_modules/
 *.o
 *.so
@@ -48,12 +47,7 @@ __pycache__/
 
 # These were in the old gitignore
 tmux/plugins
-chezmoi/dot_config/tmux/plugins/
 **/lazy-lock.json
-
-# Fonts (installed by Ansible, not tracked)
-.fonts/
-chezmoi/dot_fonts/
 
 # Keep empty directories
 !.gitkeep

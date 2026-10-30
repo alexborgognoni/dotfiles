@@ -1,4 +1,4 @@
-# Corporate settings, work profile only (chezmoi: work-only templates).
+# Corporate settings, work profile only.
 {
   config,
   lib,

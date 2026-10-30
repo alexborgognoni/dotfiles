@@ -1,6 +1,5 @@
-# Git, SSH, GPG and GitHub CLI, with personal/work identities
-# (replaces chezmoi's dot_gitconfig.tmpl, dot_gitconfig-personal.tmpl,
-# private_dot_ssh/config.tmpl and the Ansible secrets role).
+# Git, SSH, GPG and GitHub CLI, with personal/work identities; the keys come
+# from sops.
 #
 # Private keys come from sops secrets (secrets/personal.yaml, work.yaml),
 # decrypted by NixOS (modules/nixos/core/secrets.nix) or, standalone, by

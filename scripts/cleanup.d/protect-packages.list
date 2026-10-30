@@ -1,0 +1,29 @@
+# Packages cleanup-ubuntu.sh never removes. One name per line, "*" matches
+# anything. Add your company's agents here, or in
+# ~/.config/dotfiles/cleanup.d/protect-packages.list (kept outside the repo).
+#
+# Packages installed from a repository outside Ubuntu's archive, and local
+# .debs, are kept automatically as well (that is how corporate agents look);
+# the dry run lists them. The drop list below wins over both.
+
+# system: kernels, drivers, firmware, OEM, desktop base
+linux-*
+nvidia-*
+libnvidia-*
+realtek-*
+firmware-*
+oem-*
+ubuntu-*
+opensc
+libnss-resolve
+systemd-coredump
+
+# corporate agents
+falcon-sensor
+icaclient
+intune-portal
+microsoft-*
+packages-microsoft-prod
+ud-agent
+zscaler*
+cisco*

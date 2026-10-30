@@ -16,13 +16,11 @@
 set -euo pipefail
 
 out="${1:-$HOME/Backups}"
-dotfiles="$(cd "$(dirname "$0")/.." && pwd)"
 recipient="$(grep -o 'age1[a-z0-9]*' "$dotfiles/nix/.sops.yaml" | head -1)" # admin key
 stamp="$(date +%Y%m%d-%H%M%S)"
 archive="$out/system-snapshot-$(hostname)-$stamp.tar.zst.age"
 
-log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
-die() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+. "$(dirname "$0")/lib/common.sh"
 
 [ -n "$recipient" ] || die "no age recipient in nix/.sops.yaml"
 if [ -r /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then

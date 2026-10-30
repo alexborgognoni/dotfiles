@@ -1,4 +1,4 @@
-# Port of chezmoi/dot_config/kitty. Font and opacity come from Stylix; colors
+# kitty. Font and opacity come from Stylix; colors
 # come from the live theme pack, so open windows recolor on theme preview.
 {
   config,

@@ -3,7 +3,8 @@
 # provides, so the machine is "fresh Ubuntu + Nix". What stays is declared:
 #   - packages of the original Ubuntu installation (/var/log/installer)
 #   - ansible/ubuntu.yml (root daemons and the login shell)
-#   - the protect list below (corporate software, drivers, system parts)
+#   - scripts/cleanup.d/protect-packages.list (corporate software, drivers,
+#     system parts), and anything installed from outside Ubuntu's archive
 # Everything removed is in the snapshot (scripts/snapshot-system.sh), which
 # must exist first.
 #
@@ -20,20 +21,15 @@ for arg in "$@"; do
     --yes) assume_yes=true ;;
   esac
 done
-dotfiles="$(cd "$(dirname "$0")/.." && pwd)"
+. "$(dirname "$0")/lib/common.sh"
 
-# Never removed (regexes on package names): corporate agents and their
-# repositories, drivers, kernels, firmware, OEM, smartcards, system parts.
-protect='^(falcon-sensor|icaclient|intune-portal|microsoft-.*|packages-microsoft-prod|ud-agent|zscaler.*|cisco.*|oem-.*|linux-.*|nvidia-.*|libnvidia-.*|realtek-.*|firmware-.*|opensc|libnss-resolve|systemd-coredump|iw|ubuntu-.*)$'
-# Dropped tool families: removed completely, including parts that were
-# installed as dependencies (servers now run per project, CUDA per project)
-drop='^(postgresql|postgresql-[0-9].*|postgresql-common|postgresql-client.*|mysql-.*|virtualbox.*|cuda-.*)$'
-# Snaps of the Ubuntu installation that stay (store, printing, desktop glue)
-snap_keep='^(bare|core[0-9]*|snapd|snap-store|snapd-desktop-integration|cups|lxd|gnome-[0-9-]+|gtk-common-themes|mesa-[0-9]+)$'
-
-log() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
-item() { printf '    %s\n' "$*"; }
-die() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+# What stays and what goes is data, in scripts/cleanup.d/*.list (see
+# scripts/README.md); ~/.config/dotfiles/cleanup.d/ adds machine-specific entries.
+# Order of precedence for apt packages: drop list, then protect list, then
+# "installed from outside Ubuntu's archive" (kept), then default: removed.
+protect="$(list_regex protect-packages.list)"
+drop="$(list_regex drop-packages.list)"
+snap_keep="$(list_regex keep-snaps.list)"
 
 if ! ls "$HOME"/Backups/system-snapshot-*.tar.zst.age >/dev/null 2>&1; then
   $apply && die "no snapshot in ~/Backups; run scripts/snapshot-system.sh first"
@@ -48,14 +44,23 @@ declared="$(python3 -c "
 import yaml,sys
 play=yaml.safe_load(open('$dotfiles/ansible/ubuntu.yml'))[0]['vars']
 print('\n'.join(play['apt_packages'] + list(play.get('vendor_debs',{}))))" | sort -u)"
-apt_remove="$(apt-mark showmanual | sort -u \
+apt_candidates="$(apt-mark showmanual | sort -u \
   | comm -23 - <(printf '%s\n' "$initial") \
   | comm -23 - <(printf '%s\n' "$declared") \
   | grep -vE "$protect" || true)"
+# Vendor packages (corporate agents, Docker, Edge, local .debs) stay unless
+# the drop list names them
+# shellcheck disable=SC2086
+apt_foreign="$(origin_foreign $apt_candidates | sort -u)"
+apt_remove="$(comm -23 <(printf '%s\n' "$apt_candidates" | sed '/^$/d' | sort -u) <(printf '%s\n' "$apt_foreign"))"
 apt_remove="$( { printf '%s\n' "$apt_remove"; dpkg-query -W -f '${Package}\n' | grep -E "$drop" || true; } | sed '/^$/d' | sort -u)"
 
 log "apt: packages to remove: installed by hand or dropped tool families ($(printf '%s' "$apt_remove" | grep -c . || true))"
 printf '%s\n' "$apt_remove" | column -c 120 | sed 's/^/    /'
+if [ -n "$apt_foreign" ]; then
+  log "apt: kept, installed from outside Ubuntu's archive (add to scripts/cleanup.d/drop-packages.list to remove)"
+  printf '%s\n' "$apt_foreign" | column -c 120 | sed 's/^/    /'
+fi
 
 # They are marked "automatically installed" and autoremove deletes what no
 # remaining package needs (a plain purge would also remove packages that
@@ -131,24 +136,12 @@ printf '%s\n' "$flatpaks" | sed '/^$/d; s/^/    /'
 
 # --- 4. home: old tools and leftovers -----------------------------------------
 home_remove=()
-for p in .local/bin .local/lib/python3.10 .local/lib/librepods .nvm .local/share/mise .config/mise .pyenv .opencode .bun \
-         .local/share/fonts .icons .local/share/themes/catppuccin-macchiato-lavender-standard+default \
-         .local/share/themes/catppuccin-macchiato-lavender-standard+default-hdpi \
-         .local/share/themes/catppuccin-macchiato-lavender-standard+default-xhdpi \
-         .local/share/applications/kitty.desktop .local/share/applications/kitty-open.desktop \
-         .local/share/applications/me.kavishdevar.librepods.desktop \
-         .config/envman .config/herd-lite .config/composer .config/psysh .config/neofetch \
-         .config/touchegg .config/VirtualBox .config/BraveSoftware .config/opera .config/vivaldi \
-         .config/chromium .config/chezmoi .local/share/chezmoi .config/teams-for-linux \
-         .brewenv_cache .zinit .local/share/zinit .tmux/plugins \
-         .local/opt/google-cloud-sdk .local/kitty.app .local/share/nvim/mason .local/share/nvim/lazy \
-         .local/share/claude .local/share/go/bin; do
-  [ -e "$HOME/$p" ] && home_remove+=("$p")
-done
-for b in loc neovide resvg squawk yazi ya yazi-build; do
-  [ -e "$HOME/.cargo/bin/$b" ] && home_remove+=(".cargo/bin/$b")
-done
-for d in "$HOME"/.local/opt/k9s-*; do [ -e "$d" ] && home_remove+=("${d#"$HOME"/}"); done
+while IFS= read -r entry; do
+  # entries may contain "*": expand against $HOME
+  while IFS= read -r p; do
+    [ -n "$p" ] && [ -e "$HOME/$p" ] && home_remove+=("$p")
+  done < <(cd "$HOME" && compgen -G "$entry" || true)
+done < <(list_entries home-leftovers.list)
 # VS Code: old copies of extensions that Home Manager now provides
 for d in "$HOME"/.vscode/extensions/*-[0-9]*; do
   [ -d "$d" ] && [ ! -L "$d" ] || continue
@@ -163,13 +156,11 @@ printf '%s\n' "$pwa" | sed '/^$/d; s/^/    /'
 
 # --- 5. system: hand installs in /usr/local and /opt -------------------------
 sys_remove=()
-for p in /usr/local/bin/aws /usr/local/bin/aws_completer /usr/local/aws-cli /usr/local/bin/bw \
-         /usr/local/bin/keyd /usr/local/bin/keyd-application-mapper /usr/local/lib/systemd/system/keyd.service \
-         /usr/local/bin/kubectl /usr/local/bin/lazygit /usr/local/bin/llama-cli /usr/local/bin/onedrive \
-         /usr/local/bin/starship /usr/local/bin/tflint /usr/local/bin/tmux /usr/local/bin/xdotool \
-         /opt/nvim-linux-x86_64; do
-  [ -e "$p" ] && sys_remove+=("$p")
-done
+while IFS= read -r entry; do
+  while IFS= read -r p; do
+    [ -n "$p" ] && [ -e "$p" ] && sys_remove+=("$p")
+  done < <(compgen -G "$entry" || true)
+done < <(list_entries system-leftovers.list)
 # dead links left by removed packages
 while IFS= read -r l; do sys_remove+=("$l"); done < <(find /usr/bin /usr/local/bin -maxdepth 1 -xtype l 2>/dev/null)
 log "system: hand installs and dead links (${#sys_remove[@]})"

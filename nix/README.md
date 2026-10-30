@@ -10,7 +10,7 @@ One flake for every machine:
   session), [system-manager](https://github.com/numtide/system-manager) the
   root level, and a slim `../ansible/ubuntu.yml` the apt packages. One
   command sets it all up: `../install` (see
-  [../docs/UBUNTU-MIGRATION.md](../docs/UBUNTU-MIGRATION.md)).
+  [../docs/UBUNTU.md](../docs/UBUNTU.md)).
 
 Both use the same Home Manager modules: zsh, starship, kitty, tmux, git/ssh/gpg,
 Neovim (AstroNvim, plugins built by Nix), CLI tools and the theme engine.
@@ -56,7 +56,7 @@ checks/default.nix        `nix flake check`
 | --- | --- | --- | --- |
 | always | shell, git/ssh/gpg, tmux, Neovim (AstroNvim), CLI tools, theme engine | yes | yes |
 | `my.features.gui.enable` | kitty, Firefox, fonts | yes | yes |
-| `my.features.desktop.enable` | Hyprland, Noctalia, desktop apps, GTK/Qt theming | yes | not yet |
+| `my.features.desktop.enable` | Hyprland, Noctalia, desktop apps, GTK/Qt theming | yes | yes (a session next to GNOME) |
 
 `my.standalone = true` enables the non-NixOS integration: generic Linux paths
 (GNOME app grid), GPU drivers for Nix GUI apps (`my.gpu.nvidia.version` must
@@ -204,10 +204,6 @@ theme's library; rotation defaults are set with `my.wallpaper.rotation`.
 less RAM build the checks one by one:
 `nix build .#checks.x86_64-linux.<name>`.
 
-`../scripts/test-ubuntu-hm.sh` proves the Ubuntu laptop setup in a Ubuntu
-22.04 container: it reproduces the current chezmoi state, migrates, verifies
-shell, identities, keys, Neovim, tmux, themes, packages and GPU pieces, and
-rolls back (needs Docker and the admin key; nothing on the host changes).
 `../tests/ubuntu-vm/create.sh` creates a fresh Ubuntu 22.04 GNOME VM (HWE
 kernel, NetworkManager, like the laptop) for testing `../install` end to end;
 `../tests/ubuntu-vm/verify.sh` then asserts the result (system layer, GDM,

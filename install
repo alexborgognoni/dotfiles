@@ -13,9 +13,8 @@
 #      + snapshot of the current system, once         (scripts/snapshot-system.sh)
 #   4. apt packages, groups, login shell             (ansible/ubuntu.yml)
 #   5. root-level config: Nix, keyd, GPU, session    (system-manager: nix/systems/<machine>.nix)
-#   6. user-level config and tools                   (Home Manager: nix/homes/<machine>.nix,
-#                                                     migrating chezmoi if present)
-# The previous chezmoi + Ansible installer is scripts/install-legacy.sh.
+#   6. user-level config and tools                   (Home Manager: nix/homes/<machine>.nix;
+#                                                     files in the way are kept as *.hm-backup)
 set -euo pipefail
 
 repo="${DOTFILES_REPO:-https://github.com/alexborgognoni/dotfiles.git}"
@@ -86,7 +85,7 @@ log "5/6 System configuration (system-manager)"
 nixcmd run "$dir/nix#system-manager" -- switch --flake "$dir/nix#$machine" --sudo
 
 log "6/6 User configuration (Home Manager)"
-"$dir/scripts/migrate-to-home-manager.sh" "$home_config"
+nixcmd run "$dir/nix#home-manager" -- switch --flake "$dir/nix#$home_config" -b hm-backup
 
 log "Done"
 cat <<EOF
