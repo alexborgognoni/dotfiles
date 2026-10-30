@@ -3,7 +3,12 @@
 #   - the AstroNvim distribution: flake input `astronvim` (pinned in flake.lock)
 #   - its plugins: nixpkgs vimPlugins, collected in one directory that
 #     lazy.nvim loads as "dev" plugins (it never downloads or updates)
-#   - treesitter grammars, language servers, formatters: Nix (Mason is off)
+#   - treesitter grammars, language servers, formatters: Nix (Mason is off);
+#     which ones: languages.nix
+# Neovim, the plugins and the tools come from nixpkgs-unstable (latest), like
+# the other applications. They are updated with the rest: `nh home switch
+# --update` (AstroNvim's own :AstroUpdate and lazy.nvim's updates are switched
+# off: the plugin directory is read-only).
 # Same technique as lazyvim-nix and nixCats' lazy.nvim wrapper.
 {
   config,
@@ -13,7 +18,47 @@
   ...
 }:
 let
-  vp = pkgs.vimPlugins;
+  vp = pkgs.unstable.vimPlugins;
+
+  # Languages (languages.nix): tools on PATH, and what nix.lua switches on
+  languages = import ./languages.nix { pkgs = pkgs.unstable; };
+  all = lib.attrValues languages;
+  merged = key: lib.foldl' (acc: language: acc // (language.${key} or { })) { } all;
+  servers = merged "servers";
+  formatters = merged "formatters";
+  linters = merged "linters";
+  tools = lib.unique (
+    lib.attrValues servers
+    ++ lib.attrValues formatters
+    ++ lib.attrValues linters
+    ++ lib.concatMap (language: language.extra or [ ]) all
+  );
+
+  # The names must exist in the plugins that use them: a typo fails the build,
+  # not Neovim at startup. (autopep8 is a custom source in nix.lua.)
+  languagesCheck = pkgs.runCommand "astronvim-languages-check" { } ''
+    missing() { echo "languages.nix: $1 $2 does not exist" >&2; exit 1; }
+    ${lib.concatMapStrings (name: ''
+      [ -e ${vp.nvim-lspconfig}/lsp/${name}.lua ] || missing "language server" ${name}
+    '') (lib.attrNames servers)}
+    ${lib.concatMapStrings (name: ''
+      [ -e ${vp.none-ls-nvim}/lua/null-ls/builtins/formatting/${name}.lua ] || missing "formatter" ${name}
+    '') (lib.remove "autopep8" (lib.attrNames formatters))}
+    ${lib.concatMapStrings (name: ''
+      [ -e ${vp.none-ls-nvim}/lua/null-ls/builtins/diagnostics/${name}.lua ] || missing "linter" ${name}
+    '') (lib.attrNames linters)}
+    touch $out
+  '';
+
+  # What nix.lua reads (vim.g.nix_languages)
+  languagesJson = builtins.toJSON {
+    servers = lib.attrNames servers;
+    formatters = lib.attrNames formatters;
+    linters = lib.attrNames linters;
+    formattingDisabled = lib.concatMap (language: language.formattingDisabled or [ ]) all;
+    formatterFiletypes = merged "formatterFiletypes";
+    serverCommands = merged "serverCommands";
+  };
 
   # nvim-treesitter with every grammar (parsers and queries of matching
   # versions) merged into one directory, which is also its install_dir
@@ -85,38 +130,19 @@ in
     defaultEditor = true;
     viAlias = true;
     vimAlias = true;
+    package = pkgs.unstable.neovim-unwrapped;
     withRuby = false;
     withPython3 = false;
 
-    # Mason's job: language servers and formatters on nvim's PATH
-    extraPackages = with pkgs; [
-      # language servers (config/lua/nix.lua)
-      bash-language-server
-      vscode-langservers-extracted # eslint, jsonls
-      lua-language-server
-      nixd
-      pyright
-      typescript-language-server
-      yaml-language-server
-      # formatters and linters
-      python3Packages.autopep8
-      nixfmt
-      prettierd
-      shellcheck
-      shfmt
-      stylua
-      yamlfmt
-      # used by snacks.nvim: pickers (ripgrep, fd), trash (glib), images
-      glib
-      imagemagick
-      ripgrep
-      fd
-    ];
+    # Mason's job: language servers, formatters and linters on nvim's PATH
+    extraPackages = tools;
 
     initLua = ''
       -- Paths from Nix (modules/home/editor/astronvim); the rest is ./config
       vim.g.nix_lazy_plugins = "${pluginDir}"
       vim.g.nix_theme_file = "${config.my.themeState}/current/nvim.lua"
+      vim.g.nix_languages = vim.json.decode [==[${languagesJson}]==]
+      vim.g.nix_languages_check = "${languagesCheck}"
       vim.opt.rtp:prepend "${pluginDir}/lazy.nvim"
       require "lazy_setup"
       require "polish"

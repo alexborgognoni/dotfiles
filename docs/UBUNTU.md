@@ -135,11 +135,29 @@ warning says how), then run both switches.
   Cheatsheet (Super+F1), NVTOP (GPU load in the bar, click for the process
   list), Pomodoro (Super+Ctrl+P), Color Picker (bar icon in the tools pill:
   click to open, right click to pick a color straight to the clipboard;
-  hyprpicker), Emoji & Symbol Picker (Super+.), AirPods, and Hyprland Settings
-  (below). Each is pinned to the newest revision the packaged Noctalia can
-  load, with its tools from Nix. Skipped on purpose: screen recorder and OBS
-  Control (open OBS to record), ALS Brightness (no light sensor on the P1
-  Gen 5), Wallpaper Depth.
+  hyprpicker), Emoji & Symbol Picker (Super+.), AirPods, Notes (launcher only:
+  `/nt buy milk` adds to the scratchpad, bare `/nt` lists the notes; plain
+  markdown files in `~/Documents/Notes`), Printers (CUPS: appears in the tools
+  pill with a queued job or a stopped printer), Gamer Mode (below) and Hyprland
+  Settings (below). Each is pinned to the newest revision the packaged
+  Noctalia can load, with its tools from Nix. Skipped on purpose: screen
+  recorder and OBS Control (open OBS to record), ALS Brightness (no light
+  sensor on the P1 Gen 5), Wallpaper Depth, Config Swap (it swaps Noctalia's
+  settings with configurations downloaded from GitHub at runtime: the opposite
+  of a declarative setup), Bookmarks (a launcher of your own shell commands,
+  not browser bookmarks: floccus syncs those). MX Control (Logitech via Solaar)
+  waits for the mouse: it needs the receiver plugged in, Solaar's udev rules,
+  and shows a crossed-out mouse while the device is away.
+- **Gamer Mode** (toggle in the tools pill, `noctalia msg plugin
+  nomadcxx/gamer-mode:service all toggle`): the power profile goes to
+  performance and background programs are paused with SIGSTOP (no root), all
+  restored when it ends. What is paused is our own list
+  (`gamerTargets` in `plugin-catalog.nix`): sync clients, torrent clients and
+  the file indexer in "light"; also the browsers, VS Code and Obsidian in
+  "heavy" (a frozen program's connections drop, so Teams and Outlook pause
+  too). The plugin's own list is not used: it stops system services with
+  pkexec and freezes language servers. Names are what `pgrep -x` sees, cut at
+  15 characters.
 - **Typing other layouts' characters** without switching the keyboard: Super+.
   opens the emoji picker, whose "Characters" tab starts with ä ö ü ß é è ê à ç
   î ï ô ù û ÿ œ æ (German and French first, then the other Latin letters and

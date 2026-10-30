@@ -111,15 +111,19 @@ in
           }
           {
             id = "tools";
-            # The tray's width changes with the apps running, so it sits at the
-            # left end: only the pill's left edge moves, not its other widgets
+            # Left to right: what comes and goes first (the tray follows the
+            # apps running, the printer shows with a job, AirPods when connected:
+            # only the pill's left edge moves when their width changes), then
+            # what is always there, the most used at the right end.
             members = [
               "tray"
             ]
+            ++ lib.optional (has "printers") "printer"
+            ++ lib.optional config.my.desktop.airpods.enable "airpods"
+            ++ lib.optional (has "gamer-mode") "gamermode"
             ++ lib.optional (has "pomodoro") "pomodoro"
-            ++ [ "clipboard" ]
             ++ lib.optional (has "color_picker") "color-picker"
-            ++ lib.optional config.my.desktop.airpods.enable "airpods";
+            ++ [ "clipboard" ];
           }
           {
             id = "stats";

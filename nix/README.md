@@ -18,6 +18,24 @@ Neovim (AstroNvim, plugins built by Nix), CLI tools and the theme engine.
 Everything is pinned in `flake.lock`; nothing installs itself at runtime
 (no lazy.nvim, Mason, tpm or zinit).
 
+## Neovim (AstroNvim)
+
+Neovim, the plugins and the tools come from nixpkgs-unstable and are updated
+with everything else: `nh home switch --update`. AstroNvim's `:AstroUpdate` and
+lazy.nvim's update keys (`<Leader>pi/pS/pu/pU/pa`) only say so; the plugin
+directory is read-only.
+
+- **A language** (server, formatter, linter) is one entry in
+  `modules/home/editor/astronvim/languages.nix`: the package and the name the
+  plugin knows it by. The build checks the names against nvim-lspconfig and
+  none-ls, so a typo fails the build, not Neovim. One formatter per language
+  (a server that formats well, like gopls, does it itself).
+- **A plugin**: its spec in `config/lua/plugins/`, and one line in the
+  `plugins` table of `default.nix` (repository name = nixpkgs vim plugin;
+  `vimUtils.buildVimPlugin` with a pinned revision if nixpkgs has none).
+- **A tool for one project**: `nix develop` or direnv puts it first on `PATH`;
+  to try one now, `nix shell nixpkgs#gopls -c nvim`.
+
 ## Layout
 
 ```

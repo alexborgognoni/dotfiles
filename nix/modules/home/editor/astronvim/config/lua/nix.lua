@@ -1,6 +1,32 @@
 -- Nix integration, imported last by lazy_setup.lua. Everything AstroNvim
 -- would install at runtime comes from Nix instead (modules/home/editor/astronvim):
--- plugins, treesitter grammars, language servers, formatters.
+-- plugins, treesitter grammars, language servers, formatters, linters.
+
+-- The languages: set from languages.nix (servers, formatters and linters to
+-- switch on, servers whose own formatting is off)
+local languages = vim.g.nix_languages
+  or {
+    servers = {},
+    formatters = {},
+    linters = {},
+    formattingDisabled = {},
+    formatterFiletypes = {},
+    serverCommands = {},
+  }
+
+-- servers started by an absolute path (languages.nix: serverCommands)
+local server_config = {}
+for name, command in pairs(languages.serverCommands) do
+  server_config[name] = { cmd = { command } }
+end
+
+local managed_by_nix = function()
+  vim.notify(
+    "Plugins, tools and AstroNvim are managed by Nix.\nUpdate everything: nh home switch --update",
+    vim.log.levels.INFO,
+    { title = "Nix" }
+  )
+end
 
 ---@type LazySpec
 return {
@@ -11,15 +37,18 @@ return {
   { "jay-babu/mason-nvim-dap.nvim", enabled = false },
   { "WhoIsSethDaniel/mason-tool-installer.nvim", enabled = false },
 
-  -- Language servers (what mason.lua used to install, plus nix, bash, json, yaml)
+  -- Language servers (languages.nix); `formattingDisabled`: a server whose
+  -- formatting would run next to the formatter of the language
   {
     "AstroNvim/astrolsp",
     opts = {
-      servers = { "bashls", "eslint", "jsonls", "lua_ls", "nixd", "pyright", "ts_ls", "yamlls" },
+      servers = languages.servers,
+      config = server_config,
+      formatting = { disabled = languages.formattingDisabled },
     },
   },
 
-  -- Formatters (none-ls); shellcheck diagnostics come through bashls
+  -- Formatters and linters (none-ls, languages.nix)
   {
     "nvimtools/none-ls.nvim",
     opts = function(_, opts)
@@ -34,14 +63,18 @@ return {
         generator_opts = { command = "autopep8", args = { "-" }, to_stdin = true },
         factory = h.formatter_factory,
       }
-      opts.sources = require("astrocore").list_insert_unique(opts.sources, {
-        autopep8,
-        b.formatting.nixfmt,
-        b.formatting.prettierd,
-        b.formatting.shfmt,
-        b.formatting.stylua,
-        b.formatting.yamlfmt,
-      })
+      local custom = { autopep8 = autopep8 }
+      local sources = {}
+      for _, name in ipairs(languages.formatters) do
+        local source = custom[name] or b.formatting[name]
+        local filetypes = languages.formatterFiletypes[name]
+        if filetypes then source = source.with { filetypes = filetypes } end
+        table.insert(sources, source)
+      end
+      for _, name in ipairs(languages.linters) do
+        table.insert(sources, b.diagnostics[name])
+      end
+      opts.sources = require("astrocore").list_insert_unique(opts.sources, sources)
     end,
   },
 
@@ -76,6 +109,26 @@ return {
       opts.treesitter.ensure_installed = {}
       opts.treesitter.auto_install = false
     end,
+  },
+
+  -- Updates are Nix's job: say so instead of failing on the read-only plugin
+  -- directory (:AstroUpdate, <Leader>pi/pS/pu/pU/pa)
+  {
+    "AstroNvim/astrocore",
+    opts = {
+      commands = {
+        AstroUpdate = { managed_by_nix, desc = "Update (managed by Nix)" },
+      },
+      mappings = {
+        n = {
+          ["<Leader>pi"] = { managed_by_nix, desc = "Plugins Install (Nix)" },
+          ["<Leader>pS"] = { managed_by_nix, desc = "Plugins Sync (Nix)" },
+          ["<Leader>pu"] = { managed_by_nix, desc = "Plugins Check Updates (Nix)" },
+          ["<Leader>pU"] = { managed_by_nix, desc = "Plugins Update (Nix)" },
+          ["<Leader>pa"] = { managed_by_nix, desc = "Update (Nix)" },
+        },
+      },
+    },
   },
 
   -- Built by Nix with its web app included

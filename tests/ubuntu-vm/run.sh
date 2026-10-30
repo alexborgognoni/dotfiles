@@ -93,9 +93,21 @@ phase "5/6 log in to Hyprland (Nix)"
 # GDM's file is system-manager's symlink into the Nix store: replace it with a
 # plain copy plus auto-login (a test VM; the next system-manager switch restores it)
 vm 'sudo rm -f /etc/gdm3/custom.conf && printf "[daemon]\nWaylandEnable=true\nAutomaticLoginEnable=true\nAutomaticLogin=$(id -un)\n" | sudo tee /etc/gdm3/custom.conf >/dev/null' || die "gdm config"
-vm 'sudo mkdir -p /var/lib/AccountsService/users && printf "[User]\nSession=hyprland-nix\nXSession=hyprland-nix\nSystemAccount=false\n" | sudo tee /var/lib/AccountsService/users/$(id -un) >/dev/null' || die "session choice"
-vm 'sudo systemctl restart gdm3' || die "restarting gdm3"
-hyprland_up() { vm 'export XDG_RUNTIME_DIR=/run/user/$(id -u); ls $XDG_RUNTIME_DIR/hypr >/dev/null 2>&1 && pgrep -x Hyprland >/dev/null'; }
+# SessionType tells GDM it is a Wayland session (without it GDM assumes X11 and
+# starts a broken GNOME session instead)
+vm 'sudo mkdir -p /var/lib/AccountsService/users && printf "[User]\nSession=hyprland-nix\nSessionType=wayland\nSystemAccount=false\n" | sudo tee /var/lib/AccountsService/users/$(id -un) >/dev/null' || die "session choice"
+# A reboot, not a GDM restart: the user manager of an earlier session would
+# still hold stop jobs that make systemd refuse to start hyprland-session.target
+boot_before="$(vm cat /proc/sys/kernel/random/boot_id)"
+vm 'sudo systemctl reboot' || true
+rebooted() { [ "$(vm cat /proc/sys/kernel/random/boot_id)" != "$boot_before" ]; }
+wait_for 600 "the VM to reboot" rebooted
+# (the process is called .Hyprland-wrapped: ask Hyprland itself)
+hyprland_up() {
+  vm 'export XDG_RUNTIME_DIR=/run/user/$(id -u)
+    export HYPRLAND_INSTANCE_SIGNATURE=$(ls -t $XDG_RUNTIME_DIR/hypr 2>/dev/null | head -1)
+    [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ] && $HOME/.nix-profile/bin/hyprctl version'
+}
 wait_for 600 "the Hyprland session" hyprland_up
 echo "session up; letting the autostart apps settle"
 sleep 120

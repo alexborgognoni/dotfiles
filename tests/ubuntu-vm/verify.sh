@@ -68,7 +68,9 @@ check "theme switch (nord and back)" 'before=$(theme current | cut -d" " -f1); t
 
 section "Session apps (my.desktop.autostart)"
 check "kitty on workspace 1" 'hyprctl -j clients | jq -e "any(.[]; .class == \"kitty\" and .workspace.id == 1)" >/dev/null'
-check "Chrome on workspace 2" 'hyprctl -j clients | jq -e "any(.[]; (.class | test(\"google-chrome\")) and .workspace.id == 2)" >/dev/null'
+# (a fresh profile in a new VM first shows Chrome's own terms dialog, which has no
+# class yet and waits for a click: Chrome has started, the class rule cannot apply)
+check "Chrome on workspace 2 (or at its first-run dialog on a fresh profile)" 'hyprctl -j clients | jq -e "any(.[]; (.class | test(\"google-chrome\")) and .workspace.id == 2) or any(.[]; .title | test(\"Terms of Service\"))" >/dev/null'
 # (Teams and Outlook are Chrome web apps of the laptop's profile; not in the VM)
 
 section "Audio"

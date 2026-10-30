@@ -69,9 +69,12 @@ in
         "color_picker"
         "emoji-picker"
         "file-search"
+        "gamer-mode"
         "keybind-cheatsheet"
+        "notes"
         "nvtop"
         "pomodoro"
+        "printers"
         "hyprland-settings"
       ];
 

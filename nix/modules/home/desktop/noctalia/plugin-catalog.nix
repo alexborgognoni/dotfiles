@@ -14,6 +14,44 @@ let
       ]) panels
     );
 
+  # What gamer mode pauses (SIGSTOP, resumed when it ends): user-level programs
+  # only. The plugin's own list stops system services through pkexec and, in
+  # "heavy", also freezes language servers; this one touches nothing that needs
+  # root. A frozen program keeps its state but its network connections drop
+  # (so "heavy", which includes the browsers, pauses Teams and Outlook too).
+  # Names are what `pgrep -x` sees: the command name, cut at 15 characters
+  # (Nix wraps Firefox, hence the odd one).
+  freeze =
+    profiles: names:
+    map (match: {
+      inherit match profiles;
+      kind = "process";
+      action = "freeze";
+    }) names;
+  gamerTargets =
+    freeze
+      [ "light" "heavy" ]
+      [
+        "syncthing"
+        "onedrive"
+        "dropbox"
+        "nextcloud"
+        "qbittorrent"
+        "tracker-miner-f"
+        "tracker-extract"
+      ]
+    ++
+      freeze
+        [ "heavy" ]
+        [
+          "chrome"
+          "msedge"
+          "firefox"
+          ".firefox-wrappe"
+          "code"
+          "obsidian"
+        ];
+
   fetch =
     {
       repo,
@@ -139,6 +177,57 @@ in
     patch = ''
       ${pkgs.python3}/bin/python3 ${./plugin-patches/latin-letters.py} emoji-picker/assets/emoji.json
     '';
+  };
+
+  # Quick notes as plain text files (~/Documents/Notes, markdown: yours to edit
+  # elsewhere, grep or keep in git). Written from the launcher: `/nt buy milk`
+  # adds to the scratchpad, bare `/nt` lists the notes. No bar widget and no
+  # key on purpose.
+  notes = {
+    src = fetch {
+      repo = "official-plugins";
+      rev = "9e8da3201aed794fce6b9f3bc7422c8b35e0bcd0";
+      dir = "notes";
+      hash = "sha256-r7dfOaukzjZvrpAJR9BF1hZn9n13yESZZjzBq+CxYoM=";
+    };
+    id = "noctalia/notes";
+    panels = [ "panel" ];
+    # a full-height side panel, as designed (not next to a click)
+    settings = {
+      panel_position = "center_right";
+      panel_open_near_click = false;
+    };
+  };
+
+  # CUPS in the bar: appears when a job is queued or a printer stops (system
+  # CUPS: lpstat, lp, cancel, lpoptions, lpadmin).
+  printers = {
+    src = fetch {
+      repo = "community-plugins";
+      rev = "cbb7dd2fc90ad792b02cd2926c2f05471dffe7c1";
+      dir = "printers";
+      hash = "sha256-fC5yGzXx5V1EkdAZH4Tpuj8FBXT9SurwHXwE9A+jE98=";
+    };
+    id = "andrewdems/printers";
+    panels = [ "panel" ];
+    widget.printer.type = "andrewdems/printers:printer";
+  };
+
+  # One click: the power profile goes to performance and background programs
+  # are paused (gamerTargets above), everything is restored when it ends. Only
+  # the toggle is in the bar: the resource readings are the stats pill's job.
+  # Needs pgrep, pkill and powerprofilesctl.
+  gamer-mode = {
+    src = fetch {
+      repo = "community-plugins";
+      rev = "12e0501c445c2bd44033e31b7e4b5feeec76ba55";
+      dir = "gamer-mode";
+      hash = "sha256-oUBIKK5vZgNIJbEAUbihqbDsYRg2Ej8VpSQjI6JvAzk=";
+    };
+    id = "nomadcxx/gamer-mode";
+    panels = [ "main" ];
+    settings.targets = builtins.toJSON gamerTargets;
+    widget.gamermode.type = "nomadcxx/gamer-mode:gamermode";
   };
 
   file-search = {
