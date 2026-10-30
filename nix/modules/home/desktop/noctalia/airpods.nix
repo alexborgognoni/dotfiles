@@ -1,6 +1,6 @@
 # AirPods in the Noctalia bar: the "AirPods" community plugin (battery, listening
 # modes, ear detection) and the patched librepods daemon it drives. The plugin
-# itself is pinned in noctalia-plugins.nix.
+# itself is pinned in plugin-catalog.nix.
 {
   config,
   lib,
@@ -10,7 +10,7 @@
 let
   cfg = config.my.desktop.airpods;
 
-  daemon = pkgs.callPackage ../../../packages/librepods-daemon { };
+  daemon = pkgs.callPackage ../../../../packages/librepods-daemon { };
   # The plugin looks for `librepods-ctl` on PATH
   ctl = pkgs.runCommand "librepods-ctl" { } ''
     mkdir -p $out/bin
@@ -64,7 +64,7 @@ in
     my.desktop.noctalia.plugins = [ "airpods" ];
 
     programs.noctalia.settings = {
-      # The widget is placed in the bar in noctalia.nix
+      # The widget is placed in the bar in bar.nix
       widget.airpods.type = "harveywuk/airpods:airpods";
     };
   };

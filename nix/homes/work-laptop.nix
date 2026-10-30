@@ -63,7 +63,7 @@ in
       # AirPods in the bar (Noctalia plugin + patched librepods daemon)
       airpods.enable = true;
 
-      # Noctalia plugins (pinned in modules/home/desktop/noctalia-plugins.nix)
+      # Noctalia plugins (pinned in modules/home/desktop/noctalia/plugin-catalog.nix)
       noctalia.plugins = [
         "bitwarden"
         "file-search"

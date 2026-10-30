@@ -6,7 +6,8 @@
   rules, animations, monitors, session, settings panel; the helper scripts are
   `.sh` files), the system-manager layer (one file per concern) and the
   corporate pieces (`modules/home/corporate/`, `system-manager/corporate.nix`).
-  Still to do: `noctalia.nix` (bar layout, pills, panels), `theme.nix`
+  Noctalia too (`desktop/noctalia/`: package, bar, plugins and their catalog).
+  Still to do: `theme.nix`
   (443 lines), `identity.nix`, `standalone.nix`.
 - **Ansible**: it only applies a package list, repositories, groups and the
   login shell. Decide whether a plain list and a short script replace it

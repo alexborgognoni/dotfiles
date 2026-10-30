@@ -1,9 +1,7 @@
 {
   imports = [
     ./hyprland
-    ./noctalia.nix
-    ./noctalia-plugins.nix
+    ./noctalia
     ./apps.nix
-    ./airpods.nix
   ];
 }

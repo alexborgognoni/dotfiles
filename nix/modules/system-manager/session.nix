@@ -58,7 +58,7 @@ in
     };
 
     # Noctalia's lock screen (patched to use this service, see
-    # modules/home/desktop/noctalia.nix) runs Nix's PAM, which cannot parse
+    # modules/home/desktop/noctalia/package.nix) runs Nix's PAM, which cannot parse
     # Ubuntu's /etc/pam.d files (Debian's @include): a stack of its own, with
     # absolute module paths as on NixOS.
     environment.etc."pam.d/noctalia" = lib.mkIf desktop {

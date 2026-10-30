@@ -129,7 +129,7 @@ warning says how), then run both switches.
   shows after a bud has been docked in the case (the AirPods do not send it
   otherwise) and is forgotten when the daemon restarts or the buds reconnect.
 - **Noctalia plugins** (`my.desktop.noctalia.plugins`, catalog in
-  `nix/modules/home/desktop/noctalia-plugins.nix`): Bitwarden (`/bw` in the
+  `nix/modules/home/desktop/noctalia/plugin-catalog.nix`): Bitwarden (`/bw` in the
   launcher; `bw serve` locks after 30 minutes), File Search (`/fs`), Keybind
   Cheatsheet (Super+F1), NVTOP (GPU load in the bar, click for the process
   list), Pomodoro (Super+Ctrl+P), AirPods, and Hyprland Settings (below). Each
