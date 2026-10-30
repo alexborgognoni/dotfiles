@@ -44,18 +44,25 @@ wait_for() {
 [ -s "$keyfile" ] || die "$keyfile (the sops admin key) is missing"
 
 phase "1/6 create the VM"
-"$here/create.sh" || die "create.sh"
+if [ -n "${SKIP_CREATE:-}" ]; then
+  echo "SKIP_CREATE: using the running VM"
+else
+  "$here/create.sh" || die "create.sh"
+fi
 ssh-keygen -R "$ip" >/dev/null 2>&1 || true
 
 phase "2/6 wait for cloud-init (GNOME, HWE kernel) and its reboot"
-wait_for 1200 "the VM to accept ssh" vm true
-first_boot="$(vm cat /proc/sys/kernel/random/boot_id)"
-# done when it has rebooted into the installed system and GDM runs
-booted_again() {
-  [ "$(vm cat /proc/sys/kernel/random/boot_id)" != "$first_boot" ] &&
-    vm 'cloud-init status | grep -q "status: done" && systemctl is-active -q gdm3'
+wait_for 3600 "the VM to accept ssh" vm true
+# Done when cloud-init has finished, GDM runs, and the running kernel is the
+# newest installed one: the HWE kernel only runs after the final reboot. (The VM
+# may only answer ssh after that reboot, so the reboot itself is not awaited.)
+installed_system_up() {
+  vm 'cloud-init status | grep -q "status: done" &&
+    systemctl is-active -q gdm3 &&
+    [ "$(uname -r)" = "$(ls /boot/vmlinuz-* | sed "s|/boot/vmlinuz-||" | sort -V | tail -1)" ] &&
+    [ "$(cut -d. -f1 /proc/uptime)" -gt 60 ]'
 }
-wait_for 3600 "cloud-init and the reboot" booted_again
+wait_for 3600 "cloud-init and the reboot" installed_system_up
 echo "kernel: $(vm uname -r)"
 
 phase "3/6 admin key"
