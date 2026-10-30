@@ -145,6 +145,8 @@
   };
 
   config = {
+    news.display = "silent";
+
     xdg.enable = true;
     xdg.userDirs = {
       enable = true;
