@@ -62,7 +62,7 @@ tar -C "$HOME" -cf "$work/home.tar" \
   --exclude='.config/google-chrome*' --exclude='.config/microsoft-edge' --exclude='.config/chromium' \
   --exclude='.config/gcloud/logs' --exclude='.config/Code/Cache*' --exclude='.config/Code/CachedData' \
   --exclude='.config/Code/User/workspaceStorage' --exclude='.config/*/Cache' --exclude='.config/*/GPUCache' \
-  --exclude='.config/*/Code Cache' --exclude='.config/open-whispr/models' --exclude='*/node_modules' \
+  --exclude='.config/*/Code Cache' --exclude='*/node_modules' \
   "${paths[@]}"
 
 log "/etc (sudo)"

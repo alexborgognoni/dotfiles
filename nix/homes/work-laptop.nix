@@ -66,6 +66,12 @@ in
       # Voice dictation (Super+Ctrl+V; Voxtype, local Whisper)
       dictation = {
         enable = true;
+        # Whisper picks among these (more accurate than among all ~99)
+        languages = [
+          "en"
+          "de"
+          "fr"
+        ];
         # ~6x faster than the Intel graphics on this laptop; loaded per
         # dictation (about a second) so the NVIDIA GPU can sleep in between
         gpu = "nvidia";
