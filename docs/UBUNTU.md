@@ -163,7 +163,7 @@ warning says how), then run both switches.
   Voxtype with Whisper large-v3-turbo (pinned, in the Nix store), running
   locally on the NVIDIA GPU through Vulkan (about a second per dictation; the
   model is loaded per dictation so the GPU can sleep in between). Press
-  **Super+Ctrl+V** to start, again to stop: the text is typed at the cursor
+  **Super+Shift+I** to start, again to stop: the text is typed at the cursor
   (`wtype`), or copied when typing is not possible. The Noctalia "voxtype"
   widget in the tools pill shows the state and also toggles on click. A toggle
   rather than hold-to-talk: text typed while the key's modifiers are still held

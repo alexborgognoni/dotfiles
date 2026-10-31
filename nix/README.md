@@ -313,7 +313,7 @@ only offers those.
 - `my.desktop.airpods.enable`: AirPods in the bar (Noctalia plugin
   `harveywuk/airpods` and the patched librepods daemon as a user service).
 - `my.desktop.dictation`: voice dictation (Voxtype: `enable`, `languages`,
-  `model`, `gpu`, `onDemandLoading`; user service, config, Super+Ctrl+V and the
+  `model`, `gpu`, `onDemandLoading`; user service, config, Super+Shift+I and the
   `voxtype` bar plugin).
 - `my.desktop.noctalia.plugins`: pinned Noctalia plugins (bitwarden,
   file-search, keybind-cheatsheet, nvtop, pomodoro, airpods)

@@ -1,5 +1,5 @@
 # Voice dictation: Voxtype (whisper.cpp, local), started with the session and
-# driven by a Hyprland key (Super+Ctrl+V, in hyprland/binds.nix) or the
+# driven by a Hyprland key (Super+Shift+I, in hyprland/binds.nix) or the
 # Noctalia "voxtype" bar widget. Press once to start, again to stop: the text
 # is typed where the cursor is (wtype), or copied when typing is not possible.
 #

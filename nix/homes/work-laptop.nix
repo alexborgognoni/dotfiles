@@ -63,7 +63,7 @@ in
       # AirPods in the bar (Noctalia plugin + patched librepods daemon)
       airpods.enable = true;
 
-      # Voice dictation (Super+Ctrl+V; Voxtype, local Whisper)
+      # Voice dictation (Super+Shift+I; Voxtype, local Whisper)
       dictation = {
         enable = true;
         # Whisper picks among these (more accurate than among all ~99)
