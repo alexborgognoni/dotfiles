@@ -173,6 +173,13 @@ warning says how), then run both switches.
   runs on the Intel one, six times slower). It replaced OpenWhispr, whose
   Hyprland hotkeys it registers at runtime and writes into a config that is
   read-only here.
+- **Keyboard backlight popup** (`modules/home/desktop/kbd-backlight-osd.nix`): a
+  Noctalia popup with the level (off, low, high) whenever it changes, as GNOME
+  showed. Fn+Space is handled by the ThinkPad firmware and never reaches the
+  session, so a small user service listens to UPower's `BrightnessChanged`
+  signal (sent whoever changes the level) and calls `noctalia msg osd-show`. It
+  is not tied to this laptop: it starts only where a `*kbd_backlight` LED
+  exists. An external keyboard with its own backlight protocol is not covered.
 - **Typing other layouts' characters** without switching the keyboard: Super+.
   opens the emoji picker, whose "Characters" tab starts with ä ö ü ß é è ê à ç
   î ï ô ù û ÿ œ æ (German and French first, then the other Latin letters and
