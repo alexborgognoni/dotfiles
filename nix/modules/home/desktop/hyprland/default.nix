@@ -125,6 +125,10 @@ in
             touchpad.natural_scroll = true;
           };
 
+          # The pointer hides after 3 s without movement, in every application,
+          # and returns with the next move
+          cursor.inactive_timeout = 3;
+
           ecosystem.no_update_news = true;
         };
 

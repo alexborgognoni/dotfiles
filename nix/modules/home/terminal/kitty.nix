@@ -30,9 +30,9 @@
         hide_window_decorations = "no";
         wheel_scroll_multiplier = 1;
 
-        # The pointer hides after 3 s without movement and returns with the next
-        # move (kitty's default on Linux, pinned so it stays)
-        mouse_hide_wait = "3.0";
+        # Off: Hyprland hides the pointer in every application
+        # (cursor.inactive_timeout), kitty's own default would only double it
+        mouse_hide_wait = "0";
 
         cursor_shape = "block";
         cursor_trail = 3;
