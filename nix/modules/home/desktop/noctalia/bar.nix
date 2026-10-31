@@ -199,8 +199,10 @@ in
           title_scroll = "on_hover";
           hide_when_no_media = true;
         };
-        # Name of the connected device next to the icon
-        bluetooth.show_label = true;
+        # Icons only: the network and device names are the widest, most variable
+        # text in the bar (they are in the tooltips)
+        network.show_label = false;
+        bluetooth.show_label = false;
         session = {
           color = "error";
           icon_color = "error";
