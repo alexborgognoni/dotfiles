@@ -233,6 +233,10 @@ let
         path = pkgs.linkFarm "wallpapers-${theme.name}" theme.wallpapers;
       }
       {
+        name = "cursor";
+        path = pkgs.writeText "cursor" "${theme.cursor.name} ${toString theme.cursor.size}";
+      }
+      {
         name = "polarity";
         path = pkgs.writeText "polarity" theme.polarity;
       }

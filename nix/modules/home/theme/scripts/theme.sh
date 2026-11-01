@@ -149,6 +149,13 @@ apply() {
     "$base/specialisation/$1/activate" >/dev/null
   fi
   reload_live
+  # The cursor theme is installed by the activation above; Hyprland switches
+  # (and tells XWayland) without a restart. GTK apps pick up icons and cursor
+  # when restarted.
+  if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && command -v hyprctl >/dev/null &&
+    read -r cursor_name cursor_size <"$state/current/cursor"; then
+    hyprctl setcursor "$cursor_name" "$cursor_size" >/dev/null 2>&1 || true
+  fi
   notify-send -a Theme "Theme" "Applied $1" || true
 }
 

@@ -1,22 +1,8 @@
-# What every theme starts from (fonts, cursor, icons, opacity, window
-# decoration) and the decoration shared by the square themes.
-{ pkgs }:
+# What every theme starts from (opacity, window decoration, the font, cursor
+# and icon choices) and the decoration shared by the square themes. The
+# choices name entries of assets/{fonts,cursors,icons}.nix.
+_:
 let
-  fonts = {
-    jetbrains = {
-      package = pkgs.nerd-fonts.jetbrains-mono;
-      name = "JetBrainsMono Nerd Font";
-    };
-    inter = {
-      package = pkgs.inter;
-      name = "Inter";
-    };
-    notoSerif = {
-      package = pkgs.noto-fonts;
-      name = "Noto Serif";
-    };
-  };
-
   defaults = {
     polarity = "dark";
     # Accent: names a color in the theme's accent palette (see `accentPalette`).
@@ -25,27 +11,18 @@ let
     # accent2 is the second stop of the active border gradient.
     accent = "blue";
     accent2 = "purple";
-    fonts = {
-      monospace = fonts.jetbrains;
-      sansSerif = fonts.inter;
-      serif = fonts.notoSerif;
-      sizes = {
-        terminal = 12;
-        applications = 11;
-        desktop = 11;
-        popups = 11;
-      };
+    # Terminal/editor font, UI font, cursor and icon set (assets/)
+    mono = "jetbrains";
+    ui = "inter";
+    cursor = "bibata";
+    icons = "papirus";
+    fontSizes = {
+      terminal = 12;
+      applications = 11;
+      desktop = 11;
+      popups = 11;
     };
-    cursor = {
-      package = pkgs.bibata-cursors;
-      name = "Bibata-Modern-Classic";
-      size = 24;
-    };
-    icons = {
-      package = pkgs.papirus-icon-theme;
-      dark = "Papirus-Dark";
-      light = "Papirus-Light";
-    };
+    cursorSize = 24;
     opacity = {
       terminal = 0.95;
       desktop = 0.9;

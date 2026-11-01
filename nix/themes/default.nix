@@ -10,6 +10,7 @@
 #
 #   catalogue.nix   the themes (what differs from the defaults): edit here
 #   defaults.nix    what every theme starts from
+#   assets/         the font, cursor and icon libraries the themes pick from
 #   accents.nix     accent palettes
 #   wallpapers.nix  recoloring and image listing
 #   pack.nix        the live color files of one theme and accent
@@ -24,14 +25,25 @@ let
   wallpapers = ../assets/wallpapers;
 
   inherit (import ./wallpapers.nix { inherit pkgs lib; }) recolor imageFiles;
-  inherit (import ./defaults.nix { inherit pkgs; }) defaults squareDecoration;
+  inherit (import ./defaults.nix { }) defaults squareDecoration;
+  assets = {
+    fonts = import ./assets/fonts.nix { inherit pkgs; };
+    cursors = import ./assets/cursors.nix { inherit pkgs; };
+    icons = import ./assets/icons.nix { inherit pkgs; };
+  };
+  # An asset a theme names, or a clear error listing what exists
+  pick =
+    theme: kind: set: key:
+    assert lib.assertMsg (set ? ${key})
+      "theme ${theme}: unknown ${kind} '${key}' (one of: ${lib.concatStringsSep ", " (lib.attrNames set)})";
+    set.${key};
   inherit (import ./accents.nix { inherit lib; }) base16Accents catppuccin;
   mkPack = import ./pack.nix { inherit pkgs lib; };
 
   mkTheme =
     name: attrs:
     let
-      merged = lib.recursiveUpdate defaults (
+      chosen = lib.recursiveUpdate defaults (
         lib.removeAttrs attrs [
           "recolor"
           "defaultWallpaper"
@@ -39,6 +51,25 @@ let
           "extraAccents"
         ]
       );
+      merged =
+        lib.removeAttrs chosen [
+          "mono"
+          "ui"
+          "cursorSize"
+          "fontSizes"
+        ]
+        // {
+          fonts = {
+            monospace = pick name "mono font" assets.fonts.mono chosen.mono;
+            sansSerif = pick name "UI font" assets.fonts.ui chosen.ui;
+            serif = assets.fonts.serif.noto-serif;
+            sizes = chosen.fontSizes;
+          };
+          cursor = pick name "cursor" assets.cursors chosen.cursor // {
+            size = chosen.cursorSize;
+          };
+          icons = pick name "icon set" assets.icons chosen.icons;
+        };
       base16Scheme = scheme (attrs.scheme or name);
       colors = base16.mkSchemeAttrs base16Scheme;
       asEntry = img: {

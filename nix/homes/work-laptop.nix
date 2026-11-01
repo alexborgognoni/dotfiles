@@ -47,6 +47,17 @@ in
     # Super+Space switches every keyboard (shown in Noctalia's bar)
     keyboard.layout = "us,gb";
 
+    # Themes with a pre-built specialisation (the default always has one): a
+    # short list keeps this laptop's rebuilds and store small; widen it, or
+    # remove the line for all of them
+    themes.prebuilt = [
+      "catppuccin-mocha"
+      "gruvbox-dark-medium"
+      "nord"
+      "rose-pine"
+      "tokyo-night-dark"
+    ];
+
     desktop = {
       # Stylix themes GTK, Qt, the cursor (and GNOME, now only the backup
       # session) per theme, as on NixOS

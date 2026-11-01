@@ -67,7 +67,7 @@ lib.mapAttrs' (
     fail() { echo "FAIL $1: $2"; exit 1; }
     check() {
       name="$1" pack="$2"
-      for f in kitty.conf tmux.conf nvim.lua hyprland.lua noctalia.json wallpaper wallpapers polarity accent; do
+      for f in kitty.conf tmux.conf nvim.lua hyprland.lua noctalia.json wallpaper wallpapers polarity accent cursor; do
         [ -e "$pack/$f" ] || fail "$name" "missing $f"
       done
       jq -e '.dark.mPrimary and .light.mSurface' "$pack/noctalia.json" >/dev/null || fail "$name" "bad noctalia.json"
@@ -75,6 +75,7 @@ lib.mapAttrs' (
       grep -q '@thm_bg "#' "$pack/tmux.conf" || fail "$name" "tmux palette"
       grep -q 'base0F = "#' "$pack/nvim.lua" || fail "$name" "nvim palette"
       grep -qE '^(dark|light)$' "$pack/polarity" || fail "$name" "polarity"
+      grep -qE '^[^ ]+ [0-9]+$' "$pack/cursor" || fail "$name" "cursor"
       [ -n "$(ls "$pack/wallpapers")" ] || fail "$name" "no wallpapers"
       accent="$(cut -d' ' -f2 "$pack/accent")"
       jq -e --arg a "$accent" '.dark.mPrimary == $a' "$pack/noctalia.json" >/dev/null || fail "$name" "accent mismatch"

@@ -95,7 +95,15 @@ in
 
   config = lib.mkMerge [
     {
-      home.packages = [ themeCommand ];
+      home.packages = [
+        themeCommand
+      ]
+      # Icon themes inherit from these; without them a sparse set shows
+      # missing icons in apps
+      ++ lib.optionals themeEverything [
+        pkgs.kdePackages.breeze-icons
+        pkgs.adwaita-icon-theme
+      ];
 
       # Stylix follows this generation's theme (specialisations override
       # my.theme). Without the desktop feature (e.g. Ubuntu with GNOME) only
