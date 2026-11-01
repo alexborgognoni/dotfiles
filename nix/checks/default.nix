@@ -7,6 +7,11 @@
 #   hyprland-config   the generated hyprland.lua and every theme pack's
 #                     hyprland.lua pass `Hyprland --verify-config`
 #   theme-packs       every theme x accent pack is complete and well-formed
+#   theme-look        every theme's values are valid; the default keeps its baseline
+#   theme-assets      every font, cursor and icon theme a theme names exists
+#   theme-tmux        every theme's tmux config loads, with its shape; live reload
+#   theme-noctalia    every theme's Noctalia config passes `noctalia config validate`
+#   app-coverage      every installed application says how it follows the theme
 #   vm                boots the desktop configuration in a VM and exercises
 #                     login, theme switching, accents, the shell and Neovim
 {
@@ -37,7 +42,8 @@ let
     ) catalogue.themes
   );
 in
-lib.mapAttrs' (
+(import ./theme.nix { inherit self pkgs; })
+// lib.mapAttrs' (
   name: host: lib.nameValuePair "toplevel-${name}" host.config.system.build.toplevel
 ) self.nixosConfigurations
 // lib.mapAttrs' (
@@ -67,7 +73,7 @@ lib.mapAttrs' (
     fail() { echo "FAIL $1: $2"; exit 1; }
     check() {
       name="$1" pack="$2"
-      for f in kitty.conf tmux.conf nvim.lua hyprland.lua noctalia.json wallpaper wallpapers polarity accent cursor; do
+      for f in kitty.conf tmux.conf nvim.lua hyprland.lua noctalia.json wallpaper wallpapers polarity accent cursor terminal-opacity look.json; do
         [ -e "$pack/$f" ] || fail "$name" "missing $f"
       done
       jq -e '.dark.mPrimary and .light.mSurface' "$pack/noctalia.json" >/dev/null || fail "$name" "bad noctalia.json"
@@ -76,6 +82,11 @@ lib.mapAttrs' (
       grep -q 'base0F = "#' "$pack/nvim.lua" || fail "$name" "nvim palette"
       grep -qE '^(dark|light)$' "$pack/polarity" || fail "$name" "polarity"
       grep -qE '^[^ ]+ [0-9]+$' "$pack/cursor" || fail "$name" "cursor"
+      grep -qE '^(0|1)(\.[0-9]+)?$' "$pack/terminal-opacity" || fail "$name" "terminal-opacity"
+      jq -e '.decoration.rounding >= 0 and .animation.preset and .tmux.shape and .fonts.monospace' "$pack/look.json" >/dev/null || fail "$name" "look.json"
+      jq -e --arg p "$(cat "$pack/polarity")" '.polarity == $p' "$pack/look.json" >/dev/null || fail "$name" "look.json polarity"
+      grep -q 'hl.animation' "$pack/hyprland.lua" || [ "$(jq -r .animation.enabled "$pack/look.json")" = false ] || fail "$name" "no animations in hyprland.lua"
+      grep -q 'active_opacity' "$pack/hyprland.lua" || fail "$name" "no window opacity in hyprland.lua"
       [ -n "$(ls "$pack/wallpapers")" ] || fail "$name" "no wallpapers"
       accent="$(cut -d' ' -f2 "$pack/accent")"
       jq -e --arg a "$accent" '.dark.mPrimary == $a' "$pack/noctalia.json" >/dev/null || fail "$name" "accent mismatch"
@@ -100,6 +111,8 @@ lib.mapAttrs' (
       home-manager.users.alex.my.themes.prebuilt = [
         "nord"
         "dracula"
+        # a light theme
+        "catppuccin-latte"
       ];
       virtualisation = {
         memorySize = 4096;
@@ -201,6 +214,67 @@ lib.mapAttrs' (
           user("tmux new-session -d -s t && tmux source-file ~/.config/tmux/theme-reload.conf")
           assert user("tmux show -gv @thm_bg").strip() == "#282a36"
           user("tmux kill-server")
+
+      def look():
+          import json
+          return json.loads(user("cat ~/.local/state/theme/current/look.json"))
+
+      def tmux_cap():
+          return user("LC_ALL=C.UTF-8 tmux -u show -gv @catppuccin_window_current_right_separator").strip()
+
+      with subtest("each theme brings its own look: animation, shape, borders"):
+          user("theme apply dracula")
+          d = look()
+          assert d["animation"]["preset"] == "bouncy", d["animation"]
+          assert d["tmux"]["shape"] == "flame", d["tmux"]
+          assert d["decoration"]["shadowGlow"] is True, d["decoration"]
+          hypr = user("cat ~/.local/state/theme/current/hyprland.lua")
+          assert 'leaf = "windows"' in hypr, "no window animation"
+          assert "rgba(bd93f9b3)" in hypr or "rgba(ff79c6b3)" in hypr, "no accent glow shadow"
+          assert "overshoot" in hypr, "the bouncy curve is missing"
+          user("tmux new-session -d -s look")
+          dracula_cap = tmux_cap()
+          user("theme apply nord")
+          n = look()
+          assert n["animation"]["preset"] == "smooth" and n["tmux"]["shape"] == "arrow", n
+          # the running tmux took the new shape without a restart
+          nord_cap = tmux_cap()
+          assert nord_cap != dracula_cap, (nord_cap, dracula_cap)
+          assert nord_cap.endswith("\ue0b0"), repr(nord_cap)
+          user("tmux kill-server")
+
+      with subtest("the Noctalia config follows the theme's look"):
+          user("theme apply dracula")
+          cfg = user("cat ~/.config/noctalia/config.toml")
+          assert 'transition = ["disc"]' in cfg, "wallpaper transition"
+          assert "transition_duration = 700" in cfg, "wallpaper duration"
+          user("theme apply nord")
+          cfg = user("cat ~/.config/noctalia/config.toml")
+          assert 'transition = ["fade"]' in cfg and "transition_duration = 500" in cfg
+
+      with subtest("light and dark follow the theme system-wide"):
+          user("theme apply catppuccin-macchiato")
+          assert "prefer-dark" in user("dconf read /org/gnome/desktop/interface/color-scheme")
+          user("theme apply nord")
+          assert "prefer-dark" in user("dconf read /org/gnome/desktop/interface/color-scheme")
+          assert "Nordzy-dark" in user("dconf read /org/gnome/desktop/interface/icon-theme")
+          assert "Nordzy-cursors" in user("dconf read /org/gnome/desktop/interface/cursor-theme")
+          user("theme apply catppuccin-latte")
+          assert "prefer-light" in user("dconf read /org/gnome/desktop/interface/color-scheme")
+          assert "Papirus-Light" in user("dconf read /org/gnome/desktop/interface/icon-theme")
+          assert look()["polarity"] == "light"
+          assert user("cat ~/.local/state/theme/current/polarity").strip() == "light"
+
+      with subtest("theme apps lists how every application is themed"):
+          out = user("theme apps")
+          for app in ["kitty", "nautilus-and-gnome", "firefox", "tmux", "hyprland"]:
+              assert app in out, f"{app} missing from theme apps"
+
+      with subtest("the default theme's look is unchanged after switching back"):
+          user("theme apply catppuccin-macchiato")
+          m = look()
+          assert m["decoration"]["rounding"] == 10 and m["animation"]["preset"] == "smooth", m
+          assert m["tmux"]["shape"] == "round", m
     '';
   };
 }

@@ -36,6 +36,7 @@ let
         else
           theme.accentPalette.${theme.accent2};
       bare = lib.removePrefix "#";
+      shape = theme.tmux.glyphs;
       luaBool = b: if b then "true" else "false";
 
       kitty = ''
@@ -100,6 +101,14 @@ let
         set -g @thm_surface_0 "${c.base02}"
         set -g @thm_mantle "${c.base01}"
         set -g @thm_crust "${c.base01}"
+
+        # The shape of the status segments (${theme.tmux.shape})
+        set -g @catppuccin_status_left_separator " ${shape.left}"
+        set -g @catppuccin_status_right_separator "${shape.right} "
+        set -g @catppuccin_window_left_separator "#[bg=default,fg=##{?window_bell_flag,#{@thm_yellow},#{@thm_surface_1}}]${shape.left}#[bg=##{?window_bell_flag,#{@thm_yellow},#{@thm_surface_1}},fg=##{?window_bell_flag,#{@thm_crust},#{@thm_fg}}]"
+        set -g @catppuccin_window_right_separator "#[bg=default,fg=#{@thm_surface_0}]${shape.right}"
+        set -g @catppuccin_window_current_left_separator "#[bg=default,fg=#{@thm_lavender}]${shape.left}#[bg=#{@thm_lavender},fg=#{@thm_bg}]"
+        set -g @catppuccin_window_current_right_separator "#[bg=default,fg=#{@thm_surface_1}]${shape.right}"
       '';
 
       nvim = ''
@@ -111,25 +120,80 @@ let
         }
       '';
 
+      # Everything about how windows look and move; `hyprctl reload` applies it
+      # live (the module keeps only what no theme changes).
+      num = builtins.toJSON;
+      anim = theme.animation;
+      borderColor =
+        if d.borderStyle == "gradient" then
+          ''{ colors = { "rgb(${bare accent})", "rgb(${bare accent2})" }, angle = 45 }''
+        else
+          ''"rgb(${bare accent})"'';
+      shadowColor = if d.shadowGlow then "rgba(${bare accent}b3)" else "rgba(${raw.base00}99)";
       hyprland = ''
-        hl.config({
-          general = {
-            gaps_in = ${toString d.gapsIn},
-            gaps_out = ${toString d.gapsOut},
-            border_size = ${toString d.borderSize},
-            col = {
-              active_border = { colors = { "rgb(${bare accent})", "rgb(${bare accent2})" }, angle = 45 },
-              inactive_border = "rgb(${raw.base03})",
+          hl.config({
+            general = {
+              gaps_in = ${toString d.gapsIn},
+              gaps_out = ${toString d.gapsOut},
+              border_size = ${toString d.borderSize},
+              col = {
+                active_border = ${borderColor},
+                inactive_border = "rgb(${raw.base03})",
+              },
             },
-          },
-          decoration = {
-            rounding = ${toString d.rounding},
-            shadow = { enabled = ${luaBool d.shadow}, color = "rgba(${raw.base00}99)" },
-            blur = { enabled = ${luaBool d.blur} },
-          },
-          misc = { background_color = "rgb(${raw.base00})" },
-        })
-      '';
+            decoration = {
+              rounding = ${toString d.rounding},
+              rounding_power = ${num d.roundingPower},
+              active_opacity = ${num theme.opacity.applications},
+              inactive_opacity = ${num theme.opacity.inactive},
+              shadow = {
+                enabled = ${luaBool d.shadow},
+                range = ${toString d.shadowRange},
+                render_power = ${toString d.shadowPower},
+                color = "${shadowColor}",
+              },
+              blur = {
+                enabled = ${luaBool d.blur},
+                size = ${toString d.blurSize},
+                passes = ${toString d.blurPasses},
+                vibrancy = ${num d.blurVibrancy},
+              },
+            },
+            animations = { enabled = ${luaBool anim.enabled} },
+            misc = { background_color = "rgb(${raw.base00})" },
+          })
+        ${
+          lib.concatStrings (
+            lib.mapAttrsToList (name: curve: ''
+              hl.curve("${name}", { type = "${curve.type}", points = { ${
+                lib.concatMapStringsSep ", " (pt: "{ ${lib.concatMapStringsSep ", " num pt} }") curve.points
+              } } })
+            '') anim.curves
+          )
+        }${
+          lib.concatMapStrings (l: ''
+            hl.animation({ leaf = "${l.leaf}", enabled = ${luaBool l.enabled}, speed = ${num l.speed}, bezier = "${l.bezier}"${
+              lib.optionalString (l ? style) '', style = "${l.style}"''
+            } })
+          '') anim.leaves
+        }'';
+
+      # The look as data: read by tests and handy for scripts
+      look = builtins.toJSON {
+        inherit (theme) name polarity;
+        inherit (theme) decoration opacity;
+        animation = {
+          inherit (anim) preset speed wallpaper;
+          inherit (anim) enabled;
+        };
+        tmux = { inherit (theme.tmux) shape; };
+        cursor = { inherit (theme.cursor) name size; };
+        icons = { inherit (theme.icons) dark light; };
+        fonts = {
+          monospace = theme.fonts.monospace.name;
+          sansSerif = theme.fonts.sansSerif.name;
+        };
+      };
 
       noctaliaVariant = {
         mPrimary = accent;
@@ -231,6 +295,14 @@ let
       {
         name = "wallpapers";
         path = pkgs.linkFarm "wallpapers-${theme.name}" theme.wallpapers;
+      }
+      {
+        name = "terminal-opacity";
+        path = pkgs.writeText "terminal-opacity" (toString theme.opacity.terminal);
+      }
+      {
+        name = "look.json";
+        path = pkgs.writeText "look.json" look;
       }
       {
         name = "cursor";

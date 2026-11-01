@@ -1,4 +1,5 @@
-# tmux. Plugins come from nixpkgs (no tpm); the catppuccin plugin's palette comes from the live theme pack.
+# tmux. Plugins come from nixpkgs (no tpm); the catppuccin plugin's palette and
+# the shape of its segments (round, arrow, ...) come from the live theme pack.
 {
   config,
   pkgs,
@@ -8,8 +9,6 @@ let
   # Nerd Font glyphs, written as code points so no editor or tool can mangle
   # the private-use characters.
   glyph = code: builtins.fromJSON ''"\u${code}"'';
-  roundLeft = glyph "e0b6";
-  roundRight = glyph "e0b4";
   vimIcon = glyph "e615";
   zoomIcon = builtins.fromJSON ''"\udb80\udc4c"''; # U+F004C 󰁌 (surrogate pair)
 
@@ -73,16 +72,10 @@ in
           set -g @catppuccin_window_text " #W"
           set -g @catppuccin_window_flags_icon_zoom " ${zoomIcon}"
           set -g @catppuccin_application_icon "${vimIcon} "
-          set -g @catppuccin_status_left_separator " ${roundLeft}"
-          set -g @catppuccin_status_right_separator "${roundRight} "
           set -g @catppuccin_window_status_style "custom"
-          set -g @catppuccin_window_left_separator "#[bg=default,fg=##{?window_bell_flag,#{@thm_yellow},#{@thm_surface_1}}]${roundLeft}#[bg=##{?window_bell_flag,#{@thm_yellow},#{@thm_surface_1}},fg=##{?window_bell_flag,#{@thm_crust},#{@thm_fg}}]"
           set -g @catppuccin_window_middle_separator "#[fg=##{?window_bell_flag,#{@thm_yellow},#{@thm_surface_1}}]█"
-          set -g @catppuccin_window_right_separator "#[bg=default,fg=#{@thm_surface_0}]${roundRight}"
           set -g @catppuccin_window_flags_icon_format "##{?window_activity_flag,#{E:@catppuccin_window_flags_icon_activity},}##{?window_bell_flag,#{E:@catppuccin_window_flags_icon_bell},}##{?window_silence_flag,#{E:@catppuccin_window_flags_icon_silent},}##{?window_active,#{E:@catppuccin_window_flags_icon_current},}##{?window_marked_flag,#{E:@catppuccin_window_flags_icon_mark},}##{?window_zoomed_flag,#{E:@catppuccin_window_flags_icon_zoom},} "
-          set -g @catppuccin_window_current_left_separator "#[bg=default,fg=#{@thm_lavender}]${roundLeft}#[bg=#{@thm_lavender},fg=#{@thm_bg}]"
           set -g @catppuccin_window_current_middle_separator "#[fg=#{@thm_lavender}]█"
-          set -g @catppuccin_window_current_right_separator "#[bg=default,fg=#{@thm_surface_1}]${roundRight}"
           set -g @catppuccin_status_background "none"
           set -g @catppuccin_status_connect_separator "no"
         '';

@@ -17,6 +17,12 @@ let
   };
 in
 {
+  # A module (not a bare package) so Stylix sets its font from the theme
+  programs.neovide = lib.mkIf config.my.features.gui.enable {
+    enable = true;
+    package = pkgs.unstable.neovide;
+  };
+
   # opencode: your global instructions and config (herdr's integration files
   # next to them are managed by herdr itself: `herdr integration install`)
   xdg.configFile = {

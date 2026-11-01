@@ -19,6 +19,8 @@
   pkgs,
   lib,
   base16,
+  # The themes; checks/theme.nix passes broken ones to prove they are rejected
+  catalogue ? null,
 }:
 let
   scheme = name: "${pkgs.base16-schemes}/share/themes/${name}.yaml";
@@ -30,6 +32,8 @@ let
     fonts = import ./assets/fonts.nix { inherit pkgs; };
     cursors = import ./assets/cursors.nix { inherit pkgs; };
     icons = import ./assets/icons.nix { inherit pkgs; };
+    animations = import ./assets/animations.nix { inherit lib; };
+    tmuxShapes = import ./assets/tmux-shapes.nix;
   };
   # An asset a theme names, or a clear error listing what exists
   pick =
@@ -51,14 +55,62 @@ let
           "extraAccents"
         ]
       );
+      inRange =
+        lo: hi: v:
+        v >= lo && v <= hi;
+      check =
+        what: ok:
+        assert lib.assertMsg ok "theme ${name}: ${what}";
+        true;
+      validated =
+        check "opacity values must be between 0 and 1" (
+          lib.all (inRange 0 1) (lib.attrValues chosen.opacity)
+        )
+        && check "decoration.rounding, borderSize, gaps and shadow/blur sizes must not be negative" (
+          lib.all (k: chosen.decoration.${k} >= 0) [
+            "rounding"
+            "borderSize"
+            "gapsIn"
+            "gapsOut"
+            "shadowRange"
+            "blurSize"
+            "blurPasses"
+          ]
+        )
+        && check "decoration.borderStyle must be gradient or solid" (
+          lib.elem chosen.decoration.borderStyle [
+            "gradient"
+            "solid"
+          ]
+        )
+        && check "animation.speed must be above 0" (chosen.animation.speed > 0)
+        && check "animation.wallpaper transition and duration are required" (
+          chosen.animation.wallpaper == null
+          || (chosen.animation.wallpaper ? transition && chosen.animation.wallpaper ? duration)
+        );
+      animationPreset = pick name "animation preset" assets.animations.presets chosen.animation.preset;
       merged =
+        assert validated;
         lib.removeAttrs chosen [
           "mono"
           "ui"
           "cursorSize"
           "fontSizes"
+          "tmuxShape"
         ]
         // {
+          animation = assets.animations.resolve animationPreset chosen.animation.speed // {
+            inherit (chosen.animation) preset speed;
+            wallpaper =
+              if chosen.animation.wallpaper == null then
+                animationPreset.wallpaper
+              else
+                chosen.animation.wallpaper;
+          };
+          tmux = {
+            shape = chosen.tmuxShape;
+            glyphs = pick name "tmux shape" assets.tmuxShapes chosen.tmuxShape;
+          };
           fonts = {
             monospace = pick name "mono font" assets.fonts.mono chosen.mono;
             sansSerif = pick name "UI font" assets.fonts.ui chosen.ui;
@@ -131,7 +183,12 @@ let
       );
     };
 
-  themes = lib.mapAttrs mkTheme (import ./catalogue.nix { inherit catppuccin squareDecoration; });
+  themes = lib.mapAttrs mkTheme (
+    if catalogue == null then
+      import ./catalogue.nix { inherit catppuccin squareDecoration; }
+    else
+      catalogue
+  );
 in
 {
   inherit themes;
@@ -152,8 +209,16 @@ in
       polarity
       fonts
       cursor
-      opacity
       ;
+    # (Stylix has no "inactive": that one is Hyprland's alone)
+    opacity = {
+      inherit (theme.opacity)
+        terminal
+        desktop
+        popups
+        applications
+        ;
+    };
     image = theme.wallpaper;
     icons = theme.icons // {
       enable = true;

@@ -149,8 +149,6 @@ in
     terraform
     tflint
     kubectl
-    kubecolor
-    k9s
     ansible
     mkcert
     google-cloud-sdk # gcloud, gsutil, bq
@@ -201,7 +199,6 @@ in
   ]);
 
   gui = with u; [
-    neovide
     obsidian
     vlc
     obs-studio

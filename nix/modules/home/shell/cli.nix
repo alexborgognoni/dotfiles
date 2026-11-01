@@ -94,6 +94,16 @@
       enable = true;
       package = pkgs.unstable.fastfetch;
     };
+
+    # Kubernetes tools: modules, so Stylix themes them (themes/apps.nix)
+    k9s = {
+      enable = true;
+      package = pkgs.unstable.k9s;
+    };
+    kubecolor = {
+      enable = true;
+      package = pkgs.unstable.kubecolor;
+    };
   };
 
   home.packages = with pkgs.unstable; [

@@ -65,9 +65,13 @@ reload_live() {
       noctalia msg wallpaper-set "$(readlink -f "$state/current/wallpaper")"
     } >/dev/null 2>&1 &
   fi
+  opacity="$(cat "$state/current/terminal-opacity" 2>/dev/null || true)"
   for sock in "$XDG_RUNTIME_DIR"/kitty-*; do
     [ -S "$sock" ] || continue
     kitty @ --to "unix:$sock" set-colors --all --configured "$state/current/kitty.conf" >/dev/null 2>&1 &
+    if [ -n "$opacity" ]; then
+      kitty @ --to "unix:$sock" set-background-opacity --all "$opacity" >/dev/null 2>&1 &
+    fi
   done
   if tmux info >/dev/null 2>&1; then
     tmux source-file "$HOME/.config/tmux/theme-reload.conf" >/dev/null 2>&1 &
@@ -211,11 +215,12 @@ case "${1:-pick}" in
     ;;
   list) list ;;
   current) current ;;
+  apps) column -t -s "$(printf '\t')" "@apps@" ;;
   preview) preview "${2:?usage: theme preview <name>}" ;;
   apply | set) apply "${2:?usage: theme apply <name>}" ;;
   pick) pick ;;
   *)
-    echo "usage: theme [pick|list|current|preview <name>|apply <name>|accent ...|wallpaper ...]" >&2
+    echo "usage: theme [pick|list|current|apps|preview <name>|apply <name>|accent ...|wallpaper ...]" >&2
     exit 1
     ;;
 esac

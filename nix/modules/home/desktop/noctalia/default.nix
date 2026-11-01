@@ -24,6 +24,7 @@
 let
   theme = config.my.theme;
   deco = theme.decoration;
+  anim = theme.animation;
   state = config.my.themeState;
 
   noctalia = import ./package.nix { inherit config pkgs; };
@@ -83,6 +84,25 @@ in
         shell = {
           font_family = theme.fonts.sansSerif.name;
           corner_radius_scale = deco.shellRadius;
+          # The theme's outlines, shadows and animation speed
+          button_borders = deco.shellBorders;
+          card_borders = deco.shellBorders;
+          input_borders = deco.shellBorders;
+          popup_borders = deco.shellBorders;
+          popup_shadows = deco.shadow;
+          animation = {
+            inherit (anim) enabled speed;
+          };
+          shadow = {
+            direction = if deco.shadowGlow then "center" else "down";
+            alpha =
+              if !deco.shadow then
+                0.0
+              else if deco.shadowGlow then
+                0.7
+              else
+                0.55;
+          };
           polkit_agent = true;
           telemetry_enabled = false;
           # Everything the first-run wizard asks is configured here
@@ -93,6 +113,8 @@ in
           # they float below the bar instead, where transparency_mode applies.
           panel = {
             transparency_mode = "solid";
+            borders = deco.shellBorders;
+            inherit (deco) shadow;
             control_center_placement = "floating";
             wallpaper_placement = "floating";
             session_placement = "floating";
@@ -123,8 +145,8 @@ in
         # wallpapers; `theme wallpaper rotate on|off|toggle` changes rotation live.
         wallpaper = {
           enabled = true;
-          transition = [ "fade" ];
-          transition_duration = 500;
+          transition = anim.wallpaper.transition;
+          transition_duration = anim.wallpaper.duration;
           directory = "${state}/current/wallpapers";
           default.path = "${state}/current/wallpaper";
           automation = {
@@ -135,8 +157,14 @@ in
           };
         };
 
-        notification.background_opacity = theme.opacity.popups;
-        osd.background_opacity = theme.opacity.popups;
+        notification = {
+          background_opacity = theme.opacity.popups;
+          border = deco.shellBorders;
+        };
+        osd = {
+          background_opacity = theme.opacity.popups;
+          border = deco.shellBorders;
+        };
       };
     };
   };

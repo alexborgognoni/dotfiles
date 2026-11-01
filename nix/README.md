@@ -169,6 +169,41 @@ pack, and applying a theme sets the system-wide preference (`prefer-dark` or
 `prefer-light`: GTK, libadwaita, the desktop portal, browsers, Electron apps)
 and the light or dark variant of the icon set.
 
+**The look** is part of the theme too, every value overridable per theme
+(`themes/defaults.nix` documents them all):
+
+- `decoration`: window rounding, border width and style (`gradient` from the
+  accent to accent2, or `solid`), gaps, shadow (size, softness, or a `shadowGlow`
+  in the accent color), blur (size, passes, vibrancy), and for Noctalia the
+  corner radius and whether panels, cards, buttons and popups have outlines
+- `opacity`: kitty's background, the bar, popups, and every other window while
+  focused and while not (`applications`, `inactive`)
+- `animation`: a `preset` from `themes/assets/animations.nix` (`smooth`, the
+  Hyprland default; `snappy`; `slow`; `bouncy`; `minimal`, fades only; `none`),
+  a `speed` factor for all durations (Hyprland's and Noctalia's), and the
+  wallpaper transition Noctalia plays (`fade`, `wipe`, `disc`, ...)
+- `tmuxShape`: the caps of tmux's status segments: `round`, `arrow`, `slant`,
+  `flame` or `square` (`themes/assets/tmux-shapes.nix`)
+
+Hyprland, kitty and tmux take the look live (it is in the pack, like the
+colors); Noctalia takes it when the theme is applied.
+
+**Every application** is in one table, `themes/apps.nix`, saying how it
+follows the theme: from the live pack, through Stylix, as a GTK or Qt app, via
+the terminal's palette, only light/dark (portal), its own theme setting, or not
+at all (each of the last ones with a reason). `theme apps` prints it. The
+`app-coverage` check fails when an installed application (any desktop entry, in
+the home and the system profile) or a terminal tool that draws its own colors
+is missing from the table, or when its mechanism is not enabled (an app marked
+`stylix` whose Stylix target is off, for example). A new app therefore cannot
+be added without deciding how it is themed:
+
+1. install it (a package group or a `programs.<name>` module: prefer the
+   module when Stylix has a target for it, so it gets themed)
+2. run the check (`nix build .#checks.x86_64-linux.app-coverage`): it names
+   the app
+3. add an entry to `themes/apps.nix`
+
 ```sh
 theme                     # picker with live preview (Super+T)
 theme apply nord          # switch theme
@@ -179,6 +214,7 @@ theme accent list
 theme wallpaper next      # next wallpaper of the current theme
 theme wallpaper rotate on|off|toggle   # automatic rotation
 theme list | current
+theme apps                # how every application follows the theme
 ```
 
 How it works:
@@ -208,8 +244,9 @@ used as they are). The first one (or `defaultWallpaper`) is the default. The
 wallpaper panel opens the picker for the current theme's library; rotation
 defaults are set with `my.wallpaper.rotation`. The images are committed
 (`assets/wallpapers/SOURCES.md` lists where each one comes from and under which
-licence): drop a file into a theme's folder to add one, and keep it near 1 MB
-(JPEG, 3840 px wide at most), as git keeps every version forever.
+licence): drop a jpg or png into a theme's folder to add one, and list it there.
+`tests/scripts/test-wallpapers.sh` checks that every image is listed, is a real
+image, and sits in a folder named after an existing theme.
 
 ## Keybindings (Hyprland)
 
@@ -254,14 +291,37 @@ Machine-specific values of the laptop (Docker's network, NTP servers) are in
 - `hyprland-config`: the generated `hyprland.lua` and every theme pack pass
   `Hyprland --verify-config`
 - `theme-packs`: every theme x accent pack is complete and consistent
+- `theme-look`: every theme's values are in range, its polarity matches its
+  palette, its animations use known curves and styles, and the default theme
+  keeps Hyprland's baseline look
+- `theme-assets`: every font family, cursor and icon theme a theme names
+  exists in its package
+- `theme-tmux`: every theme's tmux config loads in a real tmux with its shape,
+  and a live reload switches the shape
+- `theme-noctalia`: every theme's Noctalia config passes
+  `noctalia config validate`
+- `app-coverage`: every installed application is in `themes/apps.nix` and its
+  theming mechanism is enabled
+- `theme-rejects`: the checks above catch what they should: broken themes (an
+  unknown font, cursor, icon set, preset, shape or accent; opacity out of
+  range; negative sizes; ...) fail evaluation, a broken look is reported, and
+  an unlisted app or tool is reported
 - `home-alex-work-laptop`: the standalone Home Manager configuration builds
 - `system-work-laptop`: the system-manager configuration builds
 - `lint-nix`: nixfmt, statix and deadnix on the flake (the repo-wide `lint`
   also covers shell and Lua)
 - `vm`: boots the desktop configuration in a VM and tests theme switching,
   accents (validation and per-theme memory), persistence across re-activation,
-  preview, zsh, Neovim, tmux, that every application/tool is installed and
-  runs, and that Docker and keyd are up
+  preview, each theme's look (animation preset, tmux shape switching live,
+  glow shadow, Noctalia's wallpaper transition), light and dark system-wide
+  (color scheme, icon variant, cursor), `theme apps`, zsh, Neovim, tmux, that
+  every application/tool is installed and runs, and that Docker and keyd are up
+
+The script tests (`tests/scripts/run.sh`) cover the `theme` command
+(`test-theme.sh`: preview, apply, accents, live reloads of every program, the
+cursor and terminal opacity, missing tools and files, errors) and the
+committed wallpapers (`test-wallpapers.sh`: every image is a real jpg/png in
+an existing theme's folder and listed in `SOURCES.md`).
 
 `nix flake check` evaluates everything in one process (~20 GB peak); with
 less RAM build the checks one by one:
