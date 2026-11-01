@@ -138,6 +138,13 @@ in
         })
       ];
 
+      # The system-wide light/dark preference (read by GTK, libadwaita, the
+      # desktop portal, browsers and Electron apps). Stylix leaves it at
+      # "default" for light themes, which apps may treat as "no preference".
+      dconf.settings."org/gnome/desktop/interface".color-scheme = lib.mkIf themeEverything (
+        lib.mkForce (if cfg.polarity == "light" then "prefer-light" else "prefer-dark")
+      );
+
       # Every generation points `current` at its own theme's pack, using the
       # accent the user picked for that theme.
       home.activation.themePack = lib.hm.dag.entryAfter [ "linkGeneration" ] ''

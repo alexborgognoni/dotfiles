@@ -51,6 +51,7 @@ in
     # short list keeps this laptop's rebuilds and store small; widen it, or
     # remove the line for all of them
     themes.prebuilt = [
+      "catppuccin-latte"
       "catppuccin-mocha"
       "gruvbox-dark-medium"
       "nord"

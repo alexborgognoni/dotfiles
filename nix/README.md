@@ -153,12 +153,21 @@ mkpasswd -m yescrypt      # hash for <user>-password
 ## Themes
 
 A theme is a complete look: base16 colors, an accent palette, a wallpaper
-library, fonts, cursor, icons, opacity and window decoration (rounding,
-borders, gaps, shadow, blur). `themes/defaults.nix` has the shared defaults;
-`themes/catalogue.nix` lists the themes, each overriding only what differs (add
-a theme there: a name from nixpkgs' base16-schemes is enough). The rest of
-`themes/` is machinery: accents, wallpapers, and `pack.nix`, which generates
-the color files below.
+library, a mono and a UI font, a cursor, an icon set (which also draws
+Nautilus's folders and files), light or dark mode, opacity and window
+decoration (rounding, borders, gaps, shadow, blur). `themes/defaults.nix` has
+the shared defaults; `themes/catalogue.nix` lists the themes, each overriding
+only what differs (add a theme there: a name from nixpkgs' base16-schemes is
+enough). Fonts, cursors and icon sets are picked by name from the libraries in
+`themes/assets/` (`fonts.nix`, `cursors.nix`, `icons.nix`): to offer a new one,
+add a line there, then name it in a theme (`mono`, `ui`, `cursor`, `icons`).
+The rest of `themes/` is machinery: accents, wallpapers, and `pack.nix`, which
+generates the color files below.
+
+Light and dark follow the theme: Neovim, kitty and Noctalia read it from the
+pack, and applying a theme sets the system-wide preference (`prefer-dark` or
+`prefer-light`: GTK, libadwaita, the desktop portal, browsers, Electron apps)
+and the light or dark variant of the icon set.
 
 ```sh
 theme                     # picker with live preview (Super+T)
@@ -194,9 +203,13 @@ and `accent2` (second stop of the border gradient).
 
 **Wallpapers:** each theme has its own library: the shared images in
 `assets/wallpapers/` (recolored to the palette unless `recolor = false`) plus
-anything in `assets/wallpapers/themes/<theme>/`. The first one (or
-`defaultWallpaper`) is the default. The wallpaper panel opens the picker for the current
-theme's library; rotation defaults are set with `my.wallpaper.rotation`.
+anything in `assets/wallpapers/themes/<theme>/` (the theme's native pictures,
+used as they are). The first one (or `defaultWallpaper`) is the default. The
+wallpaper panel opens the picker for the current theme's library; rotation
+defaults are set with `my.wallpaper.rotation`. The images are committed
+(`assets/wallpapers/SOURCES.md` lists where each one comes from and under which
+licence): drop a file into a theme's folder to add one, and keep it near 1 MB
+(JPEG, 3840 px wide at most), as git keeps every version forever.
 
 ## Keybindings (Hyprland)
 
