@@ -118,14 +118,16 @@ at the system level, a standalone machine picks groups with
   (the team's source of truth) is run with `mise install` on the Ubuntu laptop
   (mise is only there, not on NixOS); one without a version manager, or any
   project on NixOS, gets a Nix dev shell (`nix flake init -t ~/dotfiles/nix#c`,
-  `#go`, `#rust`; direnv; keep `.envrc` out of team repos: global gitignore or
+  `#go`, `#rust`, `#node` with Playwright's browsers; direnv; keep `.envrc` out of team repos: global gitignore or
   `.git/info/exclude`).
 - Prebuilt native code (npm addons such as sharp, PyPI wheels such as numpy,
   Lua C modules) and compilers behave differently on Nix: a Nix-built runtime
   cannot find the libraries that foreign code expects, and Nix's compiler never
   sees the distribution's headers and libraries. The whole picture, the rule per
-  runtime (bun, Python, Lua, Node, Java, PHP, Rust, Go, C/C++), how to diagnose
-  a new case and the tests that guard it: [docs/NATIVE-CODE.md](../docs/NATIVE-CODE.md).
+  runtime (bun, Python, Lua, Node, Java, PHP, Rust, Go, C/C++), the GPU and GUI
+  wrappers (`with-cuda`, `with-gui-libs`), the corporate CA for Java, how to
+  diagnose a new case and the tests that guard it:
+  [docs/NATIVE-CODE.md](../docs/NATIVE-CODE.md).
   Never fix such a case with a global `LD_LIBRARY_PATH`: it leaks into every
   child process and breaks the distribution's own programs on Ubuntu.
 - Databases run per project in Docker; only the clients are installed.

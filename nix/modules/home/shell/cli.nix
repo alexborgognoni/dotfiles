@@ -124,4 +124,11 @@
     unzip
     wl-clipboard
   ];
+
+  # uv's default Python where a project does not pin one (its own
+  # .python-version or requires-python wins): 3.13, not the newest. The wheel
+  # ecosystem lags the newest Python (a tool such as postgres-mcp has no wheels
+  # for it), and with only the Nix interpreters on PATH uv would take 3.14, the
+  # one `python3` is for scripts.
+  xdg.configFile."uv/.python-version".text = "3.13\n";
 }

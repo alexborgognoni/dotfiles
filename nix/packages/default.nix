@@ -128,6 +128,10 @@ in
     pkgs.bun-native-libs
     # python3.12 and python3.13 (python3 is the 3.14 above), same interpreters
     pkgs.pythonNativeLibs.versions
+    # one command with the GPU driver's or the GUI libraries visible, for
+    # wheels that dlopen them (pkgs/with-libs): with-cuda, with-gui-libs
+    pkgs.withLibs.with-cuda
+    pkgs.withLibs.with-gui-libs
     # Lua and LuaJIT that load prebuilt C modules, and the luarocks of that Lua
     # (pkgs/lua-native-libs)
     pkgs.luaNativeLibs.lua

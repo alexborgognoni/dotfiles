@@ -8,6 +8,10 @@
 #   native-toolchains      the compilers see only Nix's libraries, pkg-config
 #                          says so honestly, Go and Gradle download nothing,
 #                          PHP has what Laravel needs
+#   native-with-libs       with-cuda and with-gui-libs expose exactly the
+#                          libraries a wheel dlopens, to one command, no leak
+#   native-java-truststore  the generator of Java's corporate trust store keeps
+#                          every certificate of a bundle
 #   native-template-c|go   the dev-shell templates build against Nix's
 #                          libraries (openssl through pkg-config; cgo)
 #   bun-upstream-still-broken
@@ -147,11 +151,16 @@ in
           u.rustc
           u.pkg-config
           u.gnumake
+          u.uv
+          cpkgs.pythonNativeLibs.python
+          cpkgs.pythonNativeLibs.versions
           jdk
           php
         ];
+        uvConfig = hm.xdg.configFile."uv/uv.toml".source;
+        uvDefault = hm.xdg.configFile."uv/.python-version".source;
         goEnv = hm.xdg.configFile."go/env".source;
-        gradleProperties = hm.home.file.".gradle/gradle.properties".text;
+        gradleProperties = hm.home.file.".gradle/gradle.properties".source;
       }
       ''
         export HOME=$TMPDIR GOCACHE=$TMPDIR/gocache GOPATH=$TMPDIR/go
@@ -179,18 +188,104 @@ in
         grep -q 'GOTOOLCHAIN=local' <<<"$result" || fail "go did not stop at GOTOOLCHAIN=local: $result"
         cd ..
 
-        echo "== Java: javac and java from Nix; Gradle takes the JDKs from Nix and downloads none"
+        echo "== uv: the Nix interpreters only, 3.13 by default, a project's pin wins, no downloads"
+        mkdir -p uvcfg/uv && cp $uvConfig uvcfg/uv/uv.toml && cp $uvDefault uvcfg/uv/.python-version
+        export XDG_CONFIG_HOME=$PWD/uvcfg UV_CACHE_DIR=$TMPDIR/uvcache
+        found="$(uv python find)"
+        case "$found" in *python3.13) ;; *) fail "uv's default is $found, not python3.13" ;; esac
+        mkdir uvproject && ( cd uvproject && echo 3.12 > .python-version && case "$(uv python find)" in *python3.12) ;; *) exit 1 ;; esac ) \
+          || fail "a project's .python-version does not win"
+        if uv python find 3.9 2>/dev/null; then fail "uv found or fetched a Python that is not in the Nix set"; fi
+        venv="$(cd uvproject && uv venv -q v && v/bin/python -c 'import sys; print(sys.prefix)')"
+        [ -n "$venv" ] || fail "uv venv"
+
+        echo "== Java: javac and java from Nix; Gradle takes the JDK from Nix and downloads none"
         printf 'public class H { public static void main(String[] a) { System.out.println("java ok"); } }\n' > H.java
         javac H.java && java H | grep -q 'java ok' || fail "javac/java"
-        grep -q 'auto-download=false' <<<"$gradleProperties" || fail "gradle auto-download is not off"
-        for dir in $(grep installations.paths <<<"$gradleProperties" | cut -d= -f2 | tr , ' '); do
-          [ -x "$dir/bin/java" ] || fail "gradle JDK $dir has no bin/java"
-        done
+        grep -q 'auto-download = false' $gradleProperties || fail "gradle auto-download is not off"
+        dir="$(sed -n 's/^org.gradle.java.installations.paths = //p' $gradleProperties)"
+        [ -x "$dir/bin/java" ] || fail "gradle JDK $dir has no bin/java"
 
         echo "== PHP: what Laravel needs, and phpredis"
         for ext in ctype curl dom fileinfo filter hash mbstring openssl pcre PDO pdo_pgsql pdo_sqlite session tokenizer xml zip intl redis; do
           php -m | grep -qix "$ext" || fail "php extension $ext is missing"
         done
+        touch $out
+      '';
+
+  # the corporate trust store of Java: built from a PEM bundle (modules/home/
+  # corporate/TrustStore.java), read back by the JDK, as many certificates
+  native-java-truststore =
+    pkgs.runCommand "check-native-java-truststore" { nativeBuildInputs = [ jdk ]; }
+      ''
+        bundle=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+        report="$(java ${../modules/home/corporate/TrustStore.java} $bundle store.p12 2>skipped.log)"
+        echo "$report"
+        blocks=$(grep -c 'BEGIN CERTIFICATE' $bundle)
+        skipped=$(grep -c '^skipped' skipped.log || true)
+        cat > Count.java <<'EOF'
+        import java.io.*; import java.security.KeyStore;
+        public class Count { public static void main(String[] a) throws Exception {
+          KeyStore k = KeyStore.getInstance("PKCS12");
+          try (InputStream in = new FileInputStream(a[0])) { k.load(in, "changeit".toCharArray()); }
+          System.out.println(k.size()); } }
+        EOF
+        got=$(java Count.java store.p12)
+        # every certificate Java can read is in the store, and an unreadable one is not fatal
+        [ "$got" = "$((blocks - skipped))" ] || { echo "FAIL: $got in the store, $blocks in the bundle, $skipped skipped"; exit 1; }
+        [ "$got" -ge 100 ] || { echo "FAIL: only $got certificates"; exit 1; }
+        [ "$skipped" -le 3 ] || { echo "FAIL: $skipped certificates skipped"; exit 1; }
+        # a file without a certificate is an error, not an empty store that hides it
+        echo "not a certificate" > none.pem
+        if java ${../modules/home/corporate/TrustStore.java} none.pem none.p12 2>/dev/null; then echo "FAIL: an empty bundle gave a store"; exit 1; fi
+        touch $out
+      '';
+
+  # with-cuda / with-gui-libs: a library the runtime dlopens by name is found
+  # under the wrapper and not without it, and nothing else is exposed or leaks
+  native-with-libs =
+    pkgs.runCommandCC "check-native-with-libs"
+      {
+        nativeBuildInputs = [
+          cpkgs.pythonNativeLibs.python
+          cpkgs.withLibs.with-cuda
+          cpkgs.withLibs.with-gui-libs
+        ];
+        buildInputs = [
+          u.libglvnd
+          u.libx11
+        ];
+      }
+      ''
+        export HOME=$TMPDIR
+        fail() { echo "FAIL: $*"; exit 1; }
+        load() { python3 -c "import ctypes; ctypes.CDLL('$1')" 2>&1; }
+
+        echo "== with-cuda: libcuda.so.1 from the driver directory, only that"
+        mkdir driver && cp ${probe}/libprobe.so driver/libcuda.so.1
+        cp ${probe}/libprobe.so driver/libvulkan_unrelated.so.1
+        load libcuda.so.1 >/dev/null && fail "libcuda.so.1 was found without the wrapper"
+        export WITH_LIBS_DRIVER_DIR=$PWD/driver XDG_CACHE_HOME=$PWD/cache
+        with-cuda python3 -c "import ctypes; ctypes.CDLL('libcuda.so.1')" || fail "with-cuda did not expose libcuda.so.1"
+        [ "$(ls $XDG_CACHE_HOME/with-cuda)" = libcuda.so.1 ] || fail "with-cuda exposed: $(ls $XDG_CACHE_HOME/with-cuda)"
+        with-cuda python3 -c "import ctypes; ctypes.CDLL('libvulkan_unrelated.so.1')" 2>/dev/null && fail "with-cuda exposed an unrelated library"
+        [ -z "''${LD_LIBRARY_PATH:-}" ] || fail "LD_LIBRARY_PATH leaked into the calling shell"
+        [ "$(with-cuda sh -c 'echo "$LD_LIBRARY_PATH"')" = "$XDG_CACHE_HOME/with-cuda" ] || fail "unexpected LD_LIBRARY_PATH"
+        result="$(WITH_LIBS_DRIVER_DIR=$PWD/none with-cuda echo ran 2>&1)"
+        grep -q "no NVIDIA driver" <<<"$result" && grep -q "^ran$" <<<"$result" || fail "without a driver: $result"
+        with-cuda 2>/dev/null && fail "with-cuda without a command succeeded"
+
+        echo "== with-gui-libs: a library that needs libGL and libX11"
+        cat > gui.c <<'EOF'
+        extern int glGetError(void);
+        extern void *XOpenDisplay(const char *);
+        int gui_probe(void) { return glGetError() + (XOpenDisplay(0) != 0); }
+        EOF
+        gcc -shared -fPIC -o libgui.so gui.c -lGL -lX11
+        ${pkgs.patchelf}/bin/patchelf --remove-rpath libgui.so
+        readelf -d libgui.so | grep -q 'libGL.so.1' || fail "the GUI probe does not need libGL"
+        load $PWD/libgui.so >/dev/null && fail "libGL was found without the wrapper"
+        with-gui-libs python3 -c "import ctypes; ctypes.CDLL('$PWD/libgui.so')" || fail "with-gui-libs did not expose libGL/libX11"
         touch $out
       '';
 

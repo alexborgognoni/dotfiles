@@ -20,11 +20,18 @@
     package = pkgs.unstable.jdk;
   };
 
-  # Gradle's toolchains take the JDKs from Nix and never download one (an
-  # unpatched binary): a build that asks for Java 17 or 21 finds them here;
-  # another version: add it to the list, or use the project's dev shell.
-  home.file.".gradle/gradle.properties".text = ''
-    org.gradle.java.installations.auto-download=false
-    org.gradle.java.installations.paths=${pkgs.unstable.jdk17.home},${pkgs.unstable.jdk21.home}
-  '';
+  # Gradle's toolchains take the JDK from Nix and never download one (an
+  # unpatched binary): a build that asks for the default Java finds it here.
+  # Another version costs ~800 MB, so it is not installed on every host: add
+  # it to `paths` (comma separated) or use the project's dev shell. Settings
+  # are merged from other modules (corporate/java-truststore.nix), and the
+  # file stays Home Manager's; Gradle itself comes with the project's wrapper.
+  programs.gradle = {
+    enable = true;
+    package = null;
+    settings = {
+      "org.gradle.java.installations.auto-download" = false;
+      "org.gradle.java.installations.paths" = "${pkgs.unstable.jdk.home}";
+    };
+  };
 }

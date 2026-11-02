@@ -19,4 +19,8 @@ final: _prev: {
   # nixpkgs' Lua and LuaJIT that load prebuilt C modules, and the luarocks of
   # that Lua: { lua; luajit; luarocks } (lua-native-libs/package.nix)
   luaNativeLibs = final.unstable.callPackage ./lua-native-libs/package.nix { };
+
+  # `with-cuda` and `with-gui-libs`: one command with the GPU driver's or the
+  # GUI libraries visible, nothing else (with-libs/package.nix)
+  withLibs = final.unstable.callPackage ./with-libs/package.nix { };
 }

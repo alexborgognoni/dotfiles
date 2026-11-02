@@ -105,10 +105,13 @@ section "Prebuilt native code and compilers (docs/NATIVE-CODE.md)"
 check "bun loads a native addon (sharp)" 'd=$(mktemp -d) && cd $d && bun add --silent sharp && bun -e "console.log(require(\"sharp\").versions.vips)"'
 check "wheels load in a uv virtualenv on the Nix Python (numpy, 3.13)" 'd=$(mktemp -d) && uv venv --quiet --python 3.13 $d/v && uv pip install --quiet --python $d/v/bin/python numpy && $d/v/bin/python -c "import numpy"'
 check "uv uses the Nix interpreters and downloads none" 'grep -q "python-preference = \"only-system\"" ~/.config/uv/uv.toml && grep -q "python-downloads = \"never\"" ~/.config/uv/uv.toml && uv python find 3.12 | grep -q -e nix-profile -e /nix/store'
+check "uv defaults to Python 3.13 (a project's own pin wins)" 'case "$(cd "$(mktemp -d)" && uv python find)" in *python3.13) ;; *) exit 1;; esac'
+check "with-cuda and with-gui-libs run a command (GPU and GUI wheels)" 'with-cuda true 2>/dev/null; with-cuda sh -c "[ -n \"\$LD_LIBRARY_PATH\" ]" && with-gui-libs sh -c "[ -n \"\$LD_LIBRARY_PATH\" ]" && [ -z "${LD_LIBRARY_PATH:-}" ]'
 check "lua and luajit carry libz and libstdc++" 'for r in lua luajit; do readelf -d "$(readlink -f "$(command -v $r)")" | grep -q "libz.so.1" && readelf -d "$(readlink -f "$(command -v $r)")" | grep -q "libstdc++.so.6" || { echo "$r"; exit 1; }; done'
 check "pkg-config is from Nix, gcc finds no host library, a build needs a dev shell" 'case "$(command -v pkg-config)" in /nix/*|*/.nix-profile/*) ;; *) exit 1;; esac; ! pkg-config --exists openssl && ! printf "#include <openssl/ssl.h>\n" | gcc -E -x c - >/dev/null 2>&1'
 check "Rust from Nix (no rustup), Go never downloads a toolchain" '! command -v rustup >/dev/null && cargo --version && [ "$(go env GOTOOLCHAIN)" = local ]'
-check "Java from Nix: JAVA_HOME, javac, Gradle downloads no JDK" 'case "$JAVA_HOME" in /nix/store/*) ;; *) exit 1;; esac && javac -version && grep -q "auto-download=false" ~/.gradle/gradle.properties'
+check "Java from Nix: JAVA_HOME, javac, Gradle downloads no JDK" 'case "$JAVA_HOME" in /nix/store/*) ;; *) exit 1;; esac && javac -version && grep -q "auto-download = false" ~/.gradle/gradle.properties'
+check "Java trusts the corporate roots (store built from the system's, in JAVA_TOOL_OPTIONS and Gradle)" '[ "$(keytool -list -keystore ~/.local/share/java/cacerts.p12 -storepass changeit 2>/dev/null | grep -c trustedCertEntry)" -ge 50 ] && case "$JAVA_TOOL_OPTIONS" in *cacerts.p12*) ;; *) exit 1;; esac && grep -q "trustStore = " ~/.gradle/gradle.properties'
 check "PHP has phpredis, mise is installed (Ubuntu only)" 'php -m | grep -qix redis && command -v mise'
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"

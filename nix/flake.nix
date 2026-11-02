@@ -148,7 +148,7 @@
       formatter = forAllSystems (system: (tooling system).formatter);
 
       # Dev shells for projects that need system libraries or another
-      # toolchain: `nix flake init -t ~/dotfiles/nix#c` (c, go, rust)
+      # toolchain: `nix flake init -t ~/dotfiles/nix#c` (c, go, node, rust)
       # (docs/NATIVE-CODE.md)
       templates = {
         c = {
@@ -158,6 +158,10 @@
         go = {
           path = ./templates/go;
           description = "Go dev shell (another Go version, cgo libraries)";
+        };
+        node = {
+          path = ./templates/node;
+          description = "Node/Bun dev shell with Playwright's browsers (version pinned to the project's)";
         };
         rust = {
           path = ./templates/rust;
@@ -179,6 +183,8 @@
           inherit (pkgs) forgecode bun-native-libs;
           python-native-libs = pkgs.pythonNativeLibs.python;
           python-native-libs-versions = pkgs.pythonNativeLibs.versions;
+          with-cuda = pkgs.withLibs.with-cuda;
+          with-gui-libs = pkgs.withLibs.with-gui-libs;
           lua-native-libs = pkgs.luaNativeLibs.lua;
           luajit-native-libs = pkgs.luaNativeLibs.luajit;
           # Pinned CLIs for bootstrapping non-NixOS machines
