@@ -97,6 +97,13 @@ laptop: `daisy-rag`'s torch sees the GPU and runs a matrix multiplication.
 
 ## Trusting the corporate CA (class D)
 
+**Everything certificate-related lives in the corporate modules and applies only
+with `my.corporate.enable`** (`modules/home/corporate/`, `modules/system-manager/
+corporate.nix`): a personal machine gets no CA variable, no Java trust store, no
+Gradle trust setting. The check `native-corporate-gating` enforces it (the NixOS
+VM user has none, the laptop has all). A new certificate setting goes in a
+corporate module, never in a shared one.
+
 On the laptop IT deploys the Zscaler root to Ubuntu's store, and nothing
 corporate lives in this repository. Each runtime has to be pointed at that
 store; the ones that read it by themselves need nothing:
@@ -185,6 +192,7 @@ from the host.
 | `native-addons` | bun, python (and virtualenvs of 3.12, 3.13, 3.14), lua, luajit load a library that needs `libstdc++` and `libz` and has no RPATH; node, php, java do too |
 | `native-toolchains` | gcc and pkg-config do **not** find a library without a dev shell (no host path leaks in), rustc links, Go builds and stops at `GOTOOLCHAIN=local`, `uv` uses the Nix interpreters (3.13 by default, a project's pin wins, no downloads), javac/java work and Gradle downloads no JDK, PHP has Laravel's extensions and phpredis |
 | `native-with-libs` | `with-cuda` exposes exactly `libcuda.so.1` (not an unrelated library), `with-gui-libs` finds `libGL`/`libX11`, neither leaks into the calling shell, and `with-cuda` still runs without a driver |
+| `native-corporate-gating` | certificate settings exist only with `my.corporate.enable`: none on the NixOS VM user, all on the laptop (an evaluation test; mutation-tested) |
 | `native-java-truststore` | the generator keeps every certificate Java can read, skips the unreadable, and refuses a file with none |
 | `native-template-c`, `native-template-go` | the dev-shell templates build against Nix's openssl (pkg-config; cgo) |
 | `bun-upstream-still-broken` | **fails when nixpkgs' own bun loads the library**: the reminder to drop `pkgs/bun-native-libs` |

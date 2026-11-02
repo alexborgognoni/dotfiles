@@ -10,6 +10,9 @@
 #                          PHP has what Laravel needs
 #   native-with-libs       with-cuda and with-gui-libs expose exactly the
 #                          libraries a wheel dlopens, to one command, no leak
+#   native-corporate-gating certificate settings exist only with
+#                          my.corporate.enable (none on the NixOS VM user, all on
+#                          the laptop)
 #   native-java-truststore  the generator of Java's corporate trust store keeps
 #                          every certificate of a bundle
 #   native-template-c|go   the dev-shell templates build against Nix's
@@ -212,6 +215,32 @@ in
         done
         touch $out
       '';
+
+  # Certificate settings exist only with my.corporate.enable: a configuration
+  # without it (the NixOS VM user) has none, the corporate one (the laptop) has
+  # all of them. Evaluated, not built: the assertions are the test.
+  native-corporate-gating =
+    let
+      work = self.homeConfigurations."alex@work-laptop".config;
+      traces =
+        cfg:
+        let
+          vars = cfg.programs.zsh.sessionVariables;
+        in
+        {
+          javaOptions = vars ? JAVA_TOOL_OPTIONS;
+          caVariables = (vars ? REQUESTS_CA_BUNDLE) || (vars ? NODE_EXTRA_CA_CERTS);
+          gradleTrust = lib.any (lib.hasPrefix "systemProp.") (lib.attrNames cfg.programs.gradle.settings);
+          trustStoreActivation = cfg.home.activation ? javaTrustStore;
+        };
+    in
+    assert lib.assertMsg (
+      !(lib.any lib.id (lib.attrValues (traces hm)))
+    ) "certificate settings outside my.corporate.enable: ${builtins.toJSON (traces hm)}";
+    assert lib.assertMsg (lib.all lib.id (
+      lib.attrValues (traces work)
+    )) "the corporate configuration lacks certificate settings: ${builtins.toJSON (traces work)}";
+    pkgs.runCommand "check-native-corporate-gating" { } "touch $out";
 
   # the corporate trust store of Java: built from a PEM bundle (modules/home/
   # corporate/TrustStore.java), read back by the JDK, as many certificates
