@@ -5,9 +5,8 @@
 .local/lib/librepods
 .nvm
 .pyenv
-# rustup's toolchains and uv's standalone Pythons: unpatched downloads, replaced by
-# the Nix toolchains (docs/NATIVE-CODE.md)
-.rustup
+# uv's standalone Pythons on a host that cannot run them (docs/NATIVE-CODE.md).
+# (~/.rustup is in use again: the Nix rustup keeps its toolchains there.)
 .local/share/uv/python
 .opencode
 .bun

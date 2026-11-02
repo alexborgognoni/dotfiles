@@ -7,7 +7,7 @@
 #   linters      <none-ls diagnostics builtin> = package
 #   extra        tools others need (no name to switch on)
 #   serverCommands       <server> = absolute path: for a server whose name on
-#                        PATH is taken by something else
+#                        PATH is taken by something else (rustup's proxy)
 #   formatterFiletypes   <formatter> = [ filetypes ]: where that formatter applies
 #                        (its default is wider than we want)
 #   formattingDisabled   servers whose own formatting is switched off
@@ -116,6 +116,9 @@
 
   rust = {
     servers.rust_analyzer = pkgs.rust-analyzer;
+    # rustup's `rust-analyzer` proxy comes first on PATH, wants a component that
+    # may not be installed and then calls itself ("infinite recursion detected")
+    serverCommands.rust_analyzer = "${pkgs.rust-analyzer}/bin/rust-analyzer";
     extra = [ pkgs.rustfmt ]; # rust-analyzer formats with it
   };
 

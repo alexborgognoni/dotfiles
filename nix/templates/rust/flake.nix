@@ -1,9 +1,13 @@
-# Rust dev shell with the project's toolchain (rust-toolchain.toml: channel,
-# nightly, components, targets) from Nix, not rustup: rustup's toolchains are
-# unpatched downloads that need nix-ld on NixOS. Nix's compiler sees only what
-# Nix provides, never the distribution's /usr/include and /usr/lib: a library a
-# -sys crate links against (openssl-sys, ...) is named in buildInputs
-# (docs/NATIVE-CODE.md). Without a rust-toolchain.toml, replace
+# Rust dev shell: the libraries a -sys crate links against (openssl-sys, ...) and,
+# if the project wants everything from Nix, its toolchain from rust-toolchain.toml
+# (channel, nightly, components, targets) through rust-overlay.
+#
+# Without this, rustup (on every host, see modules/home/toolchains.nix) already
+# honours a project's rust-toolchain.toml: nixpkgs' rustup patches the toolchains
+# it downloads, so they run on NixOS too. What rustup cannot give is a *library*:
+# Nix's compiler sees only what Nix provides, never the distribution's
+# /usr/include and /usr/lib, so a library a -sys crate links against is named in
+# buildInputs (docs/NATIVE-CODE.md). Without a rust-toolchain.toml, replace
 # `fromRustupToolchainFile ./rust-toolchain.toml` with
 # `rust-bin.stable.latest.default` (or `rust-bin.nightly.latest.default`).
 {

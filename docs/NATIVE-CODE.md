@@ -20,7 +20,7 @@ from that, and a fourth comes from the corporate network:
 |---|---|---|
 | **A. a Nix runtime loads foreign native code** | A Nix-built interpreter (bun, python, lua) loads a prebuilt `.node`/wheel/`.so` that needs `libstdc++`, `libz`, or a library it dlopens later (the GPU driver, `libGL`). The loader cannot find them, and a library with its own RUNPATH (every wheel) ignores the executable's search path. | `ERR_DLOPEN_FAILED: libstdc++.so.6: cannot open shared object file`, `ImportError: libz.so.1: ...`, `torch.cuda.is_available()` is `False` |
 | **B. a Nix compiler builds against the host** | Nix's `gcc` (and so `rustc`, `go` with cgo, `node-gyp`, `pip` building an sdist) sees only Nix's headers and libraries, never `/usr/include` or `/usr/lib`. On Ubuntu `/usr/bin/pkg-config` answers with host paths the compiler cannot use. | `fatal error: openssl/ssl.h: No such file`, `Could not find openssl via pkg-config` |
-| **C. a tool downloads an unpatched executable** | rustup toolchains, Gradle JDK provisioning, `mise`/`sdkman` installs, `uv`'s standalone Pythons, a Playwright browser. They run on Ubuntu (its own loader), but not on NixOS without `nix-ld`. (Not Go's toolchains: they are static binaries and run everywhere.) | `Could not start dynamically linked executable`, `stub-ld` |
+| **C. a tool downloads an unpatched executable** | Gradle JDK provisioning, `mise`/`sdkman` installs, `uv`'s standalone Pythons, a Playwright browser. They run on Ubuntu (its own loader), but not on NixOS without `nix-ld`. (Not Go's toolchains: static binaries, they run everywhere. Not rustup's: nixpkgs' rustup patches what it downloads, see below.) | `Could not start dynamically linked executable`, `stub-ld` |
 | **D. a runtime does not trust the corporate CA** | The laptop sits behind Zscaler's TLS inspection. A runtime that ships its own trust store (the JDK) does not know the corporate root, which Ubuntu deploys to its system store. | `PKIX path building failed` |
 
 `nix-ld` only helps class C, and only for **unpatched** executables. A
@@ -49,7 +49,7 @@ it downloads**:
 | Gradle asks for another JDK | downloads it | the project's dev shell |
 | Playwright | `playwright install` (its own browsers run on Ubuntu) | the `node` template: browsers built for Nix, of the project's exact version |
 | Go `toolchain` line in `go.mod` | the exact version is downloaded | the same (the toolchains are static) |
-| Rust | Nix's toolchain on both; a pinned or nightly one: the `rust` template | |
+| Rust, a `rust-toolchain.toml` | `rustup` fetches the channel; it runs natively | the same: nixpkgs' `rustup` patches every toolchain it downloads (the loader and zlib are Nix's, no host library: checked with `LD_DEBUG`), so no `nix-ld` and no dev shell |
 
 `my.foreignBinaries` (a Home Manager option) is on for the Ubuntu laptop, and off
 for NixOS unless the runtimes are not patched (`nix/runtimes.nix`, below). It
@@ -79,7 +79,7 @@ configuration, not in the host.
 | **Node, pnpm** | A | nothing: nixpkgs' node already needs `libstdc++` and `libz` | (guarded by a check) |
 | **Java** | A, C, D | JDK from Nix with `JAVA_HOME` (`programs.java`); the JVM already loads JNI libraries. Gradle uses that JDK and downloads another only where a foreign binary runs (Ubuntu). The corporate roots: see below. | `modules/home/toolchains.nix`, `modules/home/corporate/java-truststore.nix` |
 | **PHP** | A, B | extensions from Nix (`php.withExtensions`: phpredis added), not `pecl install` | `nix/packages/default.nix` |
-| **Rust** | B, C | `rustc`, `cargo`, `clippy`, `rustfmt`, `rust-analyzer` from nixpkgs, not rustup. A pinned or nightly toolchain, or `-sys` crates: the `rust` template. | `nix/packages/default.nix`, `nix/templates/rust` |
+| **Rust** | B | `rustup` on **both** hosts, so a project's `rust-toolchain.toml` is honoured without Nix in the project. nixpkgs' rustup patches the toolchains it downloads, so they run on NixOS too. Nix's own toolchain is linked as rustup's default (`rustup toolchain link nix`, by the home module's activation): the baseline works offline, and a project with a toolchain file gets its channel. `-sys` crates need a library from a dev shell: the `rust` template. Quirk of the package: what cargo runs sees the toolchain's library directories and zlib in `LD_LIBRARY_PATH`. | `modules/home/toolchains.nix`, `nix/templates/rust` |
 | **Go** | B | Go from Nix; `go.mod`'s `toolchain` line pins an exact version on every host (the official toolchains are static binaries; tested); cgo libraries: the `go` template | `nix/templates/go` |
 | **C / C++** | B | Nix's `gcc` and `pkg-config` (so `/usr/bin/pkg-config` cannot mislead); libraries come from a dev shell: the `c` template | `nix/packages/default.nix`, `nix/templates/c` |
 | **GPU / GUI wheels** | A | `with-cuda`, `with-gui-libs`, see below. Prefer headless wheels (`opencv-python-headless`; Daisy's `daisy-rag` forces it). | `nix/pkgs/with-libs` |
@@ -220,7 +220,7 @@ from the host.
 | Check | What it proves |
 |---|---|
 | `native-addons` | bun, python (and virtualenvs of 3.12, 3.13, 3.14), the virtualenv a default Poetry project gets, lua, luajit load a library that needs `libstdc++` and `libz` and has no RPATH; node, php, java do too |
-| `native-toolchains` | gcc and pkg-config do **not** find a library without a dev shell (no host path leaks in), rustc links, Go builds and fetches the toolchain a `go.mod` asks for, `uv` uses the Nix interpreters (3.13 by default, a project's pin wins), javac/java work and Gradle follows the host policy, PHP has Laravel's extensions and phpredis |
+| `native-toolchains` | gcc and pkg-config do **not** find a library without a dev shell (no host path leaks in), rustup with the linked Nix toolchain builds offline, Go builds and fetches the toolchain a `go.mod` asks for, `uv` uses the Nix interpreters (3.13 by default, a project's pin wins), javac/java work and Gradle follows the host policy, PHP has Laravel's extensions and phpredis |
 | `native-host-policy` | what differs per host, and only that (NixOS: no foreign downloads in `uv` and Gradle, no `mise`; Ubuntu: they may). Evaluated. |
 | `native-retreat` | `nix/runtimes.nix` with `patched = false`: the runtimes are plain nixpkgs and run, and NixOS adopts the Ubuntu policy |
 | `native-with-libs` | `with-cuda` exposes exactly `libcuda.so.1` (not an unrelated library), `with-gui-libs` finds `libGL`/`libX11`, neither leaks into the calling shell, and `with-cuda` still runs without a driver |
@@ -309,8 +309,10 @@ already works that way for anything outside the Nix set.
 
 ## Cleaning up what this replaces
 
-After the switch, `~/.rustup` (rustup's toolchains) and `~/.local/share/uv/python`
-(uv's standalone Pythons) are unused (`scripts/cleanup.d/home-leftovers.list`).
+After the switch, `~/.local/share/uv/python` (uv's standalone Pythons) is unused
+on a host that cannot run them (`scripts/cleanup.d/home-leftovers.list`; on the
+Ubuntu laptop `uv` may use them again). `~/.rustup` is **in use**: the Nix rustup
+keeps its toolchains there, so it is not a leftover.
 **Check what still runs on them before deleting**, because deleting a Python
 breaks every virtualenv and `uv tool` environment made from it:
 

@@ -39,6 +39,11 @@ check "python: a version the Nix set lacks (3.11) follows the host policy" "net"
   fi'
 
 # --- Rust, Go, C ---------------------------------------------------------------------
+check "rust: the Nix toolchain is rustup's default and builds offline" "" '
+  rustup toolchain list | grep -q "^nix" && cargo new -q app && cd app && cargo build -q --offline && ./target/debug/app'
+check "rust: a rust-toolchain.toml is honoured (rustup fetches the channel and it runs)" "net" '
+  cargo new -q app && cd app && printf "[toolchain]\nchannel = \"1.85.0\"\nprofile = \"minimal\"\n" > rust-toolchain.toml &&
+  rustc --version | grep -q "1.85.0" && cargo build -q && ./target/debug/app'
 check "rust: build a crate with a dependency, clippy and rustfmt" "net" '
   cargo new -q app && cd app && cargo add -q anyhow && cargo build -q && ./target/debug/app &&
   cargo clippy -q && cargo fmt --check'

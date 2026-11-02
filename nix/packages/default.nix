@@ -156,13 +156,6 @@ in
     pnpm
     typescript
     typescript-language-server
-    # Rust from Nix (rustup's toolchains are unpatched downloads); a project
-    # that pins another version or nightly uses templates/rust
-    rustc
-    cargo
-    clippy
-    rustfmt
-    rust-analyzer
     go
     uv
     gcc

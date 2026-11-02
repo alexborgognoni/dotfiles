@@ -104,7 +104,7 @@ in
       {
         nativeBuildInputs = [
           u.go
-          u.rustc
+          u.rustup
           u.pkg-config
           u.gnumake
           u.uv
@@ -126,9 +126,15 @@ in
         if gcc c.c -o c 2>/dev/null; then fail "gcc found a library without being told (a host path leaked in?)"; fi
         if pkg-config --exists openssl; then fail "pkg-config found openssl without a dev shell"; fi
 
-        echo "== Rust: rustc links with Nix's cc and the binary runs"
+        echo "== Rust: rustup with the Nix toolchain linked as the default (what the home module does), offline"
+        export RUSTUP_HOME=$TMPDIR/rustup CARGO_HOME=$TMPDIR/cargo
+        rustup toolchain link nix ${cpkgs.rustNixToolchain} || fail "rustup toolchain link"
+        rustup default nix || fail "rustup default"
         printf 'fn main() { println!("rust ok"); }\n' > r.rs
-        rustc r.rs -o r && ./r | grep -q 'rust ok' || fail "rustc"
+        rustc r.rs -o r && ./r | grep -q 'rust ok' || fail "rustc through rustup's proxy"
+        [ "$(rustc --version)" = "$(${u.rustc}/bin/rustc --version)" ] || fail "the default toolchain is not Nix's"
+        cargo --version >/dev/null && cargo clippy --version >/dev/null && rustfmt --version >/dev/null || fail "cargo, clippy or rustfmt"
+        cargo new -q app && (cd app && cargo build -q --offline && ./target/debug/app >/dev/null) || fail "cargo build"
 
         echo "== Go: builds, and a go.mod that needs a newer Go makes Go fetch it (the toolchains are static)"
         [ "$(go env GOTOOLCHAIN)" = auto ] || fail "GOTOOLCHAIN is $(go env GOTOOLCHAIN), not auto"
@@ -206,6 +212,9 @@ in
         gradleDownloads = cfg.programs.gradle.settings."org.gradle.java.installations.auto-download";
         goOverride = cfg.xdg.configFile ? "go/env";
         miseInstalled = cfg.programs.mise.enable;
+        rustup =
+          (lib.any (p: lib.hasPrefix "rustup" (p.name or "")) cfg.home.packages)
+          && cfg.home.activation ? rustupNix;
       };
     in
     assert lib.assertMsg (
@@ -224,6 +233,7 @@ in
         gradleDownloads = if patched then "false" else "true";
         goOverride = false;
         miseInstalled = !patched;
+        rustup = true;
       }
     ) "NixOS policy changed: ${builtins.toJSON (policy hm)}";
     assert lib.assertMsg (
@@ -235,6 +245,7 @@ in
         gradleDownloads = "true";
         goOverride = false;
         miseInstalled = true;
+        rustup = true;
       }
     ) "Ubuntu policy changed: ${builtins.toJSON (policy work)}";
     pkgs.runCommand "check-native-host-policy" { } "touch $out";

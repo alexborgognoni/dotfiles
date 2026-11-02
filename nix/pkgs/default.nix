@@ -17,6 +17,22 @@ in
 
   forgecode = final.callPackage ./forgecode/package.nix { };
 
+  # Nix's Rust toolchain as one directory, for `rustup toolchain link`: the offline
+  # default behind rustup's proxies (modules/home/toolchains.nix)
+  rustNixToolchain = final.symlinkJoin {
+    name = "rust-nix-toolchain";
+    paths =
+      (with u; [
+        rustc
+        cargo
+        clippy
+        rustfmt
+        rust-analyzer
+      ])
+      # rustup wants a lib/ in a linked toolchain
+      ++ [ (final.runCommand "rust-toolchain-lib" { } "mkdir -p $out/lib/rustlib") ];
+  };
+
   # nixpkgs' bun that can load prebuilt native addons (sharp); plain bun when
   # the runtimes are not patched
   bun-native-libs =
