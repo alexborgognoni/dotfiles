@@ -28,6 +28,13 @@ fi'
 stub curl 'echo "curl $*" >>"$STUB_STATE/log"; while [ $# -gt 0 ]; do [ "$1" = -o ] && : >"$2"; shift; done'
 stub usermod 'echo "usermod $*" >>"$STUB_STATE/log"'
 stub chsh 'echo "chsh $*" >>"$STUB_STATE/log"'
+stub systemctl 'case "$1" in
+  is-enabled) grep -qx "$2" "$STUB_STATE/enabled" 2>/dev/null && echo enabled && exit 0
+              grep -qx "$2" "$STUB_STATE/masked" 2>/dev/null && echo masked && exit 1
+              echo disabled; exit 1 ;;
+  enable) echo "systemctl $*" >>"$STUB_STATE/log"
+          for a in "${@:3}"; do echo "$a" >>"$STUB_STATE/enabled"; done ;;
+esac'
 stub getent 'case "$1" in
   group) for g in $STUB_GROUPS_EXIST; do [ "$g" = "$2" ] && exit 0; done; exit 1 ;;
   passwd) echo "$2:x:1000:1000::/home/$2:${STUB_SHELL:-/bin/bash}" ;;
@@ -44,6 +51,8 @@ reset() {
   mkdir -p "$tmp/state"
   : >"$tmp/state/log"
   : >"$tmp/state/installed"
+  : >"$tmp/state/enabled"
+  : >"$tmp/state/masked"
 }
 # run [args]: the script as root for alice; output in $out, exit status in $rc
 run() {
@@ -68,6 +77,8 @@ assert_match "$log" 'apt-get install -y .*docker-ce' "the packages are installed
 assert_match "$log" 'apt-get install -y .*qt6-wayland' "the packages are installed (qt6-wayland)"
 assert_match "$log" 'curl .*go.microsoft.com/fwlink' "Edge is downloaded"
 assert_match "$log" 'apt-get install -y .*microsoft-edge-stable.deb' "Edge is installed from the .deb"
+assert_match "$log" 'systemctl enable --now docker.socket docker.service' "Docker's socket and service are enabled and started"
+assert_match "$log" 'systemctl enable --now containerd.service' "containerd is enabled and started"
 assert_match "$log" 'usermod -aG docker alice' "the user joins docker"
 assert_match "$log" 'usermod -aG libvirt alice' "the user joins libvirt"
 assert_match "$log" 'chsh -s /usr/bin/zsh alice' "zsh becomes the login shell"
@@ -78,6 +89,40 @@ STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run
 assert_eq "$rc" "0" "second run: exits cleanly"
 assert_match "$out" 'nothing to do' "second run: nothing to do"
 assert_eq "$(wc -c <"$tmp/state/log" | tr -d ' ')" "0" "second run: no apt, curl, usermod or chsh call (no network)"
+
+# --- services: enabled again when their enable links are gone ------------------------------
+# (what purging Ubuntu's docker.io did to docker-ce's units of the same names)
+reset
+run
+: >"$tmp/state/enabled"
+: >"$tmp/state/log"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run --check
+assert_eq "$rc" "1" "--check: units that lost their enable links are pending"
+assert_match "$out" 'would: enable and start docker.socket docker.service \(docker-ce\)' "--check names the units and the package"
+assert_eq "$(wc -c <"$tmp/state/log" | tr -d ' ')" "0" "--check: nothing enabled"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run
+assert_match "$log" 'systemctl enable --now containerd.service' "the layer enables containerd again"
+assert_match "$log" 'systemctl enable --now docker.socket docker.service' "...and Docker"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run
+assert_match "$out" 'nothing to do' "enabled: the next run has nothing to do"
+# only the missing unit is enabled
+sed -i '/^docker.service$/d' "$tmp/state/enabled"
+: >"$tmp/state/log"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run
+assert_match "$log" 'systemctl enable --now docker.service$' "only the disabled unit is enabled"
+assert_nomatch "$log" 'containerd' "...not the ones that are fine"
+# a masked unit is left alone
+sed -i '/^docker.service$/d' "$tmp/state/enabled"
+echo docker.service >"$tmp/state/masked"
+: >"$tmp/state/log"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run
+assert_match "$out" 'docker.service is masked' "a masked unit is reported"
+assert_nomatch "$log" 'systemctl enable' "...and not enabled"
+# no package, no unit check
+reset
+echo "zsh install ok installed" >>"$tmp/state/installed"
+STUB_GROUPS="alice docker libvirt" STUB_SHELL=/usr/bin/zsh run --check
+assert_nomatch "$out" 'enable and start' "--check: units of packages that are not installed are not reported"
 
 # --- --check: reports, exits 1, changes nothing -------------------------------------------
 reset

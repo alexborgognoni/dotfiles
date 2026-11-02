@@ -6,6 +6,7 @@
 #                      its key is keys/<name>.asc, installed in /etc/apt/keyrings
 #   vendor-debs.list   "<package> <url>": installed from a .deb when missing
 #   purge.list         apt packages removed and kept off (pinned out)
+#   services.list      "<package> <unit>...": systemd units kept enabled
 # ~/.config/dotfiles/apt/<same name> adds entries for one machine. Idempotent:
 # a machine that is up to date needs no network and changes nothing.
 #
@@ -136,6 +137,29 @@ while read -r package url; do
   [ -n "$package" ] || continue
   installed "$package" || act "install $package from $url" install_deb "$package" "$url"
 done < <(apt_entries vendor-debs.list)
+
+# --- services ----------------------------------------------------------------------------------
+# A package enables its units when it is installed, but nothing keeps them
+# enabled: purging another package with the same unit names removes the links
+while read -r package units; do
+  [ -n "$package" ] || continue
+  installed "$package" || continue
+  command -v systemctl >/dev/null || {
+    warn "no systemctl: $package's services are not checked"
+    break
+  }
+  disabled=()
+  for unit in $units; do
+    case "$(systemctl is-enabled "$unit" 2>/dev/null || true)" in
+      enabled | enabled-runtime) ;;
+      masked | masked-runtime) warn "$unit is masked: left alone" ;;
+      *) disabled+=("$unit") ;;
+    esac
+  done
+  if [ "${#disabled[@]}" -gt 0 ]; then
+    act "enable and start ${disabled[*]} ($package)" systemctl enable --now "${disabled[@]}"
+  fi
+done < <(apt_entries services.list)
 
 # --- the user --------------------------------------------------------------------------------
 user_groups="$(id -nG "$target_user" 2>/dev/null | tr ' ' '\n')"

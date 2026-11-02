@@ -1,0 +1,8 @@
+# systemd units the layer keeps enabled (and starts when it enables them):
+# <package> <unit>...  Only for packages that are installed. A unit that was
+# stopped by hand stays stopped; one that is disabled or has lost its enable
+# links (e.g. another package of the same unit names was purged) is enabled
+# again. A masked unit is left alone. ~/.config/dotfiles/apt/services.list adds
+# more.
+containerd.io containerd.service
+docker-ce docker.socket docker.service

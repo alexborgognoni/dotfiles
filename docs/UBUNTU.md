@@ -45,7 +45,8 @@ DOTFILES_BRANCH=nixos ~/dotfiles/install
 3. Nix with the official installer, set up for a corporate TLS proxy (`scripts/bootstrap-nix.sh`)
 4. `scripts/apt-layer.sh` (lists in `apt/`): Docker, libvirt/QEMU/OVMF, zsh,
    Zscaler's Qt 6 libraries, Edge; docker/libvirt groups; zsh as login shell.
-   It also purges snapd (so: no snaps; `apt/purge.list`) and pins it out.
+   It keeps their systemd units enabled (`apt/services.list`: Docker's), and
+   also purges snapd (so: no snaps; `apt/purge.list`) and pins it out.
    `scripts/apt-layer.sh --check` shows what is pending without root
 5. system-manager: takes over `/etc/nix/nix.conf` (the installer's file is
    kept as a backup), keyd, `/run/opengl-driver`, the "Hyprland (Nix)" login
