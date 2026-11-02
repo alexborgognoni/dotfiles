@@ -332,12 +332,13 @@ find ~ -maxdepth 6 -name pyvenv.cfg -not -path '*/node_modules/*' -not -path '*/
 
 ## Not covered, and not verified
 
-- The NixOS configuration (`vm`) was evaluated, and its user package profile
-  built without collisions, but it was not built or booted for these changes
-  (470 derivations), and no real NixOS host was tried. What was run: the
-  checks in a sandbox that matches NixOS (no host libraries), and every
-  runtime on the Ubuntu laptop. The full VM test (`nix flake check` boots
-  NixOS) was not run, and `with-cuda` was only tried on the laptop's GPU.
+- NixOS: the configuration (`vm`) is **built and booted** by `nix flake check`
+  (the `vm` check: a real NixOS under KVM, 17 subtests, 10 minutes), including a
+  subtest for the policy of this document (no `mise`, `rustup` with the Nix
+  toolchain linked, `uv` Nix-only, `nix-ld` present). What that does not cover: the
+  VM has no network (no download is exercised there: the doctor does that on the
+  laptop, and the sandbox checks do the rest), no GPU (`with-cuda` was only tried on
+  the laptop's), and it is not a real NixOS host: none was tried.
 - Puppeteer's Chrome and `canvas` (cairo): documented, not tested.
 - Another Python minor than 3.12-3.14, another JDK than the default: add it to
   `python-native-libs/package.nix`, or to the Gradle `paths` in `toolchains.nix`

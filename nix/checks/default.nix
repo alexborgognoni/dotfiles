@@ -203,7 +203,7 @@ in
               "bw", "fnox", "semgrep", "zizmor", "7zz", "sponge", "tree", "tokei", "lynx",
               "git-filter-repo", "process-compose", "llama-cli", "onedrive", "wine",
               "latexmk", "pdflatex", "python3", "ffmpeg", "magick", "docker", "virt-manager",
-              "sops", "age", "ssh-to-age", "mise",
+              "sops", "age", "ssh-to-age",
           ]
           missing = user("for c in " + " ".join(commands) + "; do command -v $c >/dev/null || echo $c; done").split()
           assert not missing, f"missing commands: {missing}"
@@ -216,6 +216,15 @@ in
           machine.succeed("id -nG alex | grep -qw docker")
           # nix-ld: the standard dynamic linker exists for prebuilt binaries
           machine.succeed("test -e /lib64/ld-linux-x86-64.so.2")
+
+      with subtest("the runtimes follow the NixOS policy (docs/NATIVE-CODE.md)"):
+          # no mise here: what it downloads is a foreign binary, and nix-ld is the net, not the plan
+          machine.fail("su - alex -c 'command -v mise'")
+          # rustup, with Nix's toolchain linked as its default by the home activation
+          user("rustup toolchain list | grep -q '^nix' && cargo --version")
+          # uv uses the Nix interpreters and downloads none
+          assert "only-system" in user("cat ~/.config/uv/uv.toml"), "uv may use a standalone Python"
+          assert "never" in user("cat ~/.config/uv/uv.toml"), "uv may download a Python"
 
       with subtest("tmux loads the config and the theme reload file"):
           user("tmux new-session -d -s t && tmux source-file ~/.config/tmux/theme-reload.conf")
