@@ -1,0 +1,114 @@
+# Checks that need no GPU, no corporate network and no machine of mine: format,
+# linters, the script tests, and the sandbox checks of the native-code work
+# (docs/NATIVE-CODE.md). What needs the real machine (the network through the
+# proxy, the GPU, the real caches) is scripts/doctor.sh, run by hand after a
+# switch.
+#
+# A weekly job tries the newest nixpkgs: the patched runtimes depend on nixpkgs
+# internals, so a bump that breaks them shows up here before it reaches a
+# machine, and a bump that fixes nixpkgs#573990 opens an issue to drop
+# pkgs/bun-native-libs.
+name: ci
+
+on:
+  push:
+    branches: [nixos, main]
+  pull_request:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # the sandbox checks of docs/NATIVE-CODE.md (bun-upstream-still-broken is separate)
+  NATIVE_CHECKS: >-
+    native-addons native-toolchains native-with-libs native-java-truststore
+    native-corporate-gating native-host-policy native-retreat native-template-c
+    native-template-go system-work-laptop
+
+jobs:
+  fast:
+    name: format, linters, script tests
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: format check and linters
+        run: nix run path:nix#lint
+      - name: script tests
+        run: |
+          failed=0
+          for t in tests/scripts/test-*.sh; do
+            # a read-only dry run of the cleanup on a machine with my packages
+            case "$t" in *cleanup-smoke*) continue ;; esac
+            bash "$t" || failed=1
+          done
+          exit "$failed"
+
+  native:
+    name: native-code checks
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: free disk space (toolchains are several GB)
+        run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: sandbox checks
+        run: |
+          targets=()
+          for c in $NATIVE_CHECKS; do targets+=("path:nix#checks.x86_64-linux.$c"); done
+          nix build --no-link --keep-going -L "${targets[@]}"
+      - name: bun-upstream-still-broken (fails when nixpkgs fixes nixpkgs#573990)
+        run: nix build --no-link -L path:nix#checks.x86_64-linux.bun-upstream-still-broken
+
+  drift:
+    name: newest nixpkgs
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: free disk space (toolchains are several GB)
+        run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: update nixpkgs (in this run only, nothing is committed)
+        # only the nixpkgs inputs: the job watches the patched runtimes, and a
+        # change in Hyprland or Stylix would turn it red for another reason
+        run: nix flake update nixpkgs nixpkgs-unstable --flake path:nix
+      - name: the native checks on the newest nixpkgs
+        run: |
+          targets=()
+          for c in $NATIVE_CHECKS; do targets+=("path:nix#checks.x86_64-linux.$c"); done
+          nix build --no-link --keep-going -L "${targets[@]}"
+      - name: has nixpkgs fixed nixpkgs#573990?
+        id: bun
+        continue-on-error: true
+        run: nix build --no-link -L path:nix#checks.x86_64-linux.bun-upstream-still-broken
+      - name: open an issue to drop pkgs/bun-native-libs
+        if: steps.bun.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="nixpkgs fixed #573990: drop pkgs/bun-native-libs"
+          if [ -z "$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number')" ]; then
+            gh issue create --title "$title" --body "The weekly run with the newest nixpkgs loads a library that needs libstdc++ and libz with nixpkgs' own bun (check bun-upstream-still-broken fails). Follow the TODO(drop) in nix/pkgs/bun-native-libs/package.nix. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
