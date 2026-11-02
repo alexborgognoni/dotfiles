@@ -83,11 +83,6 @@
       EDITOR = "nvim";
       VISUAL = "nvim";
       GOPATH = "${config.xdg.dataHome}/go";
-      # Projects run on uv's standalone Pythons, never the Nix one: PyPI wheels
-      # (numpy, pydantic, ...) need libstdc++, which a Nix-built interpreter
-      # cannot find (a standalone Python uses the system loader, or nix-ld on
-      # NixOS). The Nix python3 stays for scripts that use Nix's own packages.
-      UV_PYTHON_PREFERENCE = "only-managed";
     };
 
     initContent = lib.mkMerge [
