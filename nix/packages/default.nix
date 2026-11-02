@@ -126,8 +126,11 @@ in
     # nixpkgs' bun plus the libraries prebuilt native code expects, so addons
     # such as sharp load (nixpkgs#573990; pkgs/bun-native-libs)
     pkgs.bun-native-libs
-    # python3.12 and python3.13 (python3 is the 3.14 above), same interpreters
+    # python3.12 and python3.13 (python3 is the 3.14 above), same interpreters;
+    # and poetry running on the patched one: it makes virtualenvs from its own
+    # Python when that satisfies the project (pkgs/python-native-libs)
     pkgs.pythonNativeLibs.versions
+    pkgs.pythonNativeLibs.poetry
     # one command with the GPU driver's or the GUI libraries visible, for
     # wheels that dlopen them (pkgs/with-libs): with-cuda, with-gui-libs
     pkgs.withLibs.with-cuda
@@ -162,7 +165,6 @@ in
     rust-analyzer
     go
     uv
-    poetry
     gcc
     gnumake
     cmake

@@ -16,12 +16,14 @@
 {
   lib,
   runCommand,
+  writeShellScriptBin,
   patchelf,
   stdenv,
   zlib,
   python312,
   python313,
   python314,
+  poetry,
 }:
 let
   native = import ../native-libs.nix { inherit lib stdenv zlib; };
@@ -58,6 +60,17 @@ in
   # python3 (3.14) with packages from nixpkgs; wheels in virtualenvs load
   withPackages = withPackagesOf python314;
   python = withPackagesOf python314 (_: [ ]);
+
+  # poetry on the patched interpreter. Poetry makes a project's virtualenv from
+  # its own Python whenever that satisfies the project (requires-python), and
+  # nixpkgs' poetry runs on the unpatched python3.14 of its closure: the
+  # virtualenv then could not load a wheel (numpy: libstdc++.so.6). Run on the
+  # patched one, its own interpreter is the one every virtualenv comes from.
+  # (nixpkgs builds poetry on a package set of its own: take its Python and module)
+  poetry = writeShellScriptBin "poetry" ''
+    exec ${withPackagesOf poetry.python (ps: [ ps.poetry ])}/bin/python \
+      -c 'import sys; from poetry.console.application import main; sys.exit(main())' "$@"
+  '';
 
   # python3.12 and python3.13 on PATH for projects that need an older Python
   # (only the versioned names: python3 stays the 3.14 above)

@@ -1,4 +1,12 @@
-{ pkgs, ... }:
+{
+  config,
+  pkgs,
+  ...
+}:
+let
+  # Ubuntu runs foreign binaries on its own loader; NixOS does not (my.foreignBinaries)
+  inherit (config.my) foreignBinaries;
+in
 {
   programs = {
     starship = {
@@ -70,18 +78,29 @@
       nix-direnv.enable = true;
     };
 
-    # uv uses the Nix interpreters (python3.12 .. 3.14, wheel-capable: see
-    # pkgs/python-native-libs) and never downloads a standalone Python: that is
-    # an unpatched binary, which needs nix-ld on NixOS. In uv.toml, not a shell
-    # variable: IDEs and git hooks read it too. The uv package itself is in the
-    # package groups.
+    # uv, per host (docs/NATIVE-CODE.md). The Nix interpreters (python3.12 ..
+    # 3.14, wheel-capable: pkgs/python-native-libs) are the baseline on both.
+    #   NixOS   only those, never a download: a standalone Python is an
+    #           unpatched binary, which needs nix-ld
+    #   Ubuntu  a version the Nix set lacks (3.11, 3.10) is downloaded and runs
+    #           natively, and `uv python install` is preferred over Nix's
+    #           (NixOS does the same once the runtimes are not patched)
+    # In uv.toml, not a shell variable: IDEs and git hooks read it too. The uv
+    # package itself is in the package groups.
     uv = {
       enable = true;
       package = null;
-      settings = {
-        python-preference = "only-system";
-        python-downloads = "never";
-      };
+      settings =
+        if foreignBinaries then
+          {
+            python-preference = "managed";
+            python-downloads = "automatic";
+          }
+        else
+          {
+            python-preference = "only-system";
+            python-downloads = "never";
+          };
     };
 
     btop = {

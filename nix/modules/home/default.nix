@@ -50,6 +50,18 @@
       integration, GPU drivers, fonts, nh and user-level secrets)
     '';
 
+    foreignBinaries = lib.mkOption {
+      type = lib.types.bool;
+      default = config.my.standalone || !(import ../../runtimes.nix).patched;
+      defaultText = lib.literalExpression "config.my.standalone || !(import ../../runtimes.nix).patched";
+      description = ''
+        The host may run binaries that Nix did not build: Ubuntu (its own
+        loader) always, NixOS (nix-ld) when the runtimes are not patched
+        (nix/runtimes.nix). On: mise, uv's standalone Pythons and Gradle's JDK
+        downloads. Off: the Nix runtimes only (docs/NATIVE-CODE.md).
+      '';
+    };
+
     keyboard.layout = lib.mkOption {
       type = lib.types.str;
       default = "us";

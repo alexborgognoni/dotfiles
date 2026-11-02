@@ -1,15 +1,12 @@
 # Compilers and runtimes that run on Nix: what they need comes from Nix, and
 # nothing they would download is an unpatched binary (which needs nix-ld on
 # NixOS). The reasons and the rest of the rules: nix/docs/NATIVE-CODE.md.
-{ pkgs, ... }:
 {
-  # Go never downloads another toolchain (go.mod's `toolchain` line, GOTOOLCHAIN
-  # =auto): it would be an unpatched binary. Go from Nix is recent; a project
-  # that needs another version gets it from its dev shell (templates/go).
-  xdg.configFile."go/env".text = ''
-    GOTOOLCHAIN=local
-  '';
-
+  config,
+  pkgs,
+  ...
+}:
+{
   # rust-analyzer needs the standard library's sources; nixpkgs' rustc has none
   home.sessionVariables.RUST_SRC_PATH = "${pkgs.unstable.rustPlatform.rustLibSrc}";
 
@@ -20,17 +17,17 @@
     package = pkgs.unstable.jdk;
   };
 
-  # Gradle's toolchains take the JDK from Nix and never download one (an
-  # unpatched binary): a build that asks for the default Java finds it here.
-  # Another version costs ~800 MB, so it is not installed on every host: add
-  # it to `paths` (comma separated) or use the project's dev shell. Settings
-  # are merged from other modules (corporate/java-truststore.nix), and the
-  # file stays Home Manager's; Gradle itself comes with the project's wrapper.
+  # Gradle's toolchains: the default JDK is Nix's. A build that asks for another
+  # version downloads it on Ubuntu, where it runs natively, and not on NixOS,
+  # where an unpatched JDK does not: add the version to `paths` (comma
+  # separated, ~800 MB each) or use the project's dev shell. Settings are merged
+  # from other modules (corporate/java-truststore.nix), and the file stays Home
+  # Manager's; Gradle itself comes with the project's wrapper.
   programs.gradle = {
     enable = true;
     package = null;
     settings = {
-      "org.gradle.java.installations.auto-download" = false;
+      "org.gradle.java.installations.auto-download" = config.my.foreignBinaries;
       "org.gradle.java.installations.paths" = "${pkgs.unstable.jdk.home}";
     };
   };

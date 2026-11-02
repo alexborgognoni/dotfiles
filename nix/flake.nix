@@ -148,9 +148,13 @@
       formatter = forAllSystems (system: (tooling system).formatter);
 
       # Dev shells for projects that need system libraries or another
-      # toolchain: `nix flake init -t ~/dotfiles/nix#c` (c, go, node, rust)
+      # toolchain: `nix flake init -t ~/dotfiles/nix#c` (bun, c, go, node, rust)
       # (docs/NATIVE-CODE.md)
       templates = {
+        bun = {
+          path = ./templates/bun;
+          description = "Dev shell with an exact Bun (a team's pin, on a host without mise)";
+        };
         c = {
           path = ./templates/c;
           description = "C/C++ dev shell with pkg-config and the libraries a build links against";
@@ -183,6 +187,7 @@
           inherit (pkgs) forgecode bun-native-libs;
           python-native-libs = pkgs.pythonNativeLibs.python;
           python-native-libs-versions = pkgs.pythonNativeLibs.versions;
+          poetry-native-libs = pkgs.pythonNativeLibs.poetry;
           with-cuda = pkgs.withLibs.with-cuda;
           with-gui-libs = pkgs.withLibs.with-gui-libs;
           lua-native-libs = pkgs.luaNativeLibs.lua;

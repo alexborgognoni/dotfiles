@@ -20,7 +20,7 @@ from that, and a fourth comes from the corporate network:
 |---|---|---|
 | **A. a Nix runtime loads foreign native code** | A Nix-built interpreter (bun, python, lua) loads a prebuilt `.node`/wheel/`.so` that needs `libstdc++`, `libz`, or a library it dlopens later (the GPU driver, `libGL`). The loader cannot find them, and a library with its own RUNPATH (every wheel) ignores the executable's search path. | `ERR_DLOPEN_FAILED: libstdc++.so.6: cannot open shared object file`, `ImportError: libz.so.1: ...`, `torch.cuda.is_available()` is `False` |
 | **B. a Nix compiler builds against the host** | Nix's `gcc` (and so `rustc`, `go` with cgo, `node-gyp`, `pip` building an sdist) sees only Nix's headers and libraries, never `/usr/include` or `/usr/lib`. On Ubuntu `/usr/bin/pkg-config` answers with host paths the compiler cannot use. | `fatal error: openssl/ssl.h: No such file`, `Could not find openssl via pkg-config` |
-| **C. a tool downloads an unpatched executable** | rustup toolchains, Go toolchains (`GOTOOLCHAIN=auto`), Gradle JDK provisioning, `mise`/`sdkman` installs, `uv`'s standalone Pythons, a Playwright browser. They run on Ubuntu (its own loader), but not on NixOS without `nix-ld`. | `Could not start dynamically linked executable`, `stub-ld` |
+| **C. a tool downloads an unpatched executable** | rustup toolchains, Gradle JDK provisioning, `mise`/`sdkman` installs, `uv`'s standalone Pythons, a Playwright browser. They run on Ubuntu (its own loader), but not on NixOS without `nix-ld`. (Not Go's toolchains: they are static binaries and run everywhere.) | `Could not start dynamically linked executable`, `stub-ld` |
 | **D. a runtime does not trust the corporate CA** | The laptop sits behind Zscaler's TLS inspection. A runtime that ships its own trust store (the JDK) does not know the corporate root, which Ubuntu deploys to its system store. | `PKIX path building failed` |
 
 `nix-ld` only helps class C, and only for **unpatched** executables. A
@@ -35,6 +35,35 @@ the host's and crashes the distribution's own programs (the same hazard the
 `opencode` wrapper in `nix/packages/default.nix` works around). What exists
 instead is narrow and explicit: see "One command, more libraries" below.
 
+## One rule, two hosts
+
+The Nix runtimes (bun, node, python 3.12-3.14, lua, java, php, rust, go, gcc) are
+the **baseline on both hosts**: always there, offline, the same commands. On top
+of that, **a project's own version manager decides, where the host can run what
+it downloads**:
+
+| | Ubuntu laptop (`my.foreignBinaries` on) | NixOS (off) |
+|---|---|---|
+| team pins its tools (`mise.toml`, Daisy) | `mise install`: official binaries on Ubuntu's own loader, exact pins from the team's file, nothing of Nix in the repository | a dev shell with the exact version: `nix flake init -t ~/dotfiles/nix#bun` |
+| Python a project needs that the Nix set lacks (3.11) | `uv` downloads a standalone Python and it runs natively | not possible without `nix-ld`: a dev shell or `nix-ld` |
+| Gradle asks for another JDK | downloads it | the project's dev shell |
+| Playwright | `playwright install` (its own browsers run on Ubuntu) | the `node` template: browsers built for Nix, of the project's exact version |
+| Go `toolchain` line in `go.mod` | the exact version is downloaded | the same (the toolchains are static) |
+| Rust | Nix's toolchain on both; a pinned or nightly one: the `rust` template | |
+
+`my.foreignBinaries` (a Home Manager option) is on for the Ubuntu laptop, and off
+for NixOS unless the runtimes are not patched (`nix/runtimes.nix`, below). It
+drives `uv`, Gradle and `mise`; `native-host-policy` pins what each host gets.
+
+**One source per context.** Inside a project with a `mise.toml`, `bun`, `uv`, ...
+come from `mise` (its prompt hook puts them first on PATH); everywhere else, from
+Nix. `mise`'s own default also puts its shims directory first on PATH, so that a
+shim answered in every directory and shadowed Nix; `activate_shims = false`
+turns that off. A script, a git hook run by an IDE or cron has no prompt hook:
+use `mise exec -- <command>`. Daisy's doctor passes with this (`bun run setup
+--check`), and `~/.config/dotfiles/doctor.d/` of the laptop checks that its Bun
+equals the pin in `mise.toml`.
+
 ## What this repository does, per runtime
 
 Same result on NixOS and Ubuntu: the fixes live in the binaries and the
@@ -44,18 +73,18 @@ configuration, not in the host.
 |---|---|---|---|
 | **bun** | A | the executable carries `libstdc++` and `libz` as needed libraries (nixpkgs#573990). Drop it when nixpkgs fixes the issue. | `nix/pkgs/bun-native-libs` |
 | **Python** (3.14 with packages, 3.12, 3.13) | A | the interpreter carries them; a virtualenv made from it (venv, uv, poetry) loads wheels. Only the binary is copied and patched, nothing is rebuilt. | `nix/pkgs/python-native-libs` |
-| **uv** | A, C | uses the Nix interpreters only, never downloads a standalone Python (`uv.toml`: `python-preference = "only-system"`, `python-downloads = "never"`). Default **3.13** where a project pins nothing (`~/.config/uv/.python-version`), because the wheel ecosystem lags the newest Python and a bare `python3` is 3.14. A project's own pin wins. | `modules/home/shell/cli.nix` |
-| **poetry** | A | takes the first matching `python3.X` on `PATH`, which is a patched one | (nothing to do) |
+| **uv** | A, C | per host (`uv.toml`). NixOS: the Nix interpreters only, never a download (`only-system`, `never`). Ubuntu: Nix's are the baseline, a version the Nix set lacks is downloaded and runs natively (`managed`, `automatic`). Default **3.13** where a project pins nothing (`~/.config/uv/.python-version`), because the wheel ecosystem lags the newest Python and a bare `python3` is 3.14. A project's own pin wins. | `modules/home/shell/cli.nix` |
+| **poetry** | A | runs on the **patched** interpreter. Poetry makes a project's virtualenv from its own Python whenever that satisfies `requires-python`, and nixpkgs' poetry runs on the unpatched `python3.14` of its closure: the venv could not load numpy. (Found by the doctor; tests with `<3.14` had hidden it.) | `nix/pkgs/python-native-libs` (`poetry`) |
 | **Lua, LuaJIT** | A | same technique; `luarocks` is the one built for the same Lua (nixpkgs' default is for 5.2 and installs rocks 5.5 cannot load) | `nix/pkgs/lua-native-libs` |
 | **Node, pnpm** | A | nothing: nixpkgs' node already needs `libstdc++` and `libz` | (guarded by a check) |
-| **Java** | A, C, D | JDK from Nix with `JAVA_HOME` (`programs.java`); the JVM already loads JNI libraries. Gradle takes that JDK and never downloads one. The corporate roots: see below. | `modules/home/toolchains.nix`, `modules/home/corporate/java-truststore.nix` |
+| **Java** | A, C, D | JDK from Nix with `JAVA_HOME` (`programs.java`); the JVM already loads JNI libraries. Gradle uses that JDK and downloads another only where a foreign binary runs (Ubuntu). The corporate roots: see below. | `modules/home/toolchains.nix`, `modules/home/corporate/java-truststore.nix` |
 | **PHP** | A, B | extensions from Nix (`php.withExtensions`: phpredis added), not `pecl install` | `nix/packages/default.nix` |
 | **Rust** | B, C | `rustc`, `cargo`, `clippy`, `rustfmt`, `rust-analyzer` from nixpkgs, not rustup. A pinned or nightly toolchain, or `-sys` crates: the `rust` template. | `nix/packages/default.nix`, `nix/templates/rust` |
-| **Go** | B, C | Go from Nix; `GOTOOLCHAIN=local` (`~/.config/go/env`); cgo libraries: the `go` template | `modules/home/toolchains.nix`, `nix/templates/go` |
+| **Go** | B | Go from Nix; `go.mod`'s `toolchain` line pins an exact version on every host (the official toolchains are static binaries; tested); cgo libraries: the `go` template | `nix/templates/go` |
 | **C / C++** | B | Nix's `gcc` and `pkg-config` (so `/usr/bin/pkg-config` cannot mislead); libraries come from a dev shell: the `c` template | `nix/packages/default.nix`, `nix/templates/c` |
 | **GPU / GUI wheels** | A | `with-cuda`, `with-gui-libs`, see below. Prefer headless wheels (`opencv-python-headless`; Daisy's `daisy-rag` forces it). | `nix/pkgs/with-libs` |
-| **Playwright** | C | the Nix-built browsers of the project's exact Playwright version: the `node` template | `nix/templates/node` |
-| **mise** | C | only on the Ubuntu laptop (standalone Home Manager), where its downloads run; on NixOS use a dev shell | `modules/home/standalone/mise.nix` |
+| **Playwright** | C | NixOS: the Nix-built browsers of the project's exact Playwright version, the `node` template. Ubuntu: Playwright's own. | `nix/templates/node` |
+| **mise** | C | where a foreign binary runs (Ubuntu); `activate_shims = false`, see "One rule". On NixOS: a dev shell, `templates/bun` for an exact Bun | `modules/home/standalone/mise.nix`, `nix/templates/bun` |
 
 `nix-ld` stays enabled on NixOS (`modules/nixos/core/nix-ld.nix`) as the safety
 net for what cannot be avoided: editors' remote servers, a tool that downloads
@@ -147,7 +176,7 @@ done.**
 ## Projects: dev shells
 
 ```sh
-nix flake init -t ~/dotfiles/nix#c      # also: #go, #rust, #node
+nix flake init -t ~/dotfiles/nix#c      # also: #go, #rust, #node, #bun
 direnv allow                            # the template's .envrc is `use flake`
 ```
 
@@ -174,11 +203,12 @@ ignore bit this repository once: **`.envrc` files that belong to the repository
 itself (the templates') need `git add -f`**, and `nix flake init` copies only
 tracked files.
 
-A project that pins its tools in `mise.toml` (Daisy) uses `mise install` on the
-Ubuntu laptop, which works there because Ubuntu's loader runs the downloads.
-Daisy's doctor requires **exactly** its pinned Bun (`Bun.version`): the Bun from
-Nix drifts with `nix flake update`, and NixOS has no `mise`. On NixOS give the
-project a dev shell with that Bun.
+**An exact Bun (`#bun`).** Daisy's doctor requires exactly its pinned Bun
+(`Bun.version`), and the Bun from Nix follows nixpkgs. On the Ubuntu laptop
+`mise install` gives the pin. On NixOS the `bun` template builds the official
+release of the version written in it (with the libraries prebuilt addons need),
+and the hash of a new version is one `nix-prefetch-url` away (the template says
+how). Tested with Daisy: exact `1.4.2`, and its 188 image tests pass.
 
 ## Tests
 
@@ -189,8 +219,10 @@ from the host.
 
 | Check | What it proves |
 |---|---|
-| `native-addons` | bun, python (and virtualenvs of 3.12, 3.13, 3.14), lua, luajit load a library that needs `libstdc++` and `libz` and has no RPATH; node, php, java do too |
-| `native-toolchains` | gcc and pkg-config do **not** find a library without a dev shell (no host path leaks in), rustc links, Go builds and stops at `GOTOOLCHAIN=local`, `uv` uses the Nix interpreters (3.13 by default, a project's pin wins, no downloads), javac/java work and Gradle downloads no JDK, PHP has Laravel's extensions and phpredis |
+| `native-addons` | bun, python (and virtualenvs of 3.12, 3.13, 3.14), the virtualenv a default Poetry project gets, lua, luajit load a library that needs `libstdc++` and `libz` and has no RPATH; node, php, java do too |
+| `native-toolchains` | gcc and pkg-config do **not** find a library without a dev shell (no host path leaks in), rustc links, Go builds and fetches the toolchain a `go.mod` asks for, `uv` uses the Nix interpreters (3.13 by default, a project's pin wins), javac/java work and Gradle follows the host policy, PHP has Laravel's extensions and phpredis |
+| `native-host-policy` | what differs per host, and only that (NixOS: no foreign downloads in `uv` and Gradle, no `mise`; Ubuntu: they may). Evaluated. |
+| `native-retreat` | `nix/runtimes.nix` with `patched = false`: the runtimes are plain nixpkgs and run, and NixOS adopts the Ubuntu policy |
 | `native-with-libs` | `with-cuda` exposes exactly `libcuda.so.1` (not an unrelated library), `with-gui-libs` finds `libGL`/`libX11`, neither leaks into the calling shell, and `with-cuda` still runs without a driver |
 | `native-corporate-gating` | certificate settings exist only with `my.corporate.enable`: none on the NixOS VM user, all on the laptop (an evaluation test; mutation-tested) |
 | `native-java-truststore` | the generator keeps every certificate Java can read, skips the unreadable, and refuses a file with none |
@@ -198,7 +230,8 @@ from the host.
 | `bun-upstream-still-broken` | **fails when nixpkgs' own bun loads the library**: the reminder to drop `pkgs/bun-native-libs` |
 
 `tests/ubuntu-vm/verify.sh` asserts the same on a fresh Ubuntu install (the
-real wheels, sharp, the trust store, the toolchains).
+real wheels, sharp, the trust store, the toolchains), and `scripts/doctor.sh` runs
+the workflows (below).
 
 When you change `native-libs.nix` or a patched runtime, break it on purpose
 once (remove a library) and confirm the check fails: a test that cannot fail
@@ -206,6 +239,73 @@ proves nothing. In a check script do not call a variable `out`: it is Nix's
 output path (it bit this file twice). The `rust` and `node` templates are not in
 the checks (they need a network and flake inputs); test them by hand:
 `nix flake init -t path:~/dotfiles/nix#rust && nix develop -c cargo --version`.
+
+## The doctor: the workflows that must keep working
+
+The checks above prove the mechanism in a sandbox. `scripts/doctor.sh` proves the
+**workflow**, on the real machine, with the real network, proxy, GPU and caches,
+in the clean environment of a fresh login:
+
+```sh
+scripts/doctor.sh                 # run it after a switch and after `nix flake update`
+scripts/doctor.sh --offline       # without the checks that need the network
+scripts/doctor.sh --only poetry   # the checks whose name contains the text
+scripts/doctor.sh --list
+```
+
+It installs and loads a native addon with bun, makes virtualenvs with wheels
+(uv, venv, poetry), builds a Rust, Go, C, C++ and Java program, fetches over HTTPS
+through the proxy (Maven Central, crates, Go modules, PyPI, Composer, luarocks),
+runs a container through the registry mirror, and checks the GPU wrapper. The
+first run found a bug the sandbox checks had missed (Poetry's own interpreter).
+Every other regression of this work (Java behind the proxy, uv picking a Python
+too new for a tool, torch without the GPU) would have shown here first.
+
+A machine adds its own checks in `~/.config/dotfiles/doctor.d/*.sh`, so a
+project of the laptop (Daisy's pre-push tests, its doctor, `uvx postgres-mcp`, the
+Bun-equals-`mise.toml` pin) is checked without a word of it in this repository.
+A check is `check "<name>" "<tags>" '<command>'` (tags: `net`, `gpu`); see the
+header of the script. The engine is tested by `tests/scripts/test-doctor.sh`.
+
+## CI
+
+`.github/workflows/ci.yml`, in this repository only (nothing of Nix goes into a
+team's repository). A GitHub runner has no proxy, no GPU and none of my caches,
+so it runs what a sandbox can:
+
+- every push and pull request: format and linters, the script tests, and the
+  native-code checks (`native-addons` ... `native-template-go`, `system-work-laptop`);
+- **weekly**, and on demand: the same on the **newest nixpkgs** (`nixpkgs` and
+  `nixpkgs-unstable` only, updated inside the run, nothing is committed). The patched runtimes depend on
+  nixpkgs internals, so a bump that breaks them turns the run red before it
+  reaches a machine; and when `bun-upstream-still-broken` fails because nixpkgs
+  fixed nixpkgs#573990, the run opens an issue to drop `pkgs/bun-native-libs`.
+
+The doctor is not in CI (it needs the real machine). CI does not build the NixOS
+configuration (470 derivations) or boot the VM.
+
+## If this becomes a burden (the retreat)
+
+The patched runtimes are the part that depends on nixpkgs internals (the Python
+env builder, Bun's build phase). If a nixpkgs update breaks them twice, or they
+cost more than they give, **one line** returns to plain runtimes:
+
+```nix
+# nix/runtimes.nix
+{ patched = false; }
+```
+
+What changes: bun, python and lua are plain nixpkgs (they run, but do not load
+prebuilt native code by themselves). Every host may then run foreign binaries
+(`my.foreignBinaries`): NixOS adopts the Ubuntu policy, with `mise`, `uv`'s
+standalone Pythons and Gradle's JDK downloads, run by `nix-ld`
+(`modules/nixos/core/nix-ld.nix`, always on); and the checks of the patching
+(`native-addons`, `native-with-libs`, `bun-upstream-still-broken`) are not run.
+It is tested both ways: `native-retreat` builds the plain runtimes and asserts the
+policy, and the whole check set passed with the flag flipped. What is lost: wheels
+and addons load through `uv`'s standalone Pythons and the project's own `bun`
+(on the loader of the host), not through the Nix interpreters; the Ubuntu laptop
+already works that way for anything outside the Nix set.
 
 ## Cleaning up what this replaces
 
@@ -241,5 +341,6 @@ find ~ -maxdepth 6 -name pyvenv.cfg -not -path '*/node_modules/*' -not -path '*/
   `python-native-libs/package.nix`, or to the Gradle `paths` in `toolchains.nix`
   (a JDK is ~800 MB, so it is not installed everywhere).
 - Ruby, Perl and .NET are not installed; if added, run the probe first.
-- There is no CI: the checks run when you run `nix flake check`, so the Bun
-  reminder only fires then.
+- CI runs the sandbox checks, not the doctor and not the NixOS build or VM test:
+  a nixpkgs bump that breaks a workflow only the real machine sees (the proxy, the
+  GPU) is found by running `scripts/doctor.sh`.

@@ -1,7 +1,8 @@
-# Go dev shell, for a project that needs another Go version than the global
-# one (GOTOOLCHAIN=local: Go never downloads a toolchain) or system libraries
-# for cgo. Nix's compiler sees only what Nix provides, never the
-# distribution's /usr/include and /usr/lib: a C library cgo links against is
+# Go dev shell, for system libraries cgo links against, or another Go version
+# for a project without a `toolchain` line in go.mod (with one, Go downloads
+# that exact version by itself: the official toolchains are static binaries, so
+# that works on every host). Nix's compiler sees only what Nix provides, never
+# the distribution's /usr/include and /usr/lib: a C library cgo links against is
 # named in buildInputs (docs/NATIVE-CODE.md).
 {
   description = "Go dev shell";

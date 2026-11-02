@@ -10,6 +10,10 @@
 #                          PHP has what Laravel needs
 #   native-with-libs       with-cuda and with-gui-libs expose exactly the
 #                          libraries a wheel dlopens, to one command, no leak
+#   native-retreat         runtimes.nix `patched = false`: plain runtimes that
+#                          run, and NixOS adopts the foreign-binaries policy
+#   native-host-policy     what differs per host: NixOS downloads no foreign
+#                          binary (uv, Gradle), Ubuntu may; mise only on Ubuntu
 #   native-corporate-gating certificate settings exist only with
 #                          my.corporate.enable (none on the NixOS VM user, all on
 #                          the laptop)
@@ -33,6 +37,9 @@ let
   cpkgs = vm.pkgs;
   u = cpkgs.unstable;
   system = pkgs.stdenv.hostPlatform.system;
+  # runtimes.nix: with `patched = false` (the retreat) the checks of the patching
+  # are not run: there is nothing patched to test
+  inherit (import ../runtimes.nix) patched;
 
   # the configured php (the package groups are the user's packages on NixOS)
   php =
@@ -92,60 +99,6 @@ let
     };
 in
 {
-  native-addons =
-    pkgs.runCommand "check-native-addons"
-      {
-        nativeBuildInputs = [
-          cpkgs.bun-native-libs
-          cpkgs.pythonNativeLibs.python
-          cpkgs.pythonNativeLibs.versions
-          cpkgs.luaNativeLibs.lua
-          cpkgs.luaNativeLibs.luajit
-          u.nodejs
-          php
-          jdk
-        ];
-      }
-      ''
-        export HOME=$TMPDIR
-        probe=${probe}/libprobe.so
-        fail() { echo "FAIL: $*"; exit 1; }
-
-        echo "== bun (the cause of sharp failing: nixpkgs#573990)"
-        result="$(${bunProbe cpkgs.bun-native-libs} 2>&1)"
-        grep -q 'answer 3' <<<"$result" || fail "bun: $result"
-
-        echo "== python, python3.12, python3.13: the interpreter and a virtualenv made from it"
-        for py in python3 python3.12 python3.13; do
-          for python in "$py" "$TMPDIR/venv-$py/bin/python"; do
-            [ "$python" = "$py" ] && ! command -v "$py" >/dev/null && fail "$py is missing"
-            [ "$python" != "$py" ] && "$py" -m venv "$TMPDIR/venv-$py"
-            result="$("$python" -c "import ctypes; print('answer', ctypes.CDLL('$probe').probe_answer())" 2>&1)" \
-              || fail "$python: $result"
-            grep -q 'answer 3' <<<"$result" || fail "$python: $result"
-          done
-        done
-
-        echo "== lua, luajit"
-        result="$(lua -e "local f, e = package.loadlib('$probe', 'probe_answer'); assert(f, e); print('answer', f())" 2>&1)" \
-          || fail "lua: $result"
-        result="$(luajit -e "local ffi = require('ffi'); ffi.cdef('int probe_answer();'); print('answer', ffi.load('$probe').probe_answer())" 2>&1)" \
-          || fail "luajit: $result"
-
-        echo "== node, php, java: load it without help; a regression in nixpkgs would show here"
-        result="$(node -e "try { process.dlopen({ exports: {} }, '$probe') } catch (e) { console.log(e.message) }" 2>&1)"
-        grep -q 'did not self-register' <<<"$result" || fail "node: $result"
-        mkdir -p php-ext && cp $probe php-ext/
-        result="$(php -d enable_dl=1 -d extension_dir=$PWD/php-ext -r "dl('libprobe.so');" 2>&1 || true)"
-        grep -q 'Invalid library' <<<"$result" || fail "php: $result"
-        cat > P.java <<'EOF'
-        public class P { public static void main(String[] a) { System.load(a[0]); System.out.println("loaded"); } }
-        EOF
-        result="$(java P.java $probe 2>&1)" || fail "java: $result"
-        grep -q loaded <<<"$result" || fail "java: $result"
-        touch $out
-      '';
-
   native-toolchains =
     pkgs.runCommandCC "check-native-toolchains"
       {
@@ -162,7 +115,6 @@ in
         ];
         uvConfig = hm.xdg.configFile."uv/uv.toml".source;
         uvDefault = hm.xdg.configFile."uv/.python-version".source;
-        goEnv = hm.xdg.configFile."go/env".source;
         gradleProperties = hm.home.file.".gradle/gradle.properties".source;
       }
       ''
@@ -178,34 +130,35 @@ in
         printf 'fn main() { println!("rust ok"); }\n' > r.rs
         rustc r.rs -o r && ./r | grep -q 'rust ok' || fail "rustc"
 
-        echo "== Go: builds, and never downloads a toolchain (config: go/env)"
-        mkdir -p cfg/go && cp $goEnv cfg/go/env
-        export XDG_CONFIG_HOME=$PWD/cfg
-        [ "$(go env GOTOOLCHAIN)" = local ] || fail "GOTOOLCHAIN is $(go env GOTOOLCHAIN), not local"
+        echo "== Go: builds, and a go.mod that needs a newer Go makes Go fetch it (the toolchains are static)"
+        [ "$(go env GOTOOLCHAIN)" = auto ] || fail "GOTOOLCHAIN is $(go env GOTOOLCHAIN), not auto"
         mkdir g && cd g
         printf 'module probe\n\ngo 1.22\n' > go.mod
         printf 'package main\nimport "fmt"\nfunc main() { fmt.Println("go ok") }\n' > main.go
         go run . | grep -q 'go ok' || fail "go run"
         printf 'module probe\n\ngo 1.99\n\ntoolchain go1.99.0\n' > go.mod
         result="$(go run . 2>&1 || true)"
-        grep -q 'GOTOOLCHAIN=local' <<<"$result" || fail "go did not stop at GOTOOLCHAIN=local: $result"
+        grep -q 'downloading go1.99' <<<"$result" || fail "go did not try to fetch the toolchain go.mod asks for: $result"
         cd ..
 
-        echo "== uv: the Nix interpreters only, 3.13 by default, a project's pin wins, no downloads"
-        mkdir -p uvcfg/uv && cp $uvConfig uvcfg/uv/uv.toml && cp $uvDefault uvcfg/uv/.python-version
-        export XDG_CONFIG_HOME=$PWD/uvcfg UV_CACHE_DIR=$TMPDIR/uvcache
-        found="$(uv python find)"
-        case "$found" in *python3.13) ;; *) fail "uv's default is $found, not python3.13" ;; esac
-        mkdir uvproject && ( cd uvproject && echo 3.12 > .python-version && case "$(uv python find)" in *python3.12) ;; *) exit 1 ;; esac ) \
-          || fail "a project's .python-version does not win"
-        if uv python find 3.9 2>/dev/null; then fail "uv found or fetched a Python that is not in the Nix set"; fi
-        venv="$(cd uvproject && uv venv -q v && v/bin/python -c 'import sys; print(sys.prefix)')"
-        [ -n "$venv" ] || fail "uv venv"
+        ${lib.optionalString patched ''
+            echo "== uv: the Nix interpreters only, 3.13 by default, a project's pin wins, no downloads"
+          mkdir -p uvcfg/uv && cp $uvConfig uvcfg/uv/uv.toml && cp $uvDefault uvcfg/uv/.python-version
+            export XDG_CONFIG_HOME=$PWD/uvcfg UV_CACHE_DIR=$TMPDIR/uvcache
+            found="$(uv python find)"
+            case "$found" in *python3.13) ;; *) fail "uv's default is $found, not python3.13" ;; esac
+            mkdir uvproject && ( cd uvproject && echo 3.12 > .python-version && case "$(uv python find)" in *python3.12) ;; *) exit 1 ;; esac ) \
+              || fail "a project's .python-version does not win"
+            if uv python find 3.9 2>/dev/null; then fail "uv found or fetched a Python that is not in the Nix set"; fi
+            venv="$(cd uvproject && uv venv -q v && v/bin/python -c 'import sys; print(sys.prefix)')"
+            [ -n "$venv" ] || fail "uv venv"
+        ''}
 
-        echo "== Java: javac and java from Nix; Gradle takes the JDK from Nix and downloads none"
+        echo "== Java: javac and java from Nix; Gradle uses that JDK (downloads another only where a foreign binary runs)"
         printf 'public class H { public static void main(String[] a) { System.out.println("java ok"); } }\n' > H.java
         javac H.java && java H | grep -q 'java ok' || fail "javac/java"
-        grep -q 'auto-download = false' $gradleProperties || fail "gradle auto-download is not off"
+        grep -q 'auto-download = ${if patched then "false" else "true"}' $gradleProperties \
+          || fail "gradle auto-download does not follow the policy of this host"
         dir="$(sed -n 's/^org.gradle.java.installations.paths = //p' $gradleProperties)"
         [ -x "$dir/bin/java" ] || fail "gradle JDK $dir has no bin/java"
 
@@ -242,6 +195,104 @@ in
     )) "the corporate configuration lacks certificate settings: ${builtins.toJSON (traces work)}";
     pkgs.runCommand "check-native-corporate-gating" { } "touch $out";
 
+  # What differs per host, and only that (docs/NATIVE-CODE.md): NixOS cannot
+  # run a foreign binary, so it downloads none; Ubuntu can, so it may. The
+  # Nix interpreters are the baseline on both. Evaluated, not built.
+  native-host-policy =
+    let
+      work = self.homeConfigurations."alex@work-laptop".config;
+      policy = cfg: {
+        uv = cfg.programs.uv.settings;
+        gradleDownloads = cfg.programs.gradle.settings."org.gradle.java.installations.auto-download";
+        goOverride = cfg.xdg.configFile ? "go/env";
+        miseInstalled = cfg.programs.mise.enable;
+      };
+    in
+    assert lib.assertMsg (
+      (policy hm) == {
+        uv =
+          if patched then
+            {
+              python-preference = "only-system";
+              python-downloads = "never";
+            }
+          else
+            {
+              python-preference = "managed";
+              python-downloads = "automatic";
+            };
+        gradleDownloads = if patched then "false" else "true";
+        goOverride = false;
+        miseInstalled = !patched;
+      }
+    ) "NixOS policy changed: ${builtins.toJSON (policy hm)}";
+    assert lib.assertMsg (
+      (policy work) == {
+        uv = {
+          python-preference = "managed";
+          python-downloads = "automatic";
+        };
+        gradleDownloads = "true";
+        goOverride = false;
+        miseInstalled = true;
+      }
+    ) "Ubuntu policy changed: ${builtins.toJSON (policy work)}";
+    pkgs.runCommand "check-native-host-policy" { } "touch $out";
+
+  # The retreat (runtimes.nix): with `patched = false` the runtimes are plain
+  # nixpkgs and still run, and a NixOS host adopts the Ubuntu policy (foreign
+  # binaries allowed, nix-ld runs them). Both halves, so flipping the switch on
+  # a bad day is a tested move.
+  native-retreat =
+    let
+      plain = import inputs.nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+        overlays = [
+          (import ../pkgs {
+            inherit inputs;
+            patchedRuntimes = false;
+          })
+        ];
+      };
+      user = vm.config.my.user.name;
+      retreated = vm.extendModules {
+        modules = [ { home-manager.users.${user}.my.foreignBinaries = true; } ];
+      };
+      hmr = retreated.config.home-manager.users.${user};
+    in
+    assert lib.assertMsg (
+      plain.bun-native-libs.outPath == plain.unstable.bun.outPath
+    ) "retreat: bun is not nixpkgs' own";
+    assert lib.assertMsg (
+      !patched || cpkgs.bun-native-libs.outPath != plain.bun-native-libs.outPath
+    ) "the patched and the plain bun are the same package";
+    assert lib.assertMsg (
+      hmr.programs.uv.settings == {
+        python-preference = "managed";
+        python-downloads = "automatic";
+      }
+      && hmr.programs.gradle.settings."org.gradle.java.installations.auto-download" == "true"
+      && hmr.programs.mise.enable
+    ) "retreat: NixOS did not adopt the foreign-binaries policy";
+    pkgs.runCommand "check-native-retreat"
+      {
+        nativeBuildInputs = [
+          plain.bun-native-libs
+          plain.pythonNativeLibs.python
+          plain.pythonNativeLibs.versions
+          plain.luaNativeLibs.lua
+          plain.luaNativeLibs.luajit
+          plain.luaNativeLibs.luarocks
+        ];
+      }
+      ''
+        export HOME=$TMPDIR
+        bun --version && python3 --version && python3.12 --version && python3.13 --version
+        lua -v && luajit -v | head -1 && luarocks --version | head -1
+        touch $out
+      '';
+
   # the corporate trust store of Java: built from a PEM bundle (modules/home/
   # corporate/TrustStore.java), read back by the JDK, as many certificates
   native-java-truststore =
@@ -267,6 +318,105 @@ in
         # a file without a certificate is an error, not an empty store that hides it
         echo "not a certificate" > none.pem
         if java ${../modules/home/corporate/TrustStore.java} none.pem none.p12 2>/dev/null; then echo "FAIL: an empty bundle gave a store"; exit 1; fi
+        touch $out
+      '';
+
+  # the c template's dev shell: a build links against openssl through pkg-config
+  native-template-c =
+    pkgs.runCommandCC "check-native-template-c" (shellInputs ../templates/c/flake.nix)
+      ''
+        printf '#include <openssl/ssl.h>\n#include <stdio.h>\nint main(void) { puts(OpenSSL_version(OPENSSL_VERSION)); return 0; }\n' > o.c
+        gcc o.c $(pkg-config --cflags --libs openssl) -o o
+        ./o | grep -q OpenSSL
+        cmake --version >/dev/null
+        touch $out
+      '';
+
+  # the go template's dev shell: cgo against openssl
+  native-template-go =
+    pkgs.runCommandCC "check-native-template-go" (shellInputs ../templates/go/flake.nix)
+      ''
+        export HOME=$TMPDIR GOCACHE=$TMPDIR/gocache GOPATH=$TMPDIR/go GOTOOLCHAIN=local
+        mkdir project && cd project
+        printf 'module probe\n\ngo 1.22\n' > go.mod
+        cat > main.go <<'EOF'
+        package main
+
+        /*
+        #cgo pkg-config: openssl
+        #include <openssl/ssl.h>
+        */
+        import "C"
+        import "fmt"
+
+        func main() { fmt.Println("cgo", C.GoString(C.OpenSSL_version(C.OPENSSL_VERSION))) }
+        EOF
+        go run . | grep -q 'cgo OpenSSL'
+        touch $out
+      '';
+}
+// lib.optionalAttrs patched {
+  native-addons =
+    pkgs.runCommand "check-native-addons"
+      {
+        nativeBuildInputs = [
+          cpkgs.bun-native-libs
+          cpkgs.pythonNativeLibs.python
+          cpkgs.pythonNativeLibs.versions
+          cpkgs.pythonNativeLibs.poetry
+          cpkgs.luaNativeLibs.lua
+          cpkgs.luaNativeLibs.luajit
+          u.nodejs
+          php
+          jdk
+        ];
+      }
+      ''
+        export HOME=$TMPDIR
+        probe=${probe}/libprobe.so
+        fail() { echo "FAIL: $*"; exit 1; }
+
+        echo "== bun (the cause of sharp failing: nixpkgs#573990)"
+        result="$(${bunProbe cpkgs.bun-native-libs} 2>&1)"
+        grep -q 'answer 3' <<<"$result" || fail "bun: $result"
+
+        echo "== python, python3.12, python3.13: the interpreter and a virtualenv made from it"
+        for py in python3 python3.12 python3.13; do
+          for python in "$py" "$TMPDIR/venv-$py/bin/python"; do
+            [ "$python" = "$py" ] && ! command -v "$py" >/dev/null && fail "$py is missing"
+            [ "$python" != "$py" ] && "$py" -m venv "$TMPDIR/venv-$py"
+            result="$("$python" -c "import ctypes; print('answer', ctypes.CDLL('$probe').probe_answer())" 2>&1)" \
+              || fail "$python: $result"
+            grep -q 'answer 3' <<<"$result" || fail "$python: $result"
+          done
+        done
+
+        echo "== poetry: a project that allows Poetry's own Python gets a virtualenv that loads native code"
+        mkdir poetry-project && cd poetry-project
+        printf '[project]\nname = "probe"\nversion = "0.1.0"\nrequires-python = ">=3.12"\n\n[tool.poetry]\npackage-mode = false\n\n[build-system]\nrequires = ["poetry-core>=2.0"]\nbuild-backend = "poetry.core.masonry.api"\n' > pyproject.toml
+        POETRY_VIRTUALENVS_IN_PROJECT=true poetry install --no-root -q || fail "poetry install"
+        result="$(.venv/bin/python -c "import ctypes; print('answer', ctypes.CDLL('$probe').probe_answer())" 2>&1)" \
+          || fail "poetry's virtualenv: $result"
+        grep -q 'answer 3' <<<"$result" || fail "poetry's virtualenv: $result"
+        cd ..
+
+        echo "== lua, luajit"
+        result="$(lua -e "local f, e = package.loadlib('$probe', 'probe_answer'); assert(f, e); print('answer', f())" 2>&1)" \
+          || fail "lua: $result"
+        result="$(luajit -e "local ffi = require('ffi'); ffi.cdef('int probe_answer();'); print('answer', ffi.load('$probe').probe_answer())" 2>&1)" \
+          || fail "luajit: $result"
+
+        echo "== node, php, java: load it without help; a regression in nixpkgs would show here"
+        result="$(node -e "try { process.dlopen({ exports: {} }, '$probe') } catch (e) { console.log(e.message) }" 2>&1)"
+        grep -q 'did not self-register' <<<"$result" || fail "node: $result"
+        mkdir -p php-ext && cp $probe php-ext/
+        result="$(php -d enable_dl=1 -d extension_dir=$PWD/php-ext -r "dl('libprobe.so');" 2>&1 || true)"
+        grep -q 'Invalid library' <<<"$result" || fail "php: $result"
+        cat > P.java <<'EOF'
+        public class P { public static void main(String[] a) { System.load(a[0]); System.out.println("loaded"); } }
+        EOF
+        result="$(java P.java $probe 2>&1)" || fail "java: $result"
+        grep -q loaded <<<"$result" || fail "java: $result"
         touch $out
       '';
 
@@ -315,40 +465,6 @@ in
         readelf -d libgui.so | grep -q 'libGL.so.1' || fail "the GUI probe does not need libGL"
         load $PWD/libgui.so >/dev/null && fail "libGL was found without the wrapper"
         with-gui-libs python3 -c "import ctypes; ctypes.CDLL('$PWD/libgui.so')" || fail "with-gui-libs did not expose libGL/libX11"
-        touch $out
-      '';
-
-  # the c template's dev shell: a build links against openssl through pkg-config
-  native-template-c =
-    pkgs.runCommandCC "check-native-template-c" (shellInputs ../templates/c/flake.nix)
-      ''
-        printf '#include <openssl/ssl.h>\n#include <stdio.h>\nint main(void) { puts(OpenSSL_version(OPENSSL_VERSION)); return 0; }\n' > o.c
-        gcc o.c $(pkg-config --cflags --libs openssl) -o o
-        ./o | grep -q OpenSSL
-        cmake --version >/dev/null
-        touch $out
-      '';
-
-  # the go template's dev shell: cgo against openssl
-  native-template-go =
-    pkgs.runCommandCC "check-native-template-go" (shellInputs ../templates/go/flake.nix)
-      ''
-        export HOME=$TMPDIR GOCACHE=$TMPDIR/gocache GOPATH=$TMPDIR/go GOTOOLCHAIN=local
-        mkdir project && cd project
-        printf 'module probe\n\ngo 1.22\n' > go.mod
-        cat > main.go <<'EOF'
-        package main
-
-        /*
-        #cgo pkg-config: openssl
-        #include <openssl/ssl.h>
-        */
-        import "C"
-        import "fmt"
-
-        func main() { fmt.Println("cgo", C.GoString(C.OpenSSL_version(C.OPENSSL_VERSION))) }
-        EOF
-        go run . | grep -q 'cgo OpenSSL'
         touch $out
       '';
 

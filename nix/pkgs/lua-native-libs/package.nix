@@ -23,16 +23,7 @@
 let
   native = import ../native-libs.nix { inherit lib stdenv zlib; };
   patchedRuntime = import ../patched-runtime.nix { inherit runCommand patchelf; };
-  # only these executables, so that the two do not both provide `lua`; and
-  # ahead of the plain lua that luarocks pulls into a profile as a dependency
-  only =
-    pkg: names:
-    lib.hiPrio (
-      runCommand "${pkg.name}-bin" { } ''
-        mkdir -p $out/bin
-        ${lib.concatMapStringsSep "\n" (n: "ln -s ${pkg}/bin/${n} $out/bin/${n}") names}
-      ''
-    );
+  only = import ../only-bin.nix { inherit lib runCommand; };
 in
 {
   lua = only (patchedRuntime native lua [ "lua" ]) [
