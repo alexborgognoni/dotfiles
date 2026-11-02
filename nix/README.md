@@ -113,8 +113,14 @@ at the system level, a standalone machine picks groups with
   `azure-cli`.
 - Packages that nixpkgs lacks are in `pkgs/`; update them with
   `nix run nixpkgs#nix-update -- --flake <name>` (or bump version and hash).
-- Projects should bring their own toolchains (`nix develop`, direnv, uv):
-  the global Python, Node, Rust (rustup) and Go are for quick work.
+- Projects should bring their own toolchains: the global Python, Node, Rust
+  (rustup) and Go are for quick work. A project that pins its tools in
+  `mise.toml` (the team's source of truth) is run with `mise install`, not a
+  second set of pins in a flake; one without a version manager gets a Nix dev
+  shell (`nix develop`, direnv; keep `.envrc` out of team repos: global
+  gitignore or `.git/info/exclude`). On NixOS, `programs.nix-ld`
+  (`modules/nixos/core/nix-ld.nix`) lets the binaries these tools download
+  run.
 - Databases run per project in Docker; only the clients are installed.
 - Docker, libvirt/virt-manager and keyd (Caps Lock = Escape) are system
   modules in `modules/nixos/desktop/`. Alt+hjkl as arrow keys is only for the

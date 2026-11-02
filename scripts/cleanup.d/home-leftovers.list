@@ -4,8 +4,6 @@
 .local/lib/python3.10
 .local/lib/librepods
 .nvm
-.local/share/mise
-.config/mise
 .pyenv
 .opencode
 .bun

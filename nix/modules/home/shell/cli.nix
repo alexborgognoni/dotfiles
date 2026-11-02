@@ -70,6 +70,14 @@
       nix-direnv.enable = true;
     };
 
+    # Tool versions of projects that pin them in mise.toml (the team's source
+    # of truth, e.g. Daisy): `mise install` in the checkout. Downloaded
+    # binaries need programs.nix-ld on NixOS (modules/nixos/core/nix-ld.nix).
+    mise = {
+      enable = true;
+      package = pkgs.unstable.mise;
+    };
+
     btop = {
       enable = true;
       package = pkgs.unstable.btop;

@@ -198,7 +198,7 @@ in
               "bw", "fnox", "semgrep", "zizmor", "7zz", "sponge", "tree", "tokei", "lynx",
               "git-filter-repo", "process-compose", "llama-cli", "onedrive", "wine",
               "latexmk", "pdflatex", "python3", "ffmpeg", "magick", "docker", "virt-manager",
-              "sops", "age", "ssh-to-age",
+              "sops", "age", "ssh-to-age", "mise",
           ]
           missing = user("for c in " + " ".join(commands) + "; do command -v $c >/dev/null || echo $c; done").split()
           assert not missing, f"missing commands: {missing}"
@@ -209,6 +209,8 @@ in
           machine.wait_for_unit("docker.service")
           machine.wait_for_unit("keyd.service")
           machine.succeed("id -nG alex | grep -qw docker")
+          # nix-ld: the standard dynamic linker exists for prebuilt binaries
+          machine.succeed("test -e /lib64/ld-linux-x86-64.so.2")
 
       with subtest("tmux loads the config and the theme reload file"):
           user("tmux new-session -d -s t && tmux source-file ~/.config/tmux/theme-reload.conf")

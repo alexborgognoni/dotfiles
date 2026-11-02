@@ -21,7 +21,12 @@ in
 {
   programs.git = {
     # Global gitignore (was ~/.config/git/ignore)
-    ignores = [ "**/.claude/settings.local.json" ];
+    ignores = [
+      "**/.claude/settings.local.json"
+      # Personal direnv/Nix shell files never go into a team repository
+      ".envrc"
+      ".direnv/"
+    ];
     enable = true;
 
     settings = {

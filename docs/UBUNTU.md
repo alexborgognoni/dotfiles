@@ -86,7 +86,7 @@ Then log out and back in.
 Removes what is installed outside Nix and not part of the original Ubuntu
 installation, `apt/` or the protect list: apt packages installed
 by hand (CLI tools, apps, build libraries, databases, VirtualBox) and their
-now unused dependencies and repositories, snaps, Flatpaks, Homebrew, pip/npm/cargo/mise
+now unused dependencies and repositories, snaps, Flatpaks, Homebrew, pip/npm/cargo
 installs in your home, hand installs in `/usr/local` and `/opt`. Packages from
 vendor repositories (corporate agents) are kept automatically. Requires the
 snapshot. What stays and what goes is plain-text lists you can extend, see

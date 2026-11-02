@@ -1,7 +1,9 @@
 # Package groups, from nixos-unstable (latest versions). Curated from what was
 # installed on the Ubuntu machine (apt, snap, flatpak, cargo, pip, npm, brew,
 # go, ~/.local/bin); Ubuntu/GNOME plumbing, build-only libraries and tools Nix
-# replaces (nvm, pipx, mise, brew) are left out.
+# replaces (nvm, pipx, brew) are left out. mise is not a package here but
+# programs.mise (modules/home/shell/cli.nix), for projects that pin their tools
+# in mise.toml.
 #
 # A plain function of pkgs, so every consumer shares one evaluation:
 #   NixOS             users.users.<name>.packages (modules/nixos/packages.nix)
