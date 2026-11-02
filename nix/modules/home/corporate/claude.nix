@@ -43,7 +43,7 @@ in
           jq
           curl
           coreutils
-          unstable.bun
+          bun-libstdcxx
           unstable.claude-code
         ];
         text = claudeProfile "copilot" ''

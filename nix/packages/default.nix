@@ -118,6 +118,9 @@ in
 
     # Not in nixpkgs: packaged in pkgs/
     pkgs.forgecode
+    # nixpkgs' bun plus libstdc++, so native addons such as sharp load
+    # (nixpkgs#573990; pkgs/bun-libstdcxx)
+    pkgs.bun-libstdcxx
   ]
   ++ (with u; [
     # AI and coding agents
@@ -132,7 +135,6 @@ in
     # Languages and toolchains
     nodejs
     pnpm
-    bun
     typescript
     typescript-language-server
     rustup

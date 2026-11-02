@@ -121,6 +121,14 @@ at the system level, a standalone machine picks groups with
   gitignore or `.git/info/exclude`). On NixOS, `programs.nix-ld`
   (`modules/nixos/core/nix-ld.nix`) lets the binaries these tools download
   run.
+- Prebuilt native code from npm and PyPI (sharp, numpy, ...) needs `libstdc++`,
+  which a Nix-built interpreter cannot find: it uses its own glibc and looks
+  only in the Nix store, and nix-ld only helps unpatched executables. Per
+  runtime: `bun` is `pkgs/bun-libstdcxx` (nixpkgs#573990; the `native-addons`
+  check guards it), `node` already works, Python projects use uv's standalone
+  Pythons (`UV_PYTHON_PREFERENCE=only-managed`). Do not fix such a case with a
+  global `LD_LIBRARY_PATH`: it leaks into every child process and breaks the
+  distribution's own programs on Ubuntu.
 - Databases run per project in Docker; only the clients are installed.
 - Docker, libvirt/virt-manager and keyd (Caps Lock = Escape) are system
   modules in `modules/nixos/desktop/`. Alt+hjkl as arrow keys is only for the

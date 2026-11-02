@@ -8,4 +8,7 @@ final: _prev: {
   };
 
   forgecode = final.callPackage ./forgecode/package.nix { };
+
+  # nixpkgs' bun that can load native addons needing libstdc++ (sharp)
+  bun-libstdcxx = final.unstable.callPackage ./bun-libstdcxx/package.nix { };
 }
