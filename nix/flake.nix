@@ -147,6 +147,24 @@
       # `nix run path:nix#lint` also lints it (tooling.nix)
       formatter = forAllSystems (system: (tooling system).formatter);
 
+      # Dev shells for projects that need system libraries or another
+      # toolchain: `nix flake init -t ~/dotfiles/nix#c` (c, go, rust)
+      # (docs/NATIVE-CODE.md)
+      templates = {
+        c = {
+          path = ./templates/c;
+          description = "C/C++ dev shell with pkg-config and the libraries a build links against";
+        };
+        go = {
+          path = ./templates/go;
+          description = "Go dev shell (another Go version, cgo libraries)";
+        };
+        rust = {
+          path = ./templates/rust;
+          description = "Rust dev shell with the toolchain from rust-toolchain.toml (rust-overlay)";
+        };
+      };
+
       # Packages defined in this repository (pkgs/).
       packages = forAllSystems (
         system:
@@ -158,7 +176,11 @@
           };
         in
         {
-          inherit (pkgs) forgecode bun-libstdcxx;
+          inherit (pkgs) forgecode bun-native-libs;
+          python-native-libs = pkgs.pythonNativeLibs.python;
+          python-native-libs-versions = pkgs.pythonNativeLibs.versions;
+          lua-native-libs = pkgs.luaNativeLibs.lua;
+          luajit-native-libs = pkgs.luaNativeLibs.luajit;
           # Pinned CLIs for bootstrapping non-NixOS machines
           home-manager = inputs.home-manager.packages.${system}.home-manager;
           system-manager = inputs.system-manager.packages.${system}.default;

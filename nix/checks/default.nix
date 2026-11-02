@@ -4,8 +4,10 @@
 #                     theme specialisation, validates the Noctalia config)
 #   home-<user-host>  every standalone Home Manager configuration builds
 #   system-<host>     every system-manager configuration (Ubuntu) builds
-#   native-addons     bun loads a prebuilt library that needs libstdc++ and has
-#                     no RPATH to it (what sharp and other npm addons are)
+#   native-*          the runtimes load prebuilt native code (what npm addons
+#                     and PyPI wheels are), the toolchains see only Nix's
+#                     libraries, and Go and Gradle never download a toolchain
+#                     (checks/native-code.nix, nix/docs/NATIVE-CODE.md)
 #   hyprland-config   the generated hyprland.lua and every theme pack's
 #                     hyprland.lua pass `Hyprland --verify-config`
 #   theme-packs       every theme x accent pack is complete and well-formed
@@ -45,6 +47,7 @@ let
   );
 in
 (import ./theme.nix { inherit self pkgs; })
+// (import ./native-code.nix { inherit self inputs pkgs; })
 // lib.mapAttrs' (
   name: host: lib.nameValuePair "toplevel-${name}" host.config.system.build.toplevel
 ) self.nixosConfigurations
@@ -54,33 +57,6 @@ in
 ) self.homeConfigurations
 // lib.mapAttrs' (name: system: lib.nameValuePair "system-${name}" system) self.systemConfigs
 // {
-  native-addons =
-    pkgs.runCommand "check-native-addons"
-      {
-        nativeBuildInputs = [
-          pkgs.gcc
-          pkgs.patchelf
-          self.packages.${pkgs.stdenv.hostPlatform.system}.bun-libstdcxx
-        ];
-      }
-      ''
-        export HOME=$TMPDIR
-        cat > probe.cc <<'EOF'
-        #include <string>
-        extern "C" int probe_answer() { return (int)std::string("ok").size(); }
-        EOF
-        g++ -shared -fPIC -o libprobe.so probe.cc
-        patchelf --remove-rpath libprobe.so
-        readelf -d libprobe.so | grep -q 'libstdc++.so.6'
-        result="$(bun -e "
-          import { dlopen } from 'bun:ffi'
-          console.log('answer', dlopen('$PWD/libprobe.so', { probe_answer: { args: [], returns: 'i32' } }).symbols.probe_answer())
-        " 2>&1)"
-        echo "$result"
-        grep -q 'answer 2' <<<"$result"
-        touch $out
-      '';
-
   hyprland-config = pkgs.runCommand "check-hyprland-config" { } ''
     export HOME=$TMPDIR XDG_RUNTIME_DIR=$TMPDIR
     verify() {
@@ -222,7 +198,7 @@ in
               "readest", "claude",
               "codex", "copilot", "opencode", "herdr", "forge", "github-mcp-server",
               "mcp-language-server", "node", "pnpm", "bun", "tsc", "typescript-language-server",
-              "rustup", "go", "uv", "poetry", "aws", "az", "func", "azcopy", "cf", "terraform",
+              "cargo", "rustc", "cargo-clippy", "rustfmt", "rust-analyzer", "pkg-config", "go", "uv", "poetry", "aws", "az", "func", "azcopy", "cf", "terraform",
               "tflint", "kubectl", "kubecolor", "k9s", "ansible", "mkcert", "psql", "squawk",
               "bw", "fnox", "semgrep", "zizmor", "7zz", "sponge", "tree", "tokei", "lynx",
               "git-filter-repo", "process-compose", "llama-cli", "onedrive", "wine",

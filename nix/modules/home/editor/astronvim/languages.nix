@@ -7,7 +7,7 @@
 #   linters      <none-ls diagnostics builtin> = package
 #   extra        tools others need (no name to switch on)
 #   serverCommands       <server> = absolute path: for a server whose name on
-#                        PATH is taken by something else (rustup's proxy)
+#                        PATH is taken by something else
 #   formatterFiletypes   <formatter> = [ filetypes ]: where that formatter applies
 #                        (its default is wider than we want)
 #   formattingDisabled   servers whose own formatting is switched off
@@ -115,10 +115,8 @@
   ruby.servers.ruby_lsp = pkgs.ruby-lsp;
 
   rust = {
-    servers.rust_analyzer = pkgs.rust-analyzer; # formats with rustfmt (rustup)
-    # rustup's own `rust-analyzer` comes first on PATH, wants a component that is
-    # not installed and then calls itself ("infinite recursion detected")
-    serverCommands.rust_analyzer = "${pkgs.rust-analyzer}/bin/rust-analyzer";
+    servers.rust_analyzer = pkgs.rust-analyzer;
+    extra = [ pkgs.rustfmt ]; # rust-analyzer formats with it
   };
 
   terraform = {

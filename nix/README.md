@@ -114,23 +114,20 @@ at the system level, a standalone machine picks groups with
 - Packages that nixpkgs lacks are in `pkgs/`; update them with
   `nix run nixpkgs#nix-update -- --flake <name>` (or bump version and hash).
 - Projects should bring their own toolchains: the global Python, Node, Rust
-  (rustup) and Go are for quick work. A project that pins its tools in
-  `mise.toml` (the team's source of truth) is run with `mise install`, not a
-  second set of pins in a flake; one without a version manager gets a Nix dev
-  shell (`nix develop`, direnv; keep `.envrc` out of team repos: global
-  gitignore or `.git/info/exclude`). On NixOS, `programs.nix-ld`
-  (`modules/nixos/core/nix-ld.nix`) lets the binaries these tools download
-  run.
-- Prebuilt native code from npm and PyPI (sharp, numpy, ...) needs `libstdc++`,
-  which a Nix-built interpreter cannot find: it uses its own glibc and looks
-  only in the Nix store, and nix-ld only helps unpatched executables. Per
-  runtime: `bun` is `pkgs/bun-libstdcxx` (nixpkgs#573990; the `native-addons`
-  check guards it), `node` already works, Python projects use uv's standalone
-  Pythons (`python-preference = "only-managed"` in `uv.toml`; Poetry takes the
-  Nix `python3` unless told otherwise: `poetry env use "$(uv python find 3.13)"`
-  per project). Do not fix such a case with a
-  global `LD_LIBRARY_PATH`: it leaks into every child process and breaks the
-  distribution's own programs on Ubuntu.
+  and Go are for quick work. A project that pins its tools in `mise.toml`
+  (the team's source of truth) is run with `mise install` on the Ubuntu laptop
+  (mise is only there, not on NixOS); one without a version manager, or any
+  project on NixOS, gets a Nix dev shell (`nix flake init -t ~/dotfiles/nix#c`,
+  `#go`, `#rust`; direnv; keep `.envrc` out of team repos: global gitignore or
+  `.git/info/exclude`).
+- Prebuilt native code (npm addons such as sharp, PyPI wheels such as numpy,
+  Lua C modules) and compilers behave differently on Nix: a Nix-built runtime
+  cannot find the libraries that foreign code expects, and Nix's compiler never
+  sees the distribution's headers and libraries. The whole picture, the rule per
+  runtime (bun, Python, Lua, Node, Java, PHP, Rust, Go, C/C++), how to diagnose
+  a new case and the tests that guard it: [docs/NATIVE-CODE.md](../docs/NATIVE-CODE.md).
+  Never fix such a case with a global `LD_LIBRARY_PATH`: it leaks into every
+  child process and breaks the distribution's own programs on Ubuntu.
 - Databases run per project in Docker; only the clients are installed.
 - Docker, libvirt/virt-manager and keyd (Caps Lock = Escape) are system
   modules in `modules/nixos/desktop/`. Alt+hjkl as arrow keys is only for the

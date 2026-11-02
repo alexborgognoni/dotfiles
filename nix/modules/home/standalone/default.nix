@@ -4,11 +4,13 @@
 #   gpu.nix          GPU drivers for Nix-built GUI apps (my.gpu.nvidia)
 #   audio.nix        PipeWire from Nix (my.audio.server)
 #   secrets.nix      user-level sops secrets (decrypted with the admin age key)
+#   mise.nix         mise, for projects that pin their tools in mise.toml
 {
   imports = [
     ./audio.nix
     ./gpu.nix
     ./integration.nix
+    ./mise.nix
     ./secrets.nix
   ];
 }

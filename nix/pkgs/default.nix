@@ -9,6 +9,14 @@ final: _prev: {
 
   forgecode = final.callPackage ./forgecode/package.nix { };
 
-  # nixpkgs' bun that can load native addons needing libstdc++ (sharp)
-  bun-libstdcxx = final.unstable.callPackage ./bun-libstdcxx/package.nix { };
+  # nixpkgs' bun that can load prebuilt native addons (sharp)
+  bun-native-libs = final.unstable.callPackage ./bun-native-libs/package.nix { };
+
+  # nixpkgs' Python interpreters that load PyPI wheels:
+  # { withPackages; python; versions } (python-native-libs/package.nix)
+  pythonNativeLibs = final.unstable.callPackage ./python-native-libs/package.nix { };
+
+  # nixpkgs' Lua and LuaJIT that load prebuilt C modules, and the luarocks of
+  # that Lua: { lua; luajit; luarocks } (lua-native-libs/package.nix)
+  luaNativeLibs = final.unstable.callPackage ./lua-native-libs/package.nix { };
 }

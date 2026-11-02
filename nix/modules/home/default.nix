@@ -19,6 +19,7 @@
     ./browser.nix
     ./fonts.nix
     ./packages.nix
+    ./toolchains.nix
     ./standalone
     ./corporate
     ./apps

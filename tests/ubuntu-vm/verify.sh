@@ -43,6 +43,7 @@ check "apt layer is up to date (apt-layer.sh --check)" '$HOME/dotfiles/scripts/a
 check "no snaps (snapd purged and pinned out), no Flatpak (program or runtimes), no Homebrew" '! command -v snap >/dev/null && ! command -v flatpak >/dev/null && [ ! -e /var/lib/flatpak ] && [ ! -e /home/linuxbrew ] && apt-cache policy snapd | grep -q "Candidate: (none)"'
 check "zsh is the login shell" '[ "$(getent passwd $(id -un) | cut -d: -f7)" = /usr/bin/zsh ]'
 check "docker group, docker running" 'id -nG | grep -qw docker && systemctl is-active -q docker'
+check "docker's units stay enabled (apt/services.list)" 'systemctl is-enabled -q containerd docker.socket docker'
 check "Chrome and Edge installed (apt)" 'command -v google-chrome && command -v microsoft-edge'
 check "nix.conf owned by system-manager, corporate CA" 'grep -q "ssl-cert-file = /etc/ssl/certs/ca-certificates.crt" /etc/nix/nix.conf'
 check "Nix in non-interactive zsh" 'zsh -c "command -v nix"'
@@ -99,6 +100,16 @@ section "User environment"
 check "git identity and signing" 'git -C ~/dotfiles config user.email | grep -q @ && git config --get commit.gpgsign | grep -q true'
 check "GPG keys imported" '[ "$(/usr/bin/gpg --list-secret-keys --with-colons | grep -c ^sec)" -ge 1 ]'
 check "tools present" 'for c in nvim tmux kitty theme nh starship; do command -v $c >/dev/null || { echo "missing $c"; exit 1; }; done'
+
+section "Prebuilt native code and compilers (docs/NATIVE-CODE.md)"
+check "bun loads a native addon (sharp)" 'd=$(mktemp -d) && cd $d && bun add --silent sharp && bun -e "console.log(require(\"sharp\").versions.vips)"'
+check "wheels load in a uv virtualenv on the Nix Python (numpy, 3.13)" 'd=$(mktemp -d) && uv venv --quiet --python 3.13 $d/v && uv pip install --quiet --python $d/v/bin/python numpy && $d/v/bin/python -c "import numpy"'
+check "uv uses the Nix interpreters and downloads none" 'grep -q "python-preference = \"only-system\"" ~/.config/uv/uv.toml && grep -q "python-downloads = \"never\"" ~/.config/uv/uv.toml && uv python find 3.12 | grep -q -e nix-profile -e /nix/store'
+check "lua and luajit carry libz and libstdc++" 'for r in lua luajit; do readelf -d "$(readlink -f "$(command -v $r)")" | grep -q "libz.so.1" && readelf -d "$(readlink -f "$(command -v $r)")" | grep -q "libstdc++.so.6" || { echo "$r"; exit 1; }; done'
+check "pkg-config is from Nix, gcc finds no host library, a build needs a dev shell" 'case "$(command -v pkg-config)" in /nix/*|*/.nix-profile/*) ;; *) exit 1;; esac; ! pkg-config --exists openssl && ! printf "#include <openssl/ssl.h>\n" | gcc -E -x c - >/dev/null 2>&1'
+check "Rust from Nix (no rustup), Go never downloads a toolchain" '! command -v rustup >/dev/null && cargo --version && [ "$(go env GOTOOLCHAIN)" = local ]'
+check "Java from Nix: JAVA_HOME, javac, Gradle downloads no JDK" 'case "$JAVA_HOME" in /nix/store/*) ;; *) exit 1;; esac && javac -version && grep -q "auto-download=false" ~/.gradle/gradle.properties'
+check "PHP has phpredis, mise is installed (Ubuntu only)" 'php -m | grep -qix redis && command -v mise'
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

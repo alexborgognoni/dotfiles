@@ -19,8 +19,9 @@ let
   u = pkgs.unstable;
 
   # Global Python for scripting and office automation; projects should use
-  # their own environment (uv, poetry or a dev shell).
-  python = u.python3.withPackages (
+  # their own environment (uv, poetry or a dev shell). pkgs/python-native-libs:
+  # the interpreter also loads PyPI wheels, so virtualenvs made from it work.
+  python = pkgs.pythonNativeLibs.withPackages (
     ps: with ps; [
       boto3
       browser-cookie3
@@ -40,6 +41,10 @@ let
       python-pptx
     ]
   );
+
+  # nixpkgs' extensions plus phpredis (Laravel's cache and queue driver);
+  # more: add `all.<name>` ("php -m" lists the ones in)
+  php = u.php.withExtensions ({ enabled, all }: enabled ++ [ all.redis ]);
 
   latex = u.texliveMedium.withPackages (
     ps: with ps; [
@@ -118,9 +123,16 @@ in
 
     # Not in nixpkgs: packaged in pkgs/
     pkgs.forgecode
-    # nixpkgs' bun plus libstdc++, so native addons such as sharp load
-    # (nixpkgs#573990; pkgs/bun-libstdcxx)
-    pkgs.bun-libstdcxx
+    # nixpkgs' bun plus the libraries prebuilt native code expects, so addons
+    # such as sharp load (nixpkgs#573990; pkgs/bun-native-libs)
+    pkgs.bun-native-libs
+    # python3.12 and python3.13 (python3 is the 3.14 above), same interpreters
+    pkgs.pythonNativeLibs.versions
+    # Lua and LuaJIT that load prebuilt C modules, and the luarocks of that Lua
+    # (pkgs/lua-native-libs)
+    pkgs.luaNativeLibs.lua
+    pkgs.luaNativeLibs.luajit
+    pkgs.luaNativeLibs.luarocks
   ]
   ++ (with u; [
     # AI and coding agents
@@ -137,13 +149,24 @@ in
     pnpm
     typescript
     typescript-language-server
-    rustup
+    # Rust from Nix (rustup's toolchains are unpatched downloads); a project
+    # that pins another version or nightly uses templates/rust
+    rustc
+    cargo
+    clippy
+    rustfmt
+    rust-analyzer
     go
     uv
     poetry
     gcc
     gnumake
     cmake
+    # Nix's pkg-config, so that the distribution's /usr/bin/pkg-config does not
+    # answer with its own headers and libraries, which Nix's gcc cannot use: a
+    # build that needs a library fails clearly, and the dev shell has it
+    # (templates/c, docs/NATIVE-CODE.md)
+    pkg-config
 
     # Cloud and infrastructure
     awscli2
@@ -163,8 +186,11 @@ in
     qemu-utils # qemu-img
 
     # PHP (formerly Laravel Herd Lite); Laravel itself comes per project
-    # through composer (composer create-project laravel/laravel <app>)
-    php
+    # through composer (composer create-project laravel/laravel <app>).
+    # Extensions come from Nix (withExtensions), not `pecl install`: a
+    # prebuilt or hand-built extension is a library the interpreter cannot
+    # find its dependencies for (docs/NATIVE-CODE.md)
+    php # (the one above)
     php.packages.composer
 
     # Databases (clients; servers run per project: dev shells or containers)

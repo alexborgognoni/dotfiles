@@ -70,24 +70,18 @@
       nix-direnv.enable = true;
     };
 
-    # Tool versions of projects that pin them in mise.toml (the team's source
-    # of truth, e.g. Daisy): `mise install` in the checkout. Downloaded
-    # binaries need programs.nix-ld on NixOS (modules/nixos/core/nix-ld.nix).
-    mise = {
-      enable = true;
-      package = pkgs.unstable.mise;
-    };
-
-    # Projects run on uv's standalone Pythons, never the Nix one: PyPI wheels
-    # (numpy, pydantic, ...) need libstdc++, which a Nix-built interpreter
-    # cannot find (a standalone Python uses the system loader, or nix-ld on
-    # NixOS). The Nix python3 stays for scripts that use Nix's own packages.
-    # In uv.toml, not a shell variable: IDEs and git hooks read it too. The uv
-    # package itself is in the package groups.
+    # uv uses the Nix interpreters (python3.12 .. 3.14, wheel-capable: see
+    # pkgs/python-native-libs) and never downloads a standalone Python: that is
+    # an unpatched binary, which needs nix-ld on NixOS. In uv.toml, not a shell
+    # variable: IDEs and git hooks read it too. The uv package itself is in the
+    # package groups.
     uv = {
       enable = true;
       package = null;
-      settings.python-preference = "only-managed";
+      settings = {
+        python-preference = "only-system";
+        python-downloads = "never";
+      };
     };
 
     btop = {
