@@ -162,6 +162,8 @@ in
         # ("make model serial" glob, see kanshi(5))
         laptop = "eDP-1";
         lenovo = "*P27h-10*";
+        # same screens, spelled differently: kanshi refuses a criteria twice
+        lenovoSecond = "Lenovo*P27h-10*";
         rog = "*ROG PG278QR*";
         msi = "*MP241*";
       in
@@ -182,6 +184,31 @@ in
           profile.outputs = [
             {
               criteria = lenovo;
+              mode = "2560x1440@60";
+              position = "0,0";
+              scale = scales.external;
+            }
+            {
+              criteria = laptop;
+              mode = "2560x1600@165";
+              position = "0,1440";
+              scale = scales.laptopDocked;
+            }
+          ];
+        }
+        {
+          # Work dock: two identical Lenovos (same model and serial, so only
+          # the order tells them apart). One above the laptop, the other off.
+          # Must list both: kanshi only matches a profile that accounts for
+          # every connected screen.
+          profile.name = "dock";
+          profile.outputs = [
+            {
+              criteria = lenovo;
+              status = "disable";
+            }
+            {
+              criteria = lenovoSecond;
               mode = "2560x1440@60";
               position = "0,0";
               scale = scales.external;

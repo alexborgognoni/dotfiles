@@ -62,8 +62,11 @@ in
     wayland.windowManager.hyprland.extraConfig = lib.mkIf roles (
       lib.mkOrder 700 ''
         hl.on("hyprland.start", function() hl.exec_cmd("monitor-roles") end)
-        hl.on("monitor.added", function() hl.exec_cmd("monitor-roles") end)
-        hl.on("monitor.removed", function() hl.exec_cmd("monitor-roles") end)
+        -- a re-plugged display gets both bars from Noctalia again, even when
+        -- the roles are the same as before: force the bars, after a pause
+        -- that lets Noctalia create them
+        hl.on("monitor.added", function() hl.exec_cmd("sleep 1; monitor-roles --force") end)
+        hl.on("monitor.removed", function() hl.exec_cmd("sleep 1; monitor-roles --force") end)
         -- the autostart apps open their windows after login; the script moves
         -- their workspaces to the main display and does nothing when all is in
         -- place (it never moves empty workspaces: that would loop)

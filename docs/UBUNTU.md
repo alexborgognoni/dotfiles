@@ -211,7 +211,12 @@ warning says how), then run both switches.
   to the main display (never empty ones: Hyprland would create a replacement
   at once and the two would ping-pong), parks every other display on a
   high-numbered empty workspace (11, 12, ...) and leaves the bars alone when
-  nothing changed.
+  nothing changed (plug and unplug always re-set them: a re-plugged display
+  gets both bars from Noctalia again).
+- **Work dock**: its two Lenovo P27h-10 are identical (same model and serial),
+  so kanshi's `dock` profile lists the model twice (spelled differently, as
+  kanshi refuses the same criteria twice): the first matched screen stays on,
+  the second is disabled.
   `Super+B` hides/shows all bars, `Super+Shift+B` the one on the focused
   display (`toggle-bar`, aware of which bar each display shows). Do not call
   `hl.workspace_rule` from event handlers or listen to
