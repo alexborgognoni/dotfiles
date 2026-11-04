@@ -44,6 +44,11 @@ done
 # The other displays rest on a high-numbered empty workspace (11, 12,
 # ...), not on whichever low number Hyprland picked: otherwise Super+5
 # would jump to a side display. The empty low one then disappears.
+# Also renumbers a leftover high number (12 from the time a second side
+# display was there) when the display is on an empty workspace and the right
+# number does not exist yet. An existing workspace is never taken over, so
+# Super+scroll between side workspaces keeps working, and workspaces with
+# windows are never touched.
 monitors="$(hyprctl monitors -j)"
 workspaces="$(hyprctl workspaces -j)"
 focused="$(jq -r '.[] | select(.focused) | .name' <<<"$monitors")"
@@ -53,7 +58,10 @@ for name in $(jq -r --arg main "$main" '.[] | select(.name != $main) | .name' <<
   number=$((number + 1))
   active="$(jq -r --arg m "$name" '.[] | select(.name == $m) | .activeWorkspace.id' <<<"$monitors")"
   windows="$(jq -r --argjson id "$active" '.[] | select(.id == $id) | .windows' <<<"$workspaces")"
-  if [ "$active" -ge 1 ] && [ "$active" -le 10 ] && [ "${windows:-0}" -eq 0 ]; then
+  owner="$(jq -r --argjson id "$number" '.[] | select(.id == $id) | .monitor' <<<"$workspaces")"
+  low=false
+  if [ "$active" -ge 1 ] && [ "$active" -le 10 ]; then low=true; fi
+  if [ "${windows:-0}" -eq 0 ] && [ "$active" -ne "$number" ] && { $low || [ -z "$owner" ]; }; then
     hyprctl dispatch "hl.dsp.focus({ monitor = \"$name\" })" >/dev/null
     hyprctl dispatch "hl.dsp.focus({ workspace = \"$number\" })" >/dev/null
     switched=true

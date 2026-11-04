@@ -219,7 +219,9 @@ warning says how), then run both switches.
   switch; it runs one copy at a time, moves workspaces 1-10 that have windows
   to the main display (never empty ones: Hyprland would create a replacement
   at once and the two would ping-pong), parks every other display on a
-  high-numbered empty workspace (11, 12, ...) and leaves the bars alone when
+  high-numbered empty workspace (11, 12, ...; also renumbers a leftover 12
+  to 11 when the display is on an empty one and 11 does not exist, never
+  taking over an existing workspace) and leaves the bars alone when
   nothing changed (plug and unplug always re-set them: a re-plugged display
   gets both bars from Noctalia again).
   `Super+B` hides/shows all bars, `Super+Shift+B` the one on the focused
