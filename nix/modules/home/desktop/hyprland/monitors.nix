@@ -5,6 +5,7 @@
 #
 #   monitor-roles    moves what is on the wrong display and picks the bars;
 #                    idempotent, one copy at a time
+#   dock-screens     keeps one of identical screens (my.desktop.twinScreens)
 #   goto-workspace   Super+N: the main display first, then workspace N
 #   toggle-bar       Super+B (all bars) / Super+Shift+B (this display's bar)
 #
@@ -21,6 +22,7 @@
 let
   h = import ./lib.nix { inherit config lib pkgs; };
   roles = config.my.desktop.mainMonitors != [ ];
+  twins = config.my.desktop.twinScreens;
 
   monitorRoles = h.script {
     name = "monitor-roles";
@@ -30,6 +32,21 @@ let
     ];
     substitute."@mainMonitors@" = lib.escapeShellArgs config.my.desktop.mainMonitors;
   };
+
+  # Identical screens on a dock: keeps the one of the configured week of
+  # manufacture, switches the others off (see my.desktop.twinScreens)
+  dockScreens = h.script {
+    name = "dock-screens";
+    runtimeInputs = [
+      pkgs.jq
+      pkgs.util-linux
+      pkgs.wlr-randr
+    ];
+    substitute."@twins@" = lib.concatMapStringsSep " " (
+      t: "${lib.escapeShellArg t.match} ${toString t.week}"
+    ) twins;
+  };
+  plugged = lib.optionalString (twins != [ ]) "dock-screens; " + "monitor-roles --force";
 
   # Role-aware (monitor-roles keeps which bar each display shows): Noctalia's
   # own toggle would also flip the bars that are hidden on purpose.
@@ -50,7 +67,8 @@ in
     ++ lib.optionals roles [
       monitorRoles
       gotoWorkspace
-    ];
+    ]
+    ++ lib.optional (twins != [ ]) dockScreens;
 
     # A switch makes Noctalia reload its config, which brings back both bars
     home.activation.monitorRoles = lib.mkIf roles (
@@ -65,8 +83,8 @@ in
         -- a re-plugged display gets both bars from Noctalia again, even when
         -- the roles are the same as before: force the bars, after a pause
         -- that lets Noctalia create them
-        hl.on("monitor.added", function() hl.exec_cmd("sleep 1; monitor-roles --force") end)
-        hl.on("monitor.removed", function() hl.exec_cmd("sleep 1; monitor-roles --force") end)
+        hl.on("monitor.added", function() hl.exec_cmd("sleep 1; ${plugged}") end)
+        hl.on("monitor.removed", function() hl.exec_cmd("sleep 1; ${plugged}") end)
         -- the autostart apps open their windows after login; the script moves
         -- their workspaces to the main display and does nothing when all is in
         -- place (it never moves empty workspaces: that would loop)

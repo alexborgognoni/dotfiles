@@ -154,6 +154,37 @@
         workspaces. Empty: all displays are alike.
       '';
     };
+
+    desktop.twinScreens = lib.mkOption {
+      type = lib.types.listOf (
+        lib.types.submodule {
+          options = {
+            match = lib.mkOption {
+              type = lib.types.str;
+              example = "P27h-10";
+              description = "Part of the monitor description the identical screens share.";
+            };
+            week = lib.mkOption {
+              type = lib.types.int;
+              example = 15;
+              description = ''
+                Week of manufacture in the screen's EDID (byte 16), the only
+                thing that tells identical screens apart (`od -An -tu1 -j16 -N1
+                /sys/class/drm/card*-DP-7/edid`). That screen is kept; the
+                others with the same description are switched off.
+              '';
+            };
+          };
+        }
+      );
+      default = [ ];
+      description = ''
+        Identical screens (same model and serial, e.g. two of the same
+        monitor on a dock): keep only the one of that week of manufacture,
+        above the internal panel. kanshi cannot tell them apart, so
+        `dock-screens` (hyprland/monitors.nix) does it on plug and unplug.
+      '';
+    };
   };
 
   config = {

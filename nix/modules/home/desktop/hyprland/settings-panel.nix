@@ -1,7 +1,10 @@
 # Integration of the Noctalia "Hyprland Settings" panel (display tweaks,
 # input, look): it writes ~/.config/hypr/hyprland-settings.lua (state, not
-# config), which Hyprland loads last, so a kept change wins over the settings
-# until kanshi re-applies a profile (login, plug, unplug).
+# config), which Hyprland loads last. Not for displays: Hyprland ranks output
+# managers (kanshi, wlr-randr, wdisplays) above hyprctl calls above the
+# config file, so once kanshi has applied a profile the panel's display
+# changes are saved but ignored. Displays: Nix (kanshi, scales), one-offs with
+# wdisplays/wlr-randr.
 { config, lib, ... }:
 lib.mkIf
   (

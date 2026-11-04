@@ -192,9 +192,18 @@ warning says how), then run both switches.
 - **Hyprland Settings** (plugin, bar button left of the shortcuts button,
   `/hyprland`): displays (only valid resolutions, refresh rates and scales),
   input, look, with a 15 s keep-or-revert. A kept change goes to
-  `~/.config/hypr/hyprland-settings.lua` (state, not in git), which is loaded
-  last. Display changes last until kanshi applies a profile again (login,
-  plug, unplug); permanent values belong in `nix/homes/<machine>.nix`.
+  `~/.config/hypr/hyprland-settings.lua` (state, not in git). Use it for input
+  and look, **not for displays**: Hyprland ranks output managers (kanshi,
+  `wlr-randr`, `wdisplays`) above `hyprctl` calls above the config file, and
+  the panel writes config, so once kanshi has applied a profile its display
+  changes are saved but ignored (no error), and a stale rule there can keep a
+  screen off. Displays:
+  - permanent layouts, scales, modes: Nix (`nix/homes/<machine>.nix`: kanshi
+    profiles, `scales`, `twinScreens`), applied on every plug and login;
+  - one-off experiments: `wdisplays` (graphical) or `wlr-randr`, the same
+    tier as kanshi, so they win until the next plug or login;
+  - `kanshictl switch <profile>` forces a named kanshi profile.
+  Do not test with `hyprctl eval 'hl.monitor(...)'` either.
 - **Screen scale** is the one lever for the size of everything (windows, bar,
   text, cursor): the `scales` table at the top of `nix/homes/work-laptop.nix`.
   Valid values give whole logical pixels (laptop panel: 1.0, 1.25, 1.6, 2.0);
@@ -213,15 +222,23 @@ warning says how), then run both switches.
   high-numbered empty workspace (11, 12, ...) and leaves the bars alone when
   nothing changed (plug and unplug always re-set them: a re-plugged display
   gets both bars from Noctalia again).
-- **Work dock**: its two Lenovo P27h-10 are identical (same model and serial),
-  so kanshi's `dock` profile lists the model twice (spelled differently, as
-  kanshi refuses the same criteria twice): the first matched screen stays on,
-  the second is disabled.
   `Super+B` hides/shows all bars, `Super+Shift+B` the one on the focused
   display (`toggle-bar`, aware of which bar each display shows). Do not call
   `hl.workspace_rule` from event handlers or listen to
   `monitor.layout_changed`/`config.reloaded` for this: it re-applies the
   monitor setup in a loop (every screen flashes).
+- **Work dock**: its two Lenovo P27h-10 are identical (same model and
+  serial), so neither kanshi nor Hyprland can tell them apart, and the order
+  they are listed in (and their DP-n names) changes with every plug. Only the
+  EDID differs, in the week of manufacture. `my.desktop.twinScreens`
+  (`nix/homes/work-laptop.nix`) names the week to keep; `dock-screens` reads
+  it from `/sys/class/drm/card*-DP-n/edid` on plug and unplug, puts that screen
+  at 0,0 with the laptop below it and switches the other off (`wlr-randr`).
+  There is deliberately no kanshi profile for this layout. To keep the other
+  screen, change `week` (`od -An -tu1 -j16 -N1 /sys/class/drm/card*-DP-7/edid`
+  per connector).
+  `hyprctl eval 'hl.monitor(...)'` rules stay in the running Hyprland until it
+  is restarted.
 - **Digital audio outputs** (S/PDIF, USB card profiles): Noctalia lists only
   active devices, GNOME Settings also switches card profiles. Pick the output
   once there (`XDG_CURRENT_DESKTOP=GNOME gnome-control-center sound`; the entry
