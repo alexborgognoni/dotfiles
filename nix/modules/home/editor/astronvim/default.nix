@@ -63,10 +63,40 @@ let
   # nvim-treesitter with every grammar (parsers and queries of matching
   # versions) merged into one directory, which is also its install_dir
   # (config/lua/nix.lua), so it reports them all as installed.
+  grammars = vp.nvim-treesitter.withAllGrammars.dependencies;
+
+  # Shared queries that have no grammar (ecma, jsx, html_tags: inherited by
+  # javascript, typescript, tsx, html, svelte, ...). nvim-treesitter's own
+  # installer copies them from the plugin's runtime/queries into install_dir;
+  # the grammar packages don't carry them, so link them the same way.
+  sharedQueries =
+    let
+      grammarQueries = pkgs.symlinkJoin {
+        name = "nvim-treesitter-grammar-queries";
+        paths = grammars;
+      };
+    in
+    pkgs.runCommand "nvim-treesitter-shared-queries" { } ''
+      mkdir -p $out/queries
+      for dir in ${vp.nvim-treesitter}/runtime/queries/*; do
+        [ -e ${grammarQueries}/queries/$(basename "$dir") ] || ln -s "$dir" $out/queries/
+      done
+    '';
+
   treesitter = pkgs.symlinkJoin {
     name = "nvim-treesitter";
-    paths = [ vp.nvim-treesitter ] ++ vp.nvim-treesitter.withAllGrammars.dependencies;
+    paths = [ vp.nvim-treesitter ] ++ grammars ++ [ sharedQueries ];
   };
+
+  # A query that inherits another one (`; inherits: ecma`) silently loses its
+  # rules when that one is missing: fail the build instead.
+  treesitterCheck = pkgs.runCommand "astronvim-treesitter-check" { } ''
+    cd ${treesitter}/queries
+    for name in $(grep -RhoE '^; ?inherits: ?[a-z_,()]+' . | sed -E 's/^; ?inherits: ?//' | tr ',()' '\n' | sort -u); do
+      [ -e "$name" ] || { echo "treesitter: queries/$name is inherited but missing" >&2; exit 1; }
+    done
+    touch $out
+  '';
 
   # lazy.nvim name (the repository name) -> plugin: everything AstroNvim v6
   # loads (lua/astronvim/plugins) plus your own plugins.
@@ -143,6 +173,7 @@ in
       vim.g.nix_theme_file = "${config.my.themeState}/current/nvim.lua"
       vim.g.nix_languages = vim.json.decode [==[${languagesJson}]==]
       vim.g.nix_languages_check = "${languagesCheck}"
+      vim.g.nix_treesitter_check = "${treesitterCheck}"
       vim.opt.rtp:prepend "${pluginDir}/lazy.nvim"
       require "lazy_setup"
       require "polish"
