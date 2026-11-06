@@ -6,6 +6,8 @@
 #   artifactory.nix     pip through the company's Artifactory mirror
 #   ca-env.nix          Python and Node trust the corporate root CAs
 #   java-truststore.nix Java and Gradle trust them too (built from Ubuntu's store)
+#   local-network.nix   no local-network prompt in Firefox and Zen (Chrome,
+#                       Chromium, Edge: system-manager/corporate.nix)
 #   network-rescue.nix  fix-zscaler, net-diag, net-rescue (scripts/)
 #   identity.nix        the work identity (git email, keys, GitHub Enterprise)
 #   claude.nix          Claude Code against the company's Vertex AI / Copilot
@@ -18,6 +20,7 @@
     ./entra-sso.nix
     ./identity.nix
     ./java-truststore.nix
+    ./local-network.nix
     ./network-rescue.nix
     ./zscaler.nix
   ];

@@ -9,6 +9,14 @@
 }:
 let
   ca = "/etc/ssl/certs/ca-certificates.crt";
+  zscalerLnaPolicy = {
+    text =
+      builtins.toJSON {
+        LocalNetworkAccessIpAddressSpaceOverrides = [ "100.64.0.0/10=public" ];
+      }
+      + "\n";
+    replaceExisting = true;
+  };
 in
 {
   options.my.corporate.enable = lib.mkEnableOption "the corporate settings: root CA for Nix and Chrome, Alt+hjkl arrow keys";
@@ -66,6 +74,16 @@ in
         mv "$out.tmp" "$out"
       '';
     };
+
+    # Zscaler gives the sites it tunnels (ZPA private apps) synthetic addresses
+    # in 100.64.0.0/10, which Chromium's Local Network Access treats as the
+    # local network: any page that touches one gets "wants to access devices on
+    # your local network". Tell Chrome, Chromium and Edge (146+) that range is
+    # public. (Firefox and Zen have no range override:
+    # modules/home/corporate/local-network.nix.)
+    environment.etc."opt/chrome/policies/managed/zscaler-lna.json" = zscalerLnaPolicy;
+    environment.etc."chromium/policies/managed/zscaler-lna.json" = zscalerLnaPolicy;
+    environment.etc."opt/edge/policies/managed/zscaler-lna.json" = zscalerLnaPolicy;
 
     # Alt+hjkl as arrow keys, system-wide (keyd.nix merges the sections)
     my.keyd.settings = (import ../shared/keyd.nix).altArrows;

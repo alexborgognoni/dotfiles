@@ -264,6 +264,15 @@ warning says how), then run both switches.
   login.microsoftonline.com". SSO is per container, on in the default one.
   Test: `linux-entra-sso --interactive getAccounts` from the package prints the
   broker's accounts (Intune must be signed in).
+- **"Wants to access devices on your local network"** behind Zscaler: Zscaler
+  gives the sites it tunnels addresses in `100.64.0.0/10`, which the browsers'
+  Local Network Access counts as the local network. Chrome, Chromium and Edge
+  (146+) get the policy `LocalNetworkAccessIpAddressSpaceOverrides =
+  100.64.0.0/10=public` (`modules/system-manager/corporate.nix`, needs a
+  system switch and a full browser restart; check `chrome://policy`). Firefox
+  and Zen only take single address:port overrides, so
+  `network.lna.enabled = false` there (`modules/home/corporate/local-network.nix`),
+  which also turns the check off for the real LAN.
 
 ## Sound: back to PulseAudio
 
