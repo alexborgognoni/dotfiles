@@ -245,8 +245,11 @@ warning says how), then run both switches.
   active devices, GNOME Settings also switches card profiles. Pick the output
   once there (`XDG_CURRENT_DESKTOP=GNOME gnome-control-center sound`; the entry
   is hidden under Hyprland); WirePlumber remembers it.
-- **sudo**: passwordless only for apt, apt-get, systemctl and tee
-  (`/etc/sudoers.d/010-alex-nopasswd`). kitty's `sudo` wrapper (it runs
+- **sudo**: passwordless only for apt, apt-get, systemctl, tee
+  (`/etc/sudoers.d/010-alex-nopasswd`) and system-manager's engine
+  (`/nix/store/*-system-manager/bin/system-manager-engine *`: the profile's
+  store path changes with every config, so it is a wildcard; this is what
+  `system-manager switch --sudo` runs). kitty's `sudo` wrapper (it runs
   `sudo TERMINFO=...`) is switched off (`shell_integration ... no-sudo`),
   because sudoers refuses that for allow-listed commands.
 - **tmux** is 3.8 (nixpkgs unstable); the status-line prompt colors are
