@@ -99,6 +99,10 @@ in
           cursor.inactive_timeout = 3;
 
           ecosystem.no_update_news = true;
+
+          # XWayland apps render at native size instead of being upscaled
+          # (blurry); each one scales itself (VLC: QT_SCALE_FACTOR).
+          xwayland.force_zero_scaling = true;
         };
 
         gesture = {
