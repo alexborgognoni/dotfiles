@@ -219,6 +219,7 @@ in
     moreutils
     tree
     tokei
+    cloc
     lynx
     socat
     git-filter-repo

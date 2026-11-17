@@ -200,7 +200,7 @@ in
               "mcp-language-server", "node", "pnpm", "bun", "tsc", "typescript-language-server",
               "cargo", "rustc", "cargo-clippy", "rustfmt", "rust-analyzer", "pkg-config", "go", "uv", "poetry", "aws", "az", "func", "azcopy", "cf", "terraform",
               "tflint", "kubectl", "kubecolor", "k9s", "ansible", "mkcert", "psql", "squawk",
-              "bw", "fnox", "semgrep", "zizmor", "7zz", "sponge", "tree", "tokei", "lynx",
+              "bw", "fnox", "semgrep", "zizmor", "7zz", "sponge", "tree", "tokei", "cloc", "lynx",
               "git-filter-repo", "process-compose", "llama-cli", "onedrive", "wine",
               "latexmk", "pdflatex", "python3", "ffmpeg", "magick", "docker", "virt-manager",
               "sops", "age", "ssh-to-age",
