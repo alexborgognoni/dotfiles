@@ -160,8 +160,9 @@ in
     };
 
     gpu.nvidia = {
-      version = "595.84";
-      sha256 = "sha256-mcQE5SExvye8ptoCaNzOPr7cenOrF0BxqZXPGmxeugY=";
+    # Must match the apt driver exactly (nvidia-dkms-595-open, apt/packages.list)
+      version = "595.99.02";
+      sha256 = "sha256-6HR3lYv3YwcFSTJL1a1slI66btIQ5EAFs+/4SUD24ew=";
     };
   };
 

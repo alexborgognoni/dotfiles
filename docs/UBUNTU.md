@@ -105,6 +105,13 @@ When apt upgrades the NVIDIA driver, `nh home switch` warns; update
 `my.gpu.nvidia.version` and `sha256` in `nix/homes/work-laptop.nix` (the
 warning says how), then run both switches.
 
+The kernel driver is `nvidia-dkms-595-open` (`apt/packages.list`), built on this
+machine for every installed kernel. Ubuntu's prebuilt
+`linux-modules-nvidia-*` packages lag behind new kernels: a kernel without
+them boots with no NVIDIA driver, and with it the screens wired to the GPU
+(the docks' DisplayPort outputs; `/sys/class/drm` then lists only `card1`,
+Intel). If that happens, pick the previous kernel in GRUB (Advanced options).
+
 ## Hyprland session notes
 
 - **Keyboard layouts** (`my.keyboard.layout = "us,gb"`): Hyprland keeps the

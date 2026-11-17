@@ -41,3 +41,8 @@ qt6-qpa-plugins
 # Qt's Wayland platform: without it the tray's window runs through XWayland and
 # is upscaled (blurry) at a fractional scale
 qt6-wayland
+# NVIDIA kernel driver built on this machine for every installed kernel (DKMS).
+# The prebuilt linux-modules-nvidia-* packages lag behind new kernels, and a
+# kernel without them boots with no NVIDIA GPU (no external screens). Keep
+# my.gpu.nvidia.version in nix/homes/work-laptop.nix equal to its version.
+nvidia-dkms-595-open
