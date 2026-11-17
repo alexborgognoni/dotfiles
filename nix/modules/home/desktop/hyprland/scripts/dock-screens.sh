@@ -12,8 +12,8 @@ flock 9
 
 # Identical screens (same model and serial) cannot be told apart by kanshi or
 # Hyprland. Their EDIDs differ in the week of manufacture, so: keep the screen
-# of the configured week at 0,0 with the internal panel below it, switch the
-# other(s) off. Does nothing when everything is already so.
+# of the configured week (else the first) at 0,0 with the internal panel below
+# it, switch the other(s) off. Does nothing when everything is already so.
 twins=(@twins@)
 
 for ((i = 0; i < ${#twins[@]}; i += 2)); do
@@ -31,7 +31,16 @@ for ((i = 0; i < ${#twins[@]}; i += 2)); do
       if [ "$(od -An -tu1 -j16 -N1 "$edid" | tr -d ' ')" = "$week" ]; then keeper="$name"; fi
     done
   done
-  [ -n "$keeper" ] || continue
+  # Another desk with other screens of the same model: keep the first
+  [ -n "$keeper" ] || keeper="${names[0]}"
+
+  # A screen that never came on has no size to place things by: switch it on
+  # with its preferred mode first
+  if [ "$(jq -r --arg k "$keeper" '.[] | select(.name == $k) | .width' <<<"$monitors")" -eq 0 ]; then
+    wlr-randr --output "$keeper" --on --preferred
+    sleep 2
+    monitors="$(hyprctl monitors all -j)"
+  fi
 
   panel="$(jq -r '[.[] | select(.name | startswith("eDP"))][0].name // empty' <<<"$monitors")"
   height="$(jq -r --arg k "$keeper" '.[] | select(.name == $k) | .height' <<<"$monitors")"

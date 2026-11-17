@@ -79,7 +79,7 @@ in
 
     wayland.windowManager.hyprland.extraConfig = lib.mkIf roles (
       lib.mkOrder 700 ''
-        hl.on("hyprland.start", function() hl.exec_cmd("monitor-roles") end)
+        hl.on("hyprland.start", function() hl.exec_cmd("${lib.optionalString (twins != [ ]) "dock-screens; "}monitor-roles") end)
         -- a re-plugged display gets both bars from Noctalia again, even when
         -- the roles are the same as before: force the bars, after a pause
         -- that lets Noctalia create them

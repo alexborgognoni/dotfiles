@@ -80,7 +80,8 @@ in
 
       # Work dock: two identical Lenovos (same model and serial; kanshi cannot
       # tell them apart, so no profile matches both). Keep the one made in week
-      # 15, switch the other off.
+      # 15 (first dock), switch the other off. Another desk has other units
+      # (weeks 37 and 31): there the first one is kept.
       twinScreens = [
         {
           match = "P27h-10";
@@ -159,8 +160,8 @@ in
       ];
     };
 
-    gpu.nvidia = {
     # Must match the apt driver exactly (nvidia-dkms-595-open, apt/packages.list)
+    gpu.nvidia = {
       version = "595.99.02";
       sha256 = "sha256-6HR3lYv3YwcFSTJL1a1slI66btIQ5EAFs+/4SUD24ew=";
     };

@@ -96,14 +96,18 @@ snapshot. What stays and what goes is plain-text lists you can extend, see
 
 ```sh
 nh home switch                                              # user level
-sudo system-manager switch --flake ~/dotfiles/nix#work-laptop   # system level
+nix run ~/dotfiles/nix#system-manager -- switch --flake ~/dotfiles/nix#work-laptop --sudo   # system level
 nh home switch --update                                     # update everything (flake.lock)
 ~/dotfiles/install                                          # all layers, idempotent
 ```
 
 When apt upgrades the NVIDIA driver, `nh home switch` warns; update
 `my.gpu.nvidia.version` and `sha256` in `nix/homes/work-laptop.nix` (the
-warning says how), then run both switches.
+warning says how), then run both switches, **the system one before the
+reboot**: the Nix GPU libraries are linked at boot, so a session that starts
+before the switch loads the old libraries against the new kernel module
+(`NVRM: API mismatch` in `journalctl -k`) and the external screens stay off
+until the next login.
 
 The kernel driver is `nvidia-dkms-595-open` (`apt/packages.list`), built on this
 machine for every installed kernel. Ubuntu's prebuilt
