@@ -184,7 +184,7 @@
           };
         in
         {
-          inherit (pkgs) forgecode bun-native-libs;
+          inherit (pkgs) forgecode loc bun-native-libs;
           python-native-libs = pkgs.pythonNativeLibs.python;
           python-native-libs-versions = pkgs.pythonNativeLibs.versions;
           poetry-native-libs = pkgs.pythonNativeLibs.poetry;

@@ -16,6 +16,7 @@ in
   };
 
   forgecode = final.callPackage ./forgecode/package.nix { };
+  loc = final.callPackage ./loc/package.nix { };
 
   # Nix's Rust toolchain as one directory, for `rustup toolchain link`: the offline
   # default behind rustup's proxies (modules/home/toolchains.nix)

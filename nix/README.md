@@ -64,7 +64,7 @@ packages/default.nix      package groups: cli, gui, browsers
 themes/                   theme catalogue: catalogue.nix (the themes), defaults,
                           accents, wallpapers, pack.nix (live color files)
 assets/wallpapers/        shared wallpapers (+ themes/<theme>/ for extras)
-pkgs/                     packages not in nixpkgs (forgecode) and
+pkgs/                     packages not in nixpkgs (forgecode, loc) and
                           the `pkgs.unstable` overlay
 secrets/                  sops-encrypted: vm.yaml (host), personal.yaml and
                           work.yaml (SSH/GPG keys)

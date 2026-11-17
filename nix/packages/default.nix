@@ -123,6 +123,7 @@ in
 
     # Not in nixpkgs: packaged in pkgs/
     pkgs.forgecode
+    pkgs.loc
     # nixpkgs' bun plus the libraries prebuilt native code expects, so addons
     # such as sharp load (nixpkgs#573990; pkgs/bun-native-libs)
     pkgs.bun-native-libs
