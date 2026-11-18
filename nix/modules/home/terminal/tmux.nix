@@ -82,11 +82,14 @@ in
       }
       {
         plugin = resurrect;
-        extraConfig = "set -g @resurrect-processes '~nvim'";
+        extraConfig = "set -g @resurrect-processes '~nvim ~opencode btop htop lazygit yazi'";
       }
       {
         plugin = continuum;
-        extraConfig = "set -g @continuum-restore 'on'";
+        extraConfig = ''
+          set -g @continuum-restore 'on'
+          set -g @continuum-save-interval '1'
+        '';
       }
     ];
 
@@ -132,6 +135,9 @@ in
 
       set -g status-left "#{E:@catppuccin_status_session}"
       set -g status-right "#{E:@catppuccin_status_application}#{E:@catppuccin_status_directory}#{E:@catppuccin_status_user}#{E:@catppuccin_status_host}"
+      # continuum saves from a #() hook in status-right; setting status-right
+      # above replaced the one it installed at plugin load, so re-add it.
+      set -ag status-right "#(${pkgs.tmuxPlugins.continuum}/share/tmux-plugins/continuum/scripts/continuum_save.sh)"
       set -g status-right-length 100
       set -g status-left-length 100
       set -g window-status-bell-style "default"
