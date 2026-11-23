@@ -61,6 +61,15 @@ in
       Install.WantedBy = [ "graphical-session.target" ];
     };
 
+    # Keep the pods on A2DP (stereo, good quality). WirePlumber otherwise flips
+    # the card to the HSP/HFP headset profile (mono, low quality) whenever
+    # something opens a microphone stream, and often stays there.
+    xdg.configFile."wireplumber/wireplumber.conf.d/51-bluez-no-autoswitch.conf".text = ''
+      wireplumber.settings = {
+        bluetooth.autoswitch-to-headset-profile = false
+      }
+    '';
+
     my.desktop.noctalia.plugins = [ "airpods" ];
 
     programs.noctalia.settings = {
