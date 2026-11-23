@@ -120,7 +120,10 @@ let
     "heirline.nvim" = vp.heirline-nvim;
     "lazydev.nvim" = vp.lazydev-nvim;
     "mini.icons" = vp.mini-icons;
-    "neo-tree.nvim" = vp.neo-tree-nvim;
+    # Patched until upstream fixes https://github.com/nvim-neo-tree/neo-tree.nvim/issues/2121
+    "neo-tree.nvim" = vp.neo-tree-nvim.overrideAttrs (old: {
+      patches = (old.patches or [ ]) ++ [ ./patches/neo-tree-wait-for-reveal-prompt.patch ];
+    });
     "none-ls.nvim" = vp.none-ls-nvim;
     "nui.nvim" = vp.nui-nvim;
     inherit (vp)

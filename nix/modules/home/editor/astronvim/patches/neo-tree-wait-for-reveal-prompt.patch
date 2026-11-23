@@ -1,0 +1,24 @@
+Wait for the "File not in cwd. Change cwd to ...?" prompt before opening the tree.
+
+M.execute falls through to do_show_or_focus right after starting
+inputs.confirm, so the tree is opened while the popup is the current window and
+is closed together with it: the split fails ("Invalid window id" in nui,
+then E95 "Buffer with this name already exists" on every later open) and the
+file's window is left showing a neo-tree buffer with no state.tree (E5108 on any
+key). The confirm callback already calls do_show_or_focus once the question is
+answered, so the call must not also run unconditionally.
+
+Regression from #2063 (3f7289e), present in 3.42.0 and on main.
+Upstream: https://github.com/nvim-neo-tree/neo-tree.nvim/issues/2121
+Drop this patch once a release contains the fix.
+
+--- a/lua/neo-tree/command/init.lua
++++ b/lua/neo-tree/command/init.lua
+@@ -229,6 +229,7 @@
+           do_show_or_focus(args, state, force_navigate)
+         end
+       )
++      return
+     end
+   end
+   args.dir = args.dir or cwd
