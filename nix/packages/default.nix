@@ -148,6 +148,7 @@ in
     codex
     github-copilot-cli
     opencode
+    pi-coding-agent
     herdr
     github-mcp-server
     mcp-language-server
