@@ -12,10 +12,7 @@ if config.my.standalone then
     # Upstream's tests run on Hydra for the same sources; icon_resolver
     # depends on the build host's environment.
     doCheck = false;
-    postPatch = (old.postPatch or "") + ''
-      substituteInPlace src/shell/lockscreen/lock_screen.cpp \
-        --replace-fail 'const std::string pamService = "login";' 'const std::string pamService = "noctalia";'
-    '';
+    mesonFlags = (old.mesonFlags or [ ]) ++ [ "-Dpam_service=noctalia" ];
   })
 else
   pkgs.unstable.noctalia

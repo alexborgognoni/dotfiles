@@ -38,7 +38,16 @@ in
       # and its systemd integration starts graphical-session.target.
       # Newest release (the stable channel lags a minor version behind)
       package = if standalone then pkgs.unstable.hyprland else null;
-      portalPackage = if standalone then pkgs.unstable.xdg-desktop-portal-hyprland else null;
+      # Home Manager 26.05 overrides the portal's `hyprland` argument, which the
+      # unstable portal no longer takes (it doesn't build against Hyprland)
+      portalPackage =
+        if standalone then
+          pkgs.unstable.xdg-desktop-portal-hyprland
+          // {
+            override = _: pkgs.unstable.xdg-desktop-portal-hyprland;
+          }
+        else
+          null;
       systemd.enable = standalone;
       # The session's whole environment (cursor, Qt/GTK theming, PATH, ...) for
       # apps systemd starts, e.g. files opened from Nautilus; without it
