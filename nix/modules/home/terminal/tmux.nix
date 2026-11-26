@@ -82,7 +82,12 @@ in
       }
       {
         plugin = resurrect;
-        extraConfig = "set -g @resurrect-processes '~nvim ~opencode btop htop lazygit yazi'";
+        # opencode is restored by name: the saved command is the Nix store path
+        # behind the launcher, which skips packages/default.nix (opencode) and
+        # leaks LD_LIBRARY_PATH into every command
+        extraConfig = ''
+          set -g @resurrect-processes '~nvim "~opencode->opencode --continue" btop htop lazygit yazi'
+        '';
       }
       {
         plugin = continuum;
